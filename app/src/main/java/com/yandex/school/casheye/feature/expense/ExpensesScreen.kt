@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -13,283 +14,281 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.DividerDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.outlined.Analytics
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.ReceiptLong
+import androidx.compose.material.icons.outlined.TrendingUp
+import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.yandex.school.casheye.ui.theme.CashEyeTheme
 
-private val PrimaryGreen = Color(0xFF2AE881)
-private val SummaryGreen = Color(0xFFD4FAE6)
-private val SelectedGreen = Color(0xFFD4FAE6)
-private val EmojiBackground = Color(0xFFD4FAE6)
-private val TextPrimary = Color(0xFF1D1B20)
-private val TextSecondary = Color(0xFF49454F)
-private val DividerColor = Color(0xFFECE6F0)
-private val ScreenBackground = Color(0xFFFFFBFE)
-
 @Immutable
 private data class ExpenseItem(
-    val icon: String,
+    val emoji: String,
     val title: String,
-    val subtitle: String? = null,
     val amount: String,
 )
 
-private val MockExpenses = listOf(
-    ExpenseItem(icon = "🏠", title = "Аренда квартиры", amount = "100 000 ₽"),
-    ExpenseItem(icon = "👕", title = "Одежда", amount = "15 000 ₽"),
-    ExpenseItem(icon = "🐶", title = "На собачку", amount = "1 000 ₽"),
-    ExpenseItem(icon = "🛠", title = "Ремонт квартиры", amount = "100 000 ₽"),
-    ExpenseItem(icon = "🍔", title = "Продукты", amount = "15 000 ₽"),
-    ExpenseItem(icon = "🏋", title = "Спортзал", amount = "15 000 ₽"),
-    ExpenseItem(icon = "💊", title = "Медицина", amount = "15 000 ₽"),
+private val Expenses = listOf(
+    ExpenseItem(emoji = "✏️", title = "Покупка канцтоваров", amount = "1 200 ₽"),
+    ExpenseItem(emoji = "☕", title = "Обед в кафе", amount = "750 ₽"),
+    ExpenseItem(emoji = "⛽", title = "Топливо для машины", amount = "2 300 ₽"),
+    ExpenseItem(emoji = "📱", title = "Подписка на сервис", amount = "450 ₽"),
+    ExpenseItem(emoji = "🔧", title = "Ремонт техники", amount = "5 800 ₽"),
+    ExpenseItem(emoji = "🎫", title = "Покупка билетов", amount = "3 200 ₽"),
+    ExpenseItem(emoji = "🌐", title = "Оплата интернета", amount = "800 ₽"),
+    ExpenseItem(emoji = "🛒", title = "Магазин продуктов", amount = "2 450 ₽"),
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExpenseScreen(modifier: Modifier = Modifier) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        containerColor = ScreenBackground,
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "Расходы сегодня",
-                        modifier = Modifier.fillMaxWidth(),
-                        color = TextPrimary,
-                        textAlign = TextAlign.Center,
-                        fontSize = 22.sp,
-                        lineHeight = 28.sp,
-                        fontWeight = FontWeight.Medium,
-                    )
-                },
-                actions = {
-                    Text(
-                        text = "↺",
-                        color = TextPrimary,
-                        textAlign = TextAlign.Center,
-                        fontSize = 24.sp,
-                        lineHeight = 24.sp,
-                        modifier = Modifier
-                            .padding(end = 16.dp)
-                            .size(24.dp),
-                    )
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = PrimaryGreen,
-                    titleContentColor = TextPrimary,
-                    actionIconContentColor = TextPrimary,
-                ),
-            )
-        },
-        bottomBar = { ExpensesNavigationBar() },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = {},
-                containerColor = PrimaryGreen,
-                contentColor = TextPrimary,
-                shape = CircleShape,
-            ) {
-                Text(
-                    text = "+",
-                    fontSize = 28.sp,
-                    lineHeight = 28.sp,
-                    textAlign = TextAlign.Center,
-                )
-            }
-        },
+        containerColor = MaterialTheme.colorScheme.background,
+        contentWindowInsets = WindowInsets(0.dp),
+        topBar = { ExpensesTopBar() },
+        floatingActionButton = { ExpensesFab() },
+        bottomBar = { ExpensesBottomBar() },
     ) { innerPadding ->
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .background(ScreenBackground),
+                .background(MaterialTheme.colorScheme.background),
         ) {
-            item {
-                TotalRow(total = "261 000 ₽")
-            }
-            items(MockExpenses) { item ->
-                ExpenseRow(item = item)
+            ExpensesHero()
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+            ) {
+                items(Expenses) { expense ->
+                    ExpenseRow(expense = expense)
+                }
             }
         }
     }
 }
 
 @Composable
-private fun TotalRow(total: String) {
+private fun ExpensesTopBar() {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(56.dp)
-            .background(SummaryGreen)
-            .padding(horizontal = 16.dp),
+            .height(64.dp)
+            .background(MaterialTheme.colorScheme.background)
+            .padding(start = 12.dp, end = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text(
-            text = "Всего",
-            color = TextPrimary,
-            fontSize = 16.sp,
-            lineHeight = 24.sp,
-            fontWeight = FontWeight.Normal,
-        )
-        Text(
-            text = total,
-            color = TextPrimary,
-            fontSize = 16.sp,
-            lineHeight = 24.sp,
-            fontWeight = FontWeight.Normal,
-        )
+        DateFilterButton()
+        Row(
+            modifier = Modifier.height(48.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            TopBarIcon(icon = Icons.Outlined.Analytics, contentDescription = "Аналитика")
+            TopBarIcon(icon = Icons.Outlined.Tune, contentDescription = "Фильтры")
+        }
     }
-    HorizontalDivider(color = DividerColor, thickness = DividerDefaults.Thickness)
 }
 
 @Composable
-private fun ExpenseRow(item: ExpenseItem) {
+private fun DateFilterButton() {
+    Row(
+        modifier = Modifier
+            .height(48.dp)
+            .padding(horizontal = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.CalendarMonth,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.size(20.dp),
+        )
+        Text(
+            text = "Июль",
+            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.labelLarge,
+        )
+    }
+}
+
+@Composable
+private fun TopBarIcon(
+    icon: ImageVector,
+    contentDescription: String,
+) {
+    Box(
+        modifier = Modifier.size(48.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = contentDescription,
+            tint = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.size(24.dp),
+        )
+    }
+}
+
+@Composable
+private fun ExpensesHero() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(117.dp)
+            .background(MaterialTheme.colorScheme.background)
+            .padding(start = 20.dp, top = 12.dp),
+    ) {
+        Text(
+            text = "расходы, всего",
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+            style = MaterialTheme.typography.labelLarge,
+        )
+        Text(
+            text = "323 524 ₽",
+            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.displayMedium,
+            modifier = Modifier.padding(top = 4.dp),
+        )
+    }
+}
+
+@Composable
+private fun ExpenseRow(expense: ExpenseItem) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(70.dp)
-            .background(ScreenBackground)
-            .padding(start = 16.dp, end = 8.dp),
+            .height(72.dp)
+            .background(MaterialTheme.colorScheme.background)
+            .padding(start = 16.dp, end = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
             modifier = Modifier
-                .size(24.dp)
+                .size(40.dp)
                 .clip(CircleShape)
-                .background(EmojiBackground),
+                .background(MaterialTheme.colorScheme.surfaceVariant),
             contentAlignment = Alignment.Center,
         ) {
             Text(
-                text = item.icon,
-                fontSize = 14.sp,
-                lineHeight = 18.sp,
+                text = expense.emoji,
+                fontSize = 22.sp,
+                lineHeight = 22.sp,
                 textAlign = TextAlign.Center,
             )
         }
-        Column(
+        Text(
+            text = expense.title,
+            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.titleMedium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
             modifier = Modifier
                 .weight(1f)
-                .padding(start = 16.dp, end = 8.dp),
-            verticalArrangement = Arrangement.Center,
-        ) {
-            Text(
-                text = item.title,
-                color = TextPrimary,
-                fontSize = 16.sp,
-                lineHeight = 24.sp,
-                fontWeight = FontWeight.Normal,
-            )
-            item.subtitle?.let { subtitle ->
-                Text(
-                    text = subtitle,
-                    color = TextSecondary,
-                    fontSize = 14.sp,
-                    lineHeight = 20.sp,
-                    fontWeight = FontWeight.Normal,
-                )
-            }
-        }
+                .padding(start = 16.dp, end = 16.dp),
+        )
         Text(
-            text = item.amount,
-            color = TextPrimary,
-            fontSize = 16.sp,
-            lineHeight = 24.sp,
+            text = expense.amount,
+            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.bodySmall,
             textAlign = TextAlign.End,
         )
-        Text(
-            text = "›",
-            color = TextSecondary,
-            fontSize = 28.sp,
-            lineHeight = 28.sp,
-            textAlign = TextAlign.Center,
-            modifier = Modifier
-                .padding(start = 16.dp)
-                .size(24.dp),
-        )
     }
-    HorizontalDivider(
-        modifier = Modifier.padding(start = 56.dp),
-        color = DividerColor,
-        thickness = DividerDefaults.Thickness,
-    )
 }
 
 @Composable
-private fun ExpensesNavigationBar() {
+private fun ExpensesFab() {
+    FloatingActionButton(
+        onClick = {},
+        modifier = Modifier.size(56.dp),
+        containerColor = MaterialTheme.colorScheme.primaryContainer,
+        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        shape = RoundedCornerShape(16.dp),
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Add,
+            contentDescription = "Добавить расход",
+            modifier = Modifier.size(24.dp),
+        )
+    }
+}
+
+@Composable
+private fun ExpensesBottomBar() {
     NavigationBar(
-        containerColor = ScreenBackground,
+        modifier = Modifier.height(80.dp),
+        containerColor = MaterialTheme.colorScheme.surfaceVariant,
         tonalElevation = 0.dp,
     ) {
         val items = listOf(
-            NavigationItem("Расходы", "↓", selected = true),
-            NavigationItem("Доходы", "↑"),
-            NavigationItem("Счет", "▣"),
-            NavigationItem("Статьи", "□"),
-            NavigationItem("Настройки", "⚙"),
+            BottomNavItem("Расходы", Icons.Outlined.ReceiptLong, selected = true),
+            BottomNavItem("Доходы", Icons.Outlined.TrendingUp),
+            BottomNavItem("Счета", Icons.Outlined.Person),
         )
         items.forEach { item ->
             NavigationBarItem(
                 selected = item.selected,
                 onClick = {},
                 icon = {
-                    Text(
-                        text = item.icon,
-                        fontSize = 24.sp,
-                        lineHeight = 24.sp,
-                        textAlign = TextAlign.Center,
+                    Icon(
+                        imageVector = item.icon,
+                        contentDescription = item.label,
                         modifier = Modifier.size(24.dp),
                     )
                 },
                 label = {
                     Text(
                         text = item.label,
-                        fontSize = 12.sp,
-                        lineHeight = 16.sp,
+                        style = MaterialTheme.typography.labelMedium,
                         maxLines = 1,
                     )
                 },
-                colors = androidx.compose.material3.NavigationBarItemDefaults.colors(
-                    selectedIconColor = TextPrimary,
-                    selectedTextColor = TextPrimary,
-                    indicatorColor = SelectedGreen,
-                    unselectedIconColor = TextSecondary,
-                    unselectedTextColor = TextSecondary,
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                    selectedTextColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                    indicatorColor = MaterialTheme.colorScheme.secondaryContainer,
+                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
                 ),
             )
         }
     }
 }
 
-private data class NavigationItem(
+private data class BottomNavItem(
     val label: String,
-    val icon: String,
+    val icon: ImageVector,
     val selected: Boolean = false,
 )
 
-@Preview(showBackground = true, widthDp = 360, heightDp = 800)
+@Preview(showBackground = true, widthDp = 412, heightDp = 892)
 @Composable
 private fun ExpenseScreenPreview() {
     CashEyeTheme(dynamicColor = false) {
