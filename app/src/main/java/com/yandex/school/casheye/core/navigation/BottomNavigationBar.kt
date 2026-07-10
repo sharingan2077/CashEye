@@ -6,7 +6,9 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation3.runtime.NavKey
+import com.yandex.school.casheye.ui.theme.CashEyeTheme
 
 
 @Composable
@@ -34,6 +36,15 @@ fun BottomNavigationBar(
             )
         }
     }
+}
 
-
+@Preview(showBackground = true, widthDp = 412)
+@Composable
+private fun BottomNavigationBarPreview() {
+    CashEyeTheme(dynamicColor = false) {
+        BottomNavigationBar(
+            selectedKey = Route.Expenses,
+            onSelectKey = {},
+        )
+    }
 }
