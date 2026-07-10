@@ -6,6 +6,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation3.runtime.NavKey
 import com.yandex.school.casheye.ui.theme.CashEyeTheme
@@ -28,7 +29,7 @@ fun BottomNavigationBar(
                 onClick = { onSelectKey(topLevelDestination) },
                 icon = {
                     Icon(
-                        imageVector = data.icon,
+                        painter = painterResource(data.iconRes),
                         contentDescription = data.title
                     )
                 },
