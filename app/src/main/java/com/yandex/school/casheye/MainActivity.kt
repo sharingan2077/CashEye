@@ -15,8 +15,14 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             CashEyeTheme {
-                ExpenseScreen(modifier = Modifier.fillMaxSize())
+
+                MyApp()
+
+
+//                ExpenseScreen(modifier = Modifier.fillMaxSize())
             }
+
+
         }
     }
 }
