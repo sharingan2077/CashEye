@@ -10,9 +10,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -60,6 +62,9 @@ fun NavigationRoot(
             )
         },
         topBar = { NavigationTopBar() },
+        floatingActionButton = { FloatingButton { 
+            // TODO: Implement onCLick
+        } }
     ) { innerPadding ->
         NavDisplay(
             modifier = Modifier
@@ -89,6 +94,25 @@ fun NavigationRoot(
     }
 
 
+}
+
+@Composable
+private fun FloatingButton(onClick: () -> Unit) {
+    FloatingActionButton(
+        onClick = {
+            onClick()
+        },
+        modifier = Modifier
+            .size(56.dp)
+    ) {
+        Icon(
+            imageVector = Icons.Default.Add,
+            contentDescription = "Добавить",
+            modifier = Modifier
+                .size(24.dp)
+        )
+
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -151,5 +175,15 @@ private fun NavigationTopBar() {
 private fun NavigationTopBarPreview() {
     CashEyeTheme(dynamicColor = false) {
         NavigationTopBar()
+    }
+}
+
+@Preview(showBackground = true, widthDp = 412)
+@Composable
+private fun FloatingButtonPreview() {
+    CashEyeTheme(dynamicColor = false) {
+        FloatingButton {
+
+        }
     }
 }
