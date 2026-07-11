@@ -65,4 +65,6 @@ dependencies {
     implementation(libs.kotlinx.serialization.core)
 
     implementation(libs.android.lottie.compose)
+
+    implementation(libs.androidx.core.splashscreen)
 }
