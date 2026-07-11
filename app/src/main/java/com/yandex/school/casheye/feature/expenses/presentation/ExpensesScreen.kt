@@ -72,7 +72,6 @@ private fun ExpensesHero(total: String) {
         modifier = Modifier
             .fillMaxWidth()
             .height(117.dp)
-            .background(MaterialTheme.colorScheme.background)
             .padding(start = 20.dp, top = 12.dp),
     ) {
         Text(
