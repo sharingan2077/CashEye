@@ -3,6 +3,11 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 
     alias(libs.plugins.jetbrains.kotlin.serialization)
+
+    alias(libs.plugins.ksp)
+
+    alias(libs.plugins.hilt.android)
+
 }
 
 android {
@@ -67,4 +72,8 @@ dependencies {
     implementation(libs.android.lottie.compose)
 
     implementation(libs.androidx.core.splashscreen)
+
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+
 }
