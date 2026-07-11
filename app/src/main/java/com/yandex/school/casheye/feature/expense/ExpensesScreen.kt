@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.yandex.school.casheye.core.format.formatAmount
 import com.yandex.school.casheye.core.ui.MoneyListItem
 import com.yandex.school.casheye.domain.model.Transaction
@@ -77,7 +78,7 @@ private fun ExpensesHero(total: String) {
         Text(
             text = "расходы, всего",
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-            style = MaterialTheme.typography.labelLarge,
+            style = MaterialTheme.typography.labelLarge.copy(lineHeight = 16.sp),
         )
         Text(
             text = total,
