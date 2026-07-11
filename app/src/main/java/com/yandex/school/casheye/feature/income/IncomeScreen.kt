@@ -34,7 +34,7 @@ private data class IncomeItem(
     val amount: String
 )
 
-private val incomes = listOf<IncomeItem>(
+private val incomes = listOf(
     IncomeItem("\uD83D\uDECB", "Продажа старой мебели", "8 500 ₽"),
     IncomeItem("\uD83D\uDCCB", "Возврат налога", "15 000 ₽"),
     IncomeItem("\uD83D\uDCBC", "Премия за проект", "25 000 ₽"),
@@ -48,7 +48,7 @@ private val incomes = listOf<IncomeItem>(
 fun IncomeScreen(modifier: Modifier = Modifier) {
 
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
     ) {

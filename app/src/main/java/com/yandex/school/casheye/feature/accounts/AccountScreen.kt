@@ -34,7 +34,7 @@ private data class AccountItem(
     val amount: String
 )
 
-private val accounts = listOf<AccountItem>(
+private val accounts = listOf(
     AccountItem("\uD83D\uDCB3", "Яндекс Pay", "123 322 ₽"),
     AccountItem("\uD83C\uDFE6", "Газпромбанк", "122 322 ₽"),
     AccountItem("\uD83C\uDFE6", "Сбербанк", "122 322 ₽"),
@@ -44,7 +44,7 @@ private val accounts = listOf<AccountItem>(
 fun AccountScreen(modifier: Modifier = Modifier) {
 
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
     ) {

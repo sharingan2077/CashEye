@@ -48,7 +48,7 @@ private val Expenses = listOf(
 @Composable
 fun ExpenseScreen(modifier: Modifier = Modifier) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
     ) {
