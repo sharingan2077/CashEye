@@ -17,8 +17,11 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import com.yandex.school.casheye.feature.accounts.AccountScreen
+import com.yandex.school.casheye.feature.accounts.accountsUiStateMock
 import com.yandex.school.casheye.feature.expense.ExpenseScreen
+import com.yandex.school.casheye.feature.expense.expensesUiStateMock
 import com.yandex.school.casheye.feature.income.IncomeScreen
+import com.yandex.school.casheye.feature.income.incomeUiStateMock
 import com.yandex.school.casheye.ui.theme.CashEyeTheme
 import java.time.LocalDate
 
@@ -65,18 +68,13 @@ fun NavigationRoot(
             entries = navigationState.toEntries(
                 entryProvider {
                     entry<Route.Expenses> {
-
-                        ExpenseScreen()
-
+                        ExpenseScreen(state = expensesUiStateMock)
                     }
                     entry<Route.Income> {
-
-                        IncomeScreen()
-
+                        IncomeScreen(state = incomeUiStateMock)
                     }
                     entry<Route.Account> {
-                        AccountScreen()
-
+                        AccountScreen(state = accountsUiStateMock)
                     }
 
                 },
