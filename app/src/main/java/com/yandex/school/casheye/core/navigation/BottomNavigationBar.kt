@@ -7,7 +7,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -25,7 +25,9 @@ fun BottomNavigationBar(
     val borderColor = MaterialTheme.colorScheme.outline
 
     NavigationBar(
-        modifier = modifier.drawBehind {
+        modifier = modifier.drawWithContent {
+            drawContent()
+
             val strokeWidth = 1.dp.toPx()
             drawLine(
                 color = borderColor,
