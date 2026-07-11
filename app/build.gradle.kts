@@ -13,9 +13,7 @@ plugins {
 android {
     namespace = "com.yandex.school.casheye"
     compileSdk {
-        version = release(37) {
-            minorApiLevel = 1
-        }
+        version = release(37)
     }
 
     defaultConfig {
