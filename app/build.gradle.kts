@@ -73,6 +73,10 @@ dependencies {
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     ktlintRuleset(libs.compose.rules.ktlint)
+
+
+    implementation(libs.vico.compose)
+    implementation(libs.vico.compose.m3)
 }
 
 ktlint {
