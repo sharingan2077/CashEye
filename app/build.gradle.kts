@@ -74,4 +74,7 @@ dependencies {
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
 
+    implementation(libs.vico.compose)
+    implementation(libs.vico.compose.m3)
+
 }
