@@ -12,32 +12,34 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yandex.school.casheye.core.designsystem.component.MoneyListItem
 import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
 import com.yandex.school.casheye.core.format.formatAmount
-import com.yandex.school.casheye.core.model.Account
-import java.math.BigDecimal
-
-data class AccountsUiState(
-    val total: BigDecimal,
-    val currencyCode: String,
-    val accounts: List<AccountListItemUi>,
-)
-
-data class AccountListItemUi(
-    val account: Account,
-    val emoji: String,
-)
 
 @Composable
 fun AccountScreen(
-    state: AccountsUiState,
     modifier: Modifier = Modifier,
+    viewModel: AccountsViewModel = hiltViewModel()
 ) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    AccountContent(state = uiState, modifier = modifier)
+}
+
+@Composable
+private fun AccountContent(
+    state: AccountsUiState,
+    modifier: Modifier = Modifier
+) {
+
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -69,6 +71,8 @@ fun AccountScreen(
             }
         }
     }
+
+
 }
 
 @Composable
@@ -98,7 +102,7 @@ private fun AccountHero(total: String) {
 private fun AccountScreenPreview() {
     CashEyeTheme(dynamicColor = false) {
         Surface(color = MaterialTheme.colorScheme.background) {
-            AccountScreen(state = accountsUiStateMock)
+            AccountContent(state = AccountsUiState())
         }
     }
 }

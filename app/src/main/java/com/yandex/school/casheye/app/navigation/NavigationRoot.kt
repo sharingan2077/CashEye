@@ -18,7 +18,6 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
 import com.yandex.school.casheye.feature.accounts.presentation.AccountScreen
-import com.yandex.school.casheye.feature.accounts.presentation.accountsUiStateMock
 import com.yandex.school.casheye.feature.analytics.presentaion.AnalyticsScreen
 import com.yandex.school.casheye.feature.expenses.presentation.ExpenseScreen
 import com.yandex.school.casheye.feature.income.presentation.IncomeScreen
@@ -92,7 +91,7 @@ fun NavigationRoot(
                         IncomeScreen()
                     }
                     entry<Route.Account> {
-                        AccountScreen(state = accountsUiStateMock)
+                        AccountScreen()
                     }
                     entry<Route.Analytics> {
 
