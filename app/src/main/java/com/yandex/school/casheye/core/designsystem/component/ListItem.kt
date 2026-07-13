@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -15,13 +16,14 @@ fun ListItem(
     lead: @Composable () -> Unit,
     trail: @Composable () -> Unit,
     modifier: Modifier = Modifier,
+    height: Dp = 72.dp,
     content: @Composable () -> Unit,
 ) {
     Row(
         modifier =
             modifier
                 .fillMaxWidth()
-                .height(72.dp)
+                .height(height)
                 .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
