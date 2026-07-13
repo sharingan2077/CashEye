@@ -19,6 +19,7 @@ import androidx.navigation3.ui.NavDisplay
 import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
 import com.yandex.school.casheye.feature.accounts.presentation.AccountScreen
 import com.yandex.school.casheye.feature.accounts.presentation.accountsUiStateMock
+import com.yandex.school.casheye.feature.analytics.presentaion.AnalyticsScreen
 import com.yandex.school.casheye.feature.expenses.presentation.ExpenseScreen
 import com.yandex.school.casheye.feature.expenses.presentation.expensesUiStateMock
 import com.yandex.school.casheye.feature.income.presentation.IncomeScreen
@@ -41,22 +42,41 @@ fun NavigationRoot(
         Navigator(navigationState)
     }
 
+    val currentRoute = navigationState.backStacks[navigationState.topLevelRoute]?.lastOrNull()
+
+    val showBars = currentRoute != Route.Analytics
+
     Scaffold(
         modifier = modifier,
         bottomBar = {
-            BottomNavigationBar(
-                selectedKey = navigationState.topLevelRoute,
-                onSelectKey = {
-                    navigator.navigate(it)
-                }
-            )
+            if (showBars) {
+                BottomNavigationBar(
+                    selectedKey = navigationState.topLevelRoute,
+                    onSelectKey = {
+                        navigator.navigate(it)
+                    }
+                )
+            }
         },
         topBar = {
-            NavigationTopBar(LocalDate.of(2026, 6, 12))
+            if (showBars) {
+                NavigationTopBar(
+                    date = LocalDate.of(2026, 6, 12),
+                    onAnalyticsClick = { navigator.navigate(Route.Analytics) },
+
+                    )
+            } else {
+                ArrowTopBar(
+                    title = "Аналитика",
+                    onBackClick = navigator::goBack
+                )
+            }
         },
         floatingActionButton = {
-            FloatingButton {
-                // TODO: Implement onCLick
+            if (showBars) {
+                FloatingButton {
+                    // TODO: Implement onClick
+                }
             }
         }
     ) { innerPadding ->
@@ -76,7 +96,10 @@ fun NavigationRoot(
                     entry<Route.Account> {
                         AccountScreen(state = accountsUiStateMock)
                     }
+                    entry<Route.Analytics> {
 
+                        AnalyticsScreen()
+                    }
                 },
             )
         )

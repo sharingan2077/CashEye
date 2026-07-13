@@ -98,6 +98,7 @@ val serializersConfig = SavedStateConfiguration {
             subclass(Route.Expenses::class, Route.Expenses.serializer())
             subclass(Route.Income::class, Route.Income.serializer())
             subclass(Route.Account::class, Route.Account.serializer())
+            subclass(Route.Analytics::class, Route.Analytics.serializer())
         }
     }
 }
