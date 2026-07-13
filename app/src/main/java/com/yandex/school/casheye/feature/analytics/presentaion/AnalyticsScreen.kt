@@ -41,9 +41,10 @@ fun AnalyticsScreen(
     state: AnalyticsUiState = analyticsUiStateMock,
 ) {
     LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(top = 32.dp),
+        modifier =
+            modifier
+                .fillMaxSize()
+                .padding(top = 32.dp),
     ) {
         item {
             AnalyticsView(

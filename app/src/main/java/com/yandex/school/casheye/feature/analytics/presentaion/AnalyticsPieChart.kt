@@ -45,9 +45,10 @@ fun AnalyticsPieChart(
     }
 
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(bottom = 32.dp),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(bottom = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(24.dp),
     ) {
@@ -116,9 +117,12 @@ private fun LegendItem(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Spacer(modifier = Modifier
-            .size(12.dp)
-            .background(color, CircleShape))
+        Spacer(
+            modifier =
+                Modifier
+                    .size(12.dp)
+                    .background(color, CircleShape),
+        )
         Text(
             text = title,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
