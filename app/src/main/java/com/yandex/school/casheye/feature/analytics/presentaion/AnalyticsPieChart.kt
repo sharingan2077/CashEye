@@ -50,7 +50,7 @@ fun AnalyticsPieChart(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(bottom = 32.dp),
+            .padding(bottom = 32.dp, top = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(24.dp),
     ) {
