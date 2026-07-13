@@ -12,7 +12,10 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.yandex.school.casheye.app.navigation.NavigationRoot
 import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
 import com.yandex.school.casheye.feature.splash.presentation.SplashScreen
+import dagger.hilt.android.AndroidEntryPoint
 
+
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
