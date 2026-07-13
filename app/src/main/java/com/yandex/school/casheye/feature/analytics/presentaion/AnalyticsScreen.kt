@@ -43,8 +43,7 @@ fun AnalyticsScreen(
     LazyColumn(
         modifier =
             modifier
-                .fillMaxSize()
-                .padding(top = 32.dp),
+                .fillMaxSize(),
     ) {
         item {
             AnalyticsView(
