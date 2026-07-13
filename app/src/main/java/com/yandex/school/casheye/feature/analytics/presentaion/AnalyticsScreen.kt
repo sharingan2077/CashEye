@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
@@ -28,89 +29,62 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.yandex.school.casheye.R
 import com.yandex.school.casheye.core.designsystem.component.EmojiCircle
 import com.yandex.school.casheye.core.designsystem.component.ListItem
 import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
 import com.yandex.school.casheye.core.format.formatAmount
 import com.yandex.school.casheye.core.model.Transaction
-import java.math.BigDecimal
-
-
-data class AnalyticsUiState(
-    val total: BigDecimal,
-    val currencyCode: String,
-    val filters: List<Filter>,
-    val transactions: List<Transaction>
-)
-
 
 @Composable
 fun AnalyticsScreen(
     modifier: Modifier = Modifier,
-    state: AnalyticsUiState = analyticsUiStateMock
+    state: AnalyticsUiState = analyticsUiStateMock,
 ) {
-
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .padding(top = 32.dp)
+            .padding(top = 32.dp),
     ) {
         item {
             AnalyticsView(
-                total = formatAmount(
-                    amount = state.total,
-                    currencyCode = state.currencyCode
-                ),
-                articles = mapOf(
-                    "Ремонт" to 50000,
-                    "Авто" to 45000,
-                    "Другое" to 30000
-
-                )
+                total = formatAmount(state.total, state.currencyCode),
+                articles = analyticsArticles,
             )
         }
+        item { FilterView(filters = state.filters) }
+        analyticsTransactions(transactions = state.transactions)
+    }
+}
 
-        item {
-            FilterView(
-                filters = state.filters
+private fun LazyListScope.analyticsTransactions(transactions: List<Transaction>) {
+    item { TransactionsHeading() }
+    items(items = transactions, key = Transaction::id) { transaction ->
+        Column {
+            TransactionItem(
+                emoji = transaction.category.emoji,
+                title = transaction.category.name,
+                comment = transaction.comment,
+                amount = formatAmount(transaction.amount, "RUB"),
             )
+            Spacer(modifier = Modifier.background(MaterialTheme.colorScheme.outline))
         }
+    }
+}
 
-        item {
-            Box(
-                modifier = Modifier
-                    .padding(start = 16.dp, end = 16.dp, top = 32.dp, bottom = 8.dp)
-                    .wrapContentHeight()
-                    .wrapContentWidth(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "Транзакции",
-                    style = MaterialTheme.typography.headlineMedium.copy(
-                        fontSize = 22.sp,
-                    )
-                )
-            }
-        }
-
-        items(items = state.transactions, key = { it.id }) { transaction ->
-            Column {
-                TransactionItem(
-                    emoji = transaction.category.emoji,
-                    title = transaction.category.name,
-                    comment = transaction.comment,
-                    amount = formatAmount(
-                        amount = transaction.amount,
-                        currencyCode = "RUB"
-                    )
-                )
-                Spacer(
-                    modifier = Modifier
-                        .background(MaterialTheme.colorScheme.outline)
-                )
-            }
-        }
+@Composable
+private fun TransactionsHeading() {
+    Box(
+        modifier =
+            Modifier
+                .padding(start = 16.dp, end = 16.dp, top = 32.dp, bottom = 8.dp)
+                .wrapContentHeight()
+                .wrapContentWidth(),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = "Транзакции",
+            style = MaterialTheme.typography.headlineMedium.copy(fontSize = 22.sp),
+        )
     }
 }
 
@@ -120,32 +94,20 @@ fun TransactionItem(
     title: String,
     comment: String?,
     amount: String,
+    modifier: Modifier = Modifier,
 ) {
-
     ListItem(
-        lead = {
-            EmojiCircle(
-                emoji = emoji
-            )
-
-        },
+        modifier = modifier,
+        lead = { EmojiCircle(emoji = emoji) },
         content = {
-
-            Column(
-                modifier = Modifier,
-                verticalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium
-                )
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(text = title, style = MaterialTheme.typography.titleMedium)
                 if (comment != null) {
                     Text(
                         text = comment,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-
                 }
             }
         },
@@ -156,84 +118,48 @@ fun TransactionItem(
                 style = MaterialTheme.typography.labelLarge,
                 textAlign = TextAlign.End,
             )
-
         },
     )
-
 }
-
 
 @Composable
 fun FilterView(
-    filters: List<Filter>
+    filters: List<Filter>,
+    modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = Modifier
-            .padding(vertical = 8.dp)
-    ) {
+    Column(modifier = modifier.padding(vertical = 8.dp)) {
         filters.forEach { filter ->
-            when (filter) {
-                is Filter.Type -> {
-                    AnalyticsFilterItem(
-                        iconPainter = painterResource(filter.resId),
-                        contentDescription = filter.title,
-                        title = filter.title,
-                        filter = filter.type
-                    )
-                }
-
-                is Filter.Period -> {
-                    AnalyticsFilterItem(
-                        iconPainter = painterResource(filter.resId),
-                        contentDescription = filter.title,
-                        title = filter.title,
-                        filter = filter.period
-                    )
-
-                }
-
-                is Filter.Articles -> {
-                    AnalyticsFilterItem(
-                        iconPainter = painterResource(R.drawable.tag),
-                        contentDescription = filter.title,
-                        title = filter.title,
-                        filter = filter.articles.toString()
-                    )
-
-                }
-
-                is Filter.Account -> {
-                    AnalyticsFilterItem(
-                        iconPainter = painterResource(R.drawable.credit_card),
-                        contentDescription = filter.title,
-                        title = filter.title,
-                        filter = filter.accounts.toString()
-                    )
-                }
-            }
-            Spacer(
-                modifier = Modifier
-                    .background(MaterialTheme.colorScheme.outline)
+            AnalyticsFilterItem(
+                iconPainter = painterResource(filter.resId),
+                contentDescription = filter.title,
+                title = filter.title,
+                filter = filter.value,
             )
+            Spacer(modifier = Modifier.background(MaterialTheme.colorScheme.outline))
         }
     }
 }
+
+private val Filter.value: String
+    get() =
+        when (this) {
+            is Filter.Type -> type
+            is Filter.Period -> period
+            is Filter.Articles -> articles.toString()
+            is Filter.Account -> accounts.toString()
+        }
 
 @Composable
 fun AnalyticsFilterItem(
     iconPainter: Painter,
     contentDescription: String?,
     title: String,
-    filter: String
+    filter: String,
+    modifier: Modifier = Modifier,
 ) {
-
     ListItem(
-        lead = {
-            IconCircle(
-                iconPainter = iconPainter,
-                contentDescription = contentDescription
-            )
-        },
+        modifier = modifier,
+        lead = { IconCircle(iconPainter = iconPainter, contentDescription = contentDescription) },
         content = {
             Text(
                 text = title,
@@ -243,31 +169,24 @@ fun AnalyticsFilterItem(
                 overflow = TextOverflow.Ellipsis,
             )
         },
-        trail = {
-            FilterItem(
-                title = filter
-            )
-        },
-        height = 56.dp
+        trail = { FilterItem(title = filter) },
+        height = 56.dp,
     )
-
 }
 
 @Composable
 fun FilterItem(
-    title: String
+    title: String,
+    modifier: Modifier = Modifier,
 ) {
     Box(
-        modifier = Modifier
-            .height(24.dp)
-            .wrapContentWidth()
-            .border(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.outline,
-                shape = CircleShape
-            )
-            .padding(horizontal = 12.dp, vertical = 4.dp),
-        contentAlignment = Alignment.Center
+        modifier =
+            modifier
+                .height(24.dp)
+                .wrapContentWidth()
+                .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
+                .padding(horizontal = 12.dp, vertical = 4.dp),
+        contentAlignment = Alignment.Center,
     ) {
         Text(
             text = title,
@@ -280,44 +199,38 @@ fun FilterItem(
 @Composable
 fun IconCircle(
     iconPainter: Painter,
-    contentDescription: String?
+    contentDescription: String?,
+    modifier: Modifier = Modifier,
 ) {
     Box(
-        modifier = Modifier
-            .size(32.dp)
-            .border(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.outline,
-                shape = CircleShape
-            ),
-        contentAlignment = Alignment.Center
+        modifier =
+            modifier
+                .size(32.dp)
+                .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape),
+        contentAlignment = Alignment.Center,
     ) {
-        Icon(
-            painter = iconPainter,
-            contentDescription = contentDescription
-        )
+        Icon(painter = iconPainter, contentDescription = contentDescription)
     }
-
 }
 
 @Composable
 private fun AnalyticsView(
     total: String,
     articles: Map<String, Int>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
-
-    AnalyticsPieChart(
-        total = total,
-        articles = articles,
-        modifier = modifier,
-    )
+    AnalyticsPieChart(total = total, articles = articles, modifier = modifier)
 }
+
+private val analyticsArticles =
+    mapOf(
+        "Ремонт" to 50000,
+        "Авто" to 45000,
+        "Другое" to 30000,
+    )
 
 @Preview(showBackground = true)
 @Composable
 private fun AnalyticsScreenPreview() {
-    CashEyeTheme(dynamicColor = false) {
-        AnalyticsScreen()
-    }
+    CashEyeTheme(dynamicColor = false) { AnalyticsScreen() }
 }

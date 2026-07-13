@@ -40,11 +40,8 @@ fun AnalyticsPieChart(
     modifier: Modifier = Modifier,
 ) {
     val modelProducer = remember { PieChartModelProducer() }
-
     LaunchedEffect(articles) {
-        modelProducer.runTransaction {
-            pieSeries { series(articles.values) }
-        }
+        modelProducer.runTransaction { pieSeries { series(articles.values) } }
     }
 
     Column(
@@ -54,54 +51,56 @@ fun AnalyticsPieChart(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(24.dp),
     ) {
-        Box(
-            modifier = Modifier.size(220.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            PieChartHost(
-                chart = rememberPieChart(
-                    sliceProvider = PieChart.SliceProvider.series(
-                        slices = chartColors.map { color ->
-                            PieChart.Slice(fill = Fill(color))
-                        },
-                    ),
+        PieChartWithTotal(total = total, modelProducer = modelProducer)
+        AnalyticsLegend(articles = articles)
+    }
+}
+
+@Composable
+private fun PieChartWithTotal(
+    total: String,
+    modelProducer: PieChartModelProducer,
+) {
+    Box(modifier = Modifier.size(220.dp), contentAlignment = Alignment.Center) {
+        PieChartHost(
+            chart =
+                rememberPieChart(
+                    sliceProvider =
+                        PieChart.SliceProvider.series(
+                            chartColors.map { color -> PieChart.Slice(fill = Fill(color)) },
+                        ),
                     innerSize = PieSize.Inner.fixed(172.dp),
                 ),
-                modelProducer = modelProducer,
-                modifier = Modifier.size(220.dp),
-            )
-
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                Text(
-                    text = "Всего за период",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.labelLarge,
-                )
-                Text(
-                    text = total,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    style = MaterialTheme.typography.headlineMedium,
-                )
-            }
-        }
-
-        FlowRow(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(
-                space = 16.dp,
-                alignment = Alignment.CenterHorizontally,
-            ),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modelProducer = modelProducer,
+            modifier = Modifier.size(220.dp),
+        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            articles.keys.forEachIndexed { index, article ->
-                LegendItem(
-                    title = article,
-                    color = chartColors[index % chartColors.size],
-                )
-            }
+            Text(
+                text = "Всего за период",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.labelLarge,
+            )
+            Text(
+                text = total,
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.headlineMedium,
+            )
+        }
+    }
+}
+
+@Composable
+private fun AnalyticsLegend(articles: Map<String, Int>) {
+    FlowRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        articles.keys.forEachIndexed { index, article ->
+            LegendItem(title = article, color = chartColors[index % chartColors.size])
         }
     }
 }
@@ -117,11 +116,9 @@ private fun LegendItem(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Spacer(
-            modifier = Modifier
-                .size(12.dp)
-                .background(color = color, shape = CircleShape),
-        )
+        Spacer(modifier = Modifier
+            .size(12.dp)
+            .background(color, CircleShape))
         Text(
             text = title,
             color = MaterialTheme.colorScheme.onSurfaceVariant,

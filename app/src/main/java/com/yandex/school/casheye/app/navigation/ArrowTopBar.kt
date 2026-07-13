@@ -16,28 +16,28 @@ import com.yandex.school.casheye.R
 @Composable
 fun ArrowTopBar(
     title: String,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-
     TopAppBar(
+        modifier = modifier,
         title = {
             Text(
                 text = title,
             )
         },
         navigationIcon = {
-
             IconButton(
-                modifier = Modifier
-                    .size(48.dp),
-                onClick = onBackClick
+                modifier =
+                    Modifier
+                        .size(48.dp),
+                onClick = onBackClick,
             ) {
                 Icon(
                     painter = painterResource(R.drawable.arrow_back),
                     contentDescription = "Назад",
-
-                    )
+                )
             }
-        }
+        },
     )
 }
