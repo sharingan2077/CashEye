@@ -1,8 +1,12 @@
-package com.yandex.school.casheye.feature.expenses.presentation
+package com.yandex.school.casheye.feature.expenses.data.local
 
 import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.Category
 import com.yandex.school.casheye.core.model.Transaction
+import com.yandex.school.casheye.feature.expenses.domain.model.Expenses
+import jakarta.inject.Inject
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import java.math.BigDecimal
 import java.time.Instant
 
@@ -15,7 +19,14 @@ private val MockAccount = Account(
     currency = CurrencyRub,
 )
 
-internal val expensesUiStateMock = ExpensesUiState(
+
+class ExpensesDaoMock @Inject constructor() : ExpensesDao {
+    override fun observeExpenses(): Flow<Expenses> {
+        return flowOf(ExpensesMock)
+    }
+}
+
+private val ExpensesMock = Expenses(
     total = BigDecimal("323524"),
     currencyCode = CurrencyRub,
     transactions = listOf(

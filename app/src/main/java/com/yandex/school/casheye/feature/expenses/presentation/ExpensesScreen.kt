@@ -12,27 +12,60 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yandex.school.casheye.core.designsystem.component.MoneyListItem
 import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
 import com.yandex.school.casheye.core.format.formatAmount
 import com.yandex.school.casheye.core.model.Transaction
-import java.math.BigDecimal
-
-data class ExpensesUiState(
-    val total: BigDecimal,
-    val currencyCode: String,
-    val transactions: List<Transaction>,
-)
 
 @Composable
 fun ExpenseScreen(
-    state: ExpensesUiState,
     modifier: Modifier = Modifier,
+    viewModel: ExpensesViewModel = hiltViewModel()
 ) {
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+    ExpensesContent(
+        state = state,
+        modifier = modifier
+    )
+}
+
+@Composable
+private fun ExpensesHero(total: String) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(117.dp)
+            .padding(start = 20.dp, top = 12.dp),
+    ) {
+        Text(
+            text = "расходы, всего",
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+            style = MaterialTheme.typography.labelLarge.copy(lineHeight = 16.sp),
+        )
+        Text(
+            text = total,
+            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.displayMedium,
+            modifier = Modifier.padding(top = 4.dp),
+        )
+    }
+}
+
+@Composable
+private fun ExpensesContent(
+    state: ExpensesUiState,
+    modifier: Modifier = Modifier
+) {
+
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -66,34 +99,13 @@ fun ExpenseScreen(
     }
 }
 
-@Composable
-private fun ExpensesHero(total: String) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(117.dp)
-            .padding(start = 20.dp, top = 12.dp),
-    ) {
-        Text(
-            text = "расходы, всего",
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-            style = MaterialTheme.typography.labelLarge.copy(lineHeight = 16.sp),
-        )
-        Text(
-            text = total,
-            color = MaterialTheme.colorScheme.onSurface,
-            style = MaterialTheme.typography.displayMedium,
-            modifier = Modifier.padding(top = 4.dp),
-        )
-    }
-}
-
 @Preview(showBackground = true, widthDp = 412, heightDp = 892)
 @Composable
 private fun ExpenseScreenPreview() {
     CashEyeTheme(dynamicColor = false) {
         Surface(color = MaterialTheme.colorScheme.background) {
-            ExpenseScreen(state = expensesUiStateMock)
+
+            ExpensesContent(state = ExpensesUiState())
         }
     }
 }

@@ -21,7 +21,6 @@ import com.yandex.school.casheye.feature.accounts.presentation.AccountScreen
 import com.yandex.school.casheye.feature.accounts.presentation.accountsUiStateMock
 import com.yandex.school.casheye.feature.analytics.presentaion.AnalyticsScreen
 import com.yandex.school.casheye.feature.expenses.presentation.ExpenseScreen
-import com.yandex.school.casheye.feature.expenses.presentation.expensesUiStateMock
 import com.yandex.school.casheye.feature.income.presentation.IncomeScreen
 import com.yandex.school.casheye.feature.income.presentation.incomeUiStateMock
 import java.time.LocalDate
@@ -88,7 +87,7 @@ fun NavigationRoot(
             entries = navigationState.toEntries(
                 entryProvider {
                     entry<Route.Expenses> {
-                        ExpenseScreen(state = expensesUiStateMock)
+                        ExpenseScreen()
                     }
                     entry<Route.Income> {
                         IncomeScreen(state = incomeUiStateMock)
