@@ -12,26 +12,32 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yandex.school.casheye.core.designsystem.component.MoneyListItem
 import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
 import com.yandex.school.casheye.core.format.formatAmount
 import com.yandex.school.casheye.core.model.Transaction
-import java.math.BigDecimal
-
-data class IncomeUiState(
-    val total: BigDecimal,
-    val currencyCode: String,
-    val transactions: List<Transaction>,
-)
 
 @Composable
 fun IncomeScreen(
-    state: IncomeUiState,
     modifier: Modifier = Modifier,
+    viewModel: IncomeViewModel = hiltViewModel()
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+
+    IncomeContent(state = state, modifier = modifier)
+}
+
+@Composable
+private fun IncomeContent(
+    state: IncomeUiState,
+    modifier: Modifier = Modifier
 ) {
     Column(
         modifier = modifier
@@ -93,7 +99,7 @@ private fun IncomeHero(total: String) {
 private fun IncomeScreenPreview() {
     CashEyeTheme(dynamicColor = false) {
         Surface(color = MaterialTheme.colorScheme.background) {
-            IncomeScreen(state = incomeUiStateMock)
+            IncomeContent(state = IncomeUiState())
         }
     }
 }

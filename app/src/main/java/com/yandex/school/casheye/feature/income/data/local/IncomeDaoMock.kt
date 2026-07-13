@@ -1,10 +1,15 @@
-package com.yandex.school.casheye.feature.income.presentation
+package com.yandex.school.casheye.feature.income.data.local
 
 import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.Category
 import com.yandex.school.casheye.core.model.Transaction
+import com.yandex.school.casheye.feature.income.domain.model.Income
+import jakarta.inject.Inject
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import java.math.BigDecimal
 import java.time.Instant
+
 
 private const val CurrencyRub = "RUB"
 private val MockDate: Instant = Instant.parse("2026-06-12T12:00:00Z")
@@ -15,7 +20,14 @@ private val MockAccount = Account(
     currency = CurrencyRub,
 )
 
-internal val incomeUiStateMock = IncomeUiState(
+class IncomeDaoMock @Inject constructor() : IncomeDao {
+
+    override fun observeIncome(): Flow<Income> {
+        return flowOf(IncomeMock)
+    }
+}
+
+private val IncomeMock = Income(
     total = BigDecimal("323524"),
     currencyCode = CurrencyRub,
     transactions = listOf(
@@ -26,7 +38,7 @@ internal val incomeUiStateMock = IncomeUiState(
         incomeTransaction(105, 205, "Сдача квартиры", "🏠", "38000"),
         incomeTransaction(106, 206, "Кешбек на карту", "💳", "1200"),
         incomeTransaction(107, 207, "Подарок от родителей", "🎁", "5000"),
-    ),
+    )
 )
 
 private fun incomeTransaction(
