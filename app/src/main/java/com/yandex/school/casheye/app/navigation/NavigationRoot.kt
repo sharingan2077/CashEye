@@ -27,7 +27,7 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
 import com.yandex.school.casheye.feature.accounts.presentation.AccountScreen
-import com.yandex.school.casheye.feature.accounts.presentation.AddAccountContent
+import com.yandex.school.casheye.feature.add.account.AddAccountRoute
 import com.yandex.school.casheye.feature.add.transaction.presentation.AddTransactionRoute
 import com.yandex.school.casheye.feature.add.transaction.presentation.TransactionType
 import com.yandex.school.casheye.feature.analytics.presentaion.AnalyticsScreen
@@ -174,8 +174,8 @@ fun NavigationRoot(
                 }
 
                 AddSheetType.ACCOUNT -> {
-                    AddAccountContent(
-                        onConfirm = closeSheet
+                    AddAccountRoute(
+                        onSaved = closeSheet
                     )
                 }
             }
