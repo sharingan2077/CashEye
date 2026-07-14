@@ -19,6 +19,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
@@ -28,29 +29,35 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yandex.school.casheye.R
 import com.yandex.school.casheye.core.designsystem.component.EmojiCircle
 import com.yandex.school.casheye.core.designsystem.component.ListItem
 import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
 import com.yandex.school.casheye.core.format.formatAmount
-import com.yandex.school.casheye.core.model.Transaction
-import java.math.BigDecimal
-
-
-data class AnalyticsUiState(
-    val total: BigDecimal,
-    val currencyCode: String,
-    val filters: List<Filter>,
-    val transactions: List<Transaction>
-)
 
 
 @Composable
 fun AnalyticsScreen(
     modifier: Modifier = Modifier,
-    state: AnalyticsUiState = analyticsUiStateMock
+    viewModel: AnalyticsViewModel = hiltViewModel()
 ) {
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
 
+    AnalyticsContent(
+        state = state,
+        modifier = modifier
+    )
+
+
+}
+
+@Composable
+fun AnalyticsContent(
+    state: AnalyticsUiState,
+    modifier: Modifier = Modifier
+) {
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
@@ -317,6 +324,8 @@ private fun AnalyticsView(
 @Composable
 private fun AnalyticsScreenPreview() {
     CashEyeTheme(dynamicColor = false) {
-        AnalyticsScreen()
+        AnalyticsContent(
+            state = AnalyticsUiState()
+        )
     }
 }

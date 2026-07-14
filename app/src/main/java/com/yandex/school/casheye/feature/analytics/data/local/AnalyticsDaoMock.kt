@@ -1,8 +1,14 @@
-package com.yandex.school.casheye.feature.analytics.presentaion
+package com.yandex.school.casheye.feature.analytics.data.local
+
 
 import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.Category
 import com.yandex.school.casheye.core.model.Transaction
+import com.yandex.school.casheye.feature.analytics.domain.model.Analytics
+import com.yandex.school.casheye.feature.analytics.presentaion.Filter
+import jakarta.inject.Inject
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import java.math.BigDecimal
 import java.time.Instant
 
@@ -15,7 +21,13 @@ private val MockAccount = Account(
     currency = CurrencyRub,
 )
 
-internal val analyticsUiStateMock = AnalyticsUiState(
+class AnalyticsDaoMock @Inject constructor() : AnalyticsDao {
+    override fun observeAnalytics(): Flow<Analytics> {
+        return flowOf(AnalyticsMock)
+    }
+}
+
+private val AnalyticsMock = Analytics(
     total = BigDecimal("323524"),
     currencyCode = CurrencyRub,
     filters = listOf(
@@ -37,7 +49,6 @@ internal val analyticsUiStateMock = AnalyticsUiState(
         ),
     ),
 )
-
 private fun analyticsTransaction(
     id: Int,
     categoryId: Int,

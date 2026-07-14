@@ -94,7 +94,6 @@ fun NavigationRoot(
                         AccountScreen()
                     }
                     entry<Route.Analytics> {
-
                         AnalyticsScreen()
                     }
                 },
