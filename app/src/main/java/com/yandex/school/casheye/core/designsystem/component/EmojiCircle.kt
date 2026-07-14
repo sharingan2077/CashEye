@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -17,10 +18,11 @@ import androidx.compose.ui.unit.sp
 fun EmojiCircle(
     emoji: String,
     modifier: Modifier = Modifier,
+    size: Dp = 40.dp
 ) {
     Box(
         modifier = modifier
-            .size(40.dp)
+            .size(size = size)
             .border(
                 width = 1.dp,
                 color = MaterialTheme.colorScheme.outline,
