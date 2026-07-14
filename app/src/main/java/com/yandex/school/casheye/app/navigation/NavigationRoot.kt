@@ -3,26 +3,44 @@ package com.yandex.school.casheye.app.navigation
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
 import com.yandex.school.casheye.feature.accounts.presentation.AccountScreen
+import com.yandex.school.casheye.feature.accounts.presentation.AddAccountContent
+import com.yandex.school.casheye.feature.add.transaction.presentation.AddTransactionRoute
+import com.yandex.school.casheye.feature.add.transaction.presentation.TransactionType
 import com.yandex.school.casheye.feature.analytics.presentaion.AnalyticsScreen
 import com.yandex.school.casheye.feature.expenses.presentation.ExpenseScreen
 import com.yandex.school.casheye.feature.income.presentation.IncomeScreen
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 
+private enum class AddSheetType {
+    EXPENSE,
+    INCOME,
+    ACCOUNT
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,6 +60,32 @@ fun NavigationRoot(
     val currentRoute = navigationState.backStacks[navigationState.topLevelRoute]?.lastOrNull()
 
     val showBars = currentRoute != Route.Analytics
+
+    val sheetForCurrentRoute: AddSheetType? = when (currentRoute) {
+        is Route.Expenses -> AddSheetType.EXPENSE
+        is Route.Income -> AddSheetType.INCOME
+        is Route.Account -> AddSheetType.ACCOUNT
+        else -> null
+    }
+
+    var openedSheet by rememberSaveable {
+        mutableStateOf<AddSheetType?>(null)
+    }
+
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true
+    )
+
+    val scope = rememberCoroutineScope()
+
+    val closeSheet: () -> Unit = {
+        scope.launch {
+            sheetState.hide()
+            openedSheet = null
+        }
+    }
+
+
 
     Scaffold(
         modifier = modifier,
@@ -70,9 +114,9 @@ fun NavigationRoot(
             }
         },
         floatingActionButton = {
-            if (showBars) {
+            if (showBars && sheetForCurrentRoute != null) {
                 FloatingButton {
-                    // TODO: Implement onClick
+                    openedSheet = sheetForCurrentRoute
                 }
             }
         }
@@ -99,6 +143,44 @@ fun NavigationRoot(
                 },
             )
         )
+    }
+
+    openedSheet?.let { type ->
+        ModalBottomSheet(
+            onDismissRequest = {
+                openedSheet = null
+            },
+            sheetState = sheetState,
+            shape = RoundedCornerShape(
+                topStart = 24.dp,
+                topEnd = 24.dp
+            ),
+            containerColor = Color.White,
+            scrimColor = Color.Black.copy(alpha = 0.5f)
+        ) {
+            when (type) {
+                AddSheetType.EXPENSE -> {
+                    AddTransactionRoute(
+                        type = TransactionType.EXPENSE,
+                        onSaved = closeSheet,
+                    )
+                }
+
+                AddSheetType.INCOME -> {
+                    AddTransactionRoute(
+                        type = TransactionType.INCOME,
+                        onSaved = closeSheet,
+                    )
+                }
+
+                AddSheetType.ACCOUNT -> {
+                    AddAccountContent(
+                        onConfirm = closeSheet
+                    )
+                }
+            }
+        }
+
     }
 
 
