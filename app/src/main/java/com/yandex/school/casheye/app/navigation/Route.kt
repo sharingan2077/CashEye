@@ -14,7 +14,7 @@ sealed interface Route : NavKey {
     data object Income : Route
 
     @Serializable
-    data object Account : Route
+    data object Accounts : Route
 
     @Serializable
     data object Analytics : Route

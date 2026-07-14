@@ -3,7 +3,7 @@ package com.yandex.school.casheye.feature.accounts.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.yandex.school.casheye.core.model.Account
-import com.yandex.school.casheye.feature.accounts.domain.repository.AccountsRepository
+import com.yandex.school.casheye.domain.accounts.repository.AccountsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow

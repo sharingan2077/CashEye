@@ -26,13 +26,13 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
-import com.yandex.school.casheye.feature.accounts.presentation.AccountScreen
-import com.yandex.school.casheye.feature.add.account.AddAccountRoute
-import com.yandex.school.casheye.feature.add.transaction.presentation.AddTransactionRoute
-import com.yandex.school.casheye.feature.add.transaction.presentation.TransactionType
-import com.yandex.school.casheye.feature.analytics.presentaion.AnalyticsScreen
-import com.yandex.school.casheye.feature.expenses.presentation.ExpenseScreen
-import com.yandex.school.casheye.feature.income.presentation.IncomeScreen
+import com.yandex.school.casheye.feature.accounts.editor.presentation.AddAccountRoute
+import com.yandex.school.casheye.feature.accounts.presentation.AccountsScreen
+import com.yandex.school.casheye.feature.analytics.presentation.AnalyticsScreen
+import com.yandex.school.casheye.feature.transactions.editor.presentation.AddTransactionRoute
+import com.yandex.school.casheye.feature.transactions.editor.presentation.TransactionType
+import com.yandex.school.casheye.feature.transactions.expenses.presentation.ExpensesScreen
+import com.yandex.school.casheye.feature.transactions.income.presentation.IncomeScreen
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
@@ -64,7 +64,7 @@ fun NavigationRoot(
     val sheetForCurrentRoute: AddSheetType? = when (currentRoute) {
         is Route.Expenses -> AddSheetType.EXPENSE
         is Route.Income -> AddSheetType.INCOME
-        is Route.Account -> AddSheetType.ACCOUNT
+        is Route.Accounts -> AddSheetType.ACCOUNT
         else -> null
     }
 
@@ -129,13 +129,13 @@ fun NavigationRoot(
             entries = navigationState.toEntries(
                 entryProvider {
                     entry<Route.Expenses> {
-                        ExpenseScreen()
+                        ExpensesScreen()
                     }
                     entry<Route.Income> {
                         IncomeScreen()
                     }
-                    entry<Route.Account> {
-                        AccountScreen()
+                    entry<Route.Accounts> {
+                        AccountsScreen()
                     }
                     entry<Route.Analytics> {
                         AnalyticsScreen()

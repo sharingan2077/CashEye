@@ -49,7 +49,7 @@ class NavigatorTest {
     fun `goBack from a top-level destination returns to the start destination`() {
         val state = navigationState()
         val navigator = Navigator(state)
-        navigator.navigate(Route.Account)
+        navigator.navigate(Route.Accounts)
 
         navigator.goBack()
 
@@ -58,7 +58,7 @@ class NavigatorTest {
 
     private fun navigationState(): NavigationState {
         val startRoute = Route.Expenses
-        val routes = listOf(Route.Expenses, Route.Income, Route.Account)
+        val routes = listOf(Route.Expenses, Route.Income, Route.Accounts)
 
         return NavigationState(
             startRoute = startRoute,
