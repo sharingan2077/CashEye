@@ -43,6 +43,7 @@ fun SplashScreen(
     val progress by animateLottieCompositionAsState(
         composition = composition,
         iterations = 1,
+        // TODO: Set speed for 1f (for production)
         speed = 2f,
         clipSpec = LottieClipSpec.Progress(
             min = 0f,
