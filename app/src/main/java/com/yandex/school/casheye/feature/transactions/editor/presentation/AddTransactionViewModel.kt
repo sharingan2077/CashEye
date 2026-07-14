@@ -5,11 +5,13 @@ import androidx.lifecycle.viewModelScope
 import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.Category
 import com.yandex.school.casheye.domain.accounts.repository.AccountsRepository
+import com.yandex.school.casheye.domain.categories.repository.CategoriesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -37,8 +39,8 @@ data class AddTransactionUiState(
 @HiltViewModel
 class AddTransactionViewModel @Inject constructor(
     private val accountsRepository: AccountsRepository,
+    private val categoriesRepository: CategoriesRepository
     // Позже можно добавить:
-    // private val categoriesRepository: CategoriesRepository,
     // private val transactionsRepository: TransactionsRepository,
 ) : ViewModel() {
 
@@ -111,16 +113,24 @@ class AddTransactionViewModel @Inject constructor(
     }
 
     private fun loadCategories(type: TransactionType) {
-        // Пока репозитория категорий нет.
-        // Здесь временно могут быть mock-данные.
-        //
-        // В дальнейшем:
-        // categoriesRepository.observeCategories()
-        //     .map { categories ->
-        //         categories.filter {
-        //             it.isIncome == (type == TransactionType.INCOME)
-        //         }
-        //     }
+
+        viewModelScope.launch {
+            categoriesRepository.observeCategories()
+                .map { categories ->
+                    categories.filter {
+                        it.isIncome == (type == TransactionType.INCOME)
+                    }
+                }
+                .collect { categories ->
+                    _uiState.update {
+                        it.copy(
+                            availableCategories = categories,
+                            selectedCategory = categories.firstOrNull()
+                        )
+                    }
+                }
+        }
+
     }
 
     private fun saveTransaction() {
