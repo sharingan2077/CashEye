@@ -7,6 +7,8 @@ plugins {
     alias(libs.plugins.ksp)
 
     alias(libs.plugins.hilt.android)
+    alias(libs.plugins.ktlint)
+    alias(libs.plugins.detekt)
 
 }
 
@@ -71,5 +73,22 @@ dependencies {
 
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
+    ktlintRuleset(libs.compose.rules.ktlint)
 
+}
+
+ktlint {
+    version.set(libs.versions.ktlintEngine.get())
+    android.set(true)
+    outputToConsole.set(true)
+    ignoreFailures.set(false)
+
+    filter {
+        exclude("**/generated/**")
+    }
+}
+
+detekt {
+    config.setFrom(rootProject.files("config/detekt/detekt.yml"))
+    buildUponDefaultConfig = true
 }

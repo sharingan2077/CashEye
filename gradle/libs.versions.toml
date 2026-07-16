@@ -20,6 +20,10 @@ coreSplashscreen = "1.2.0"
 
 ksp = "2.3.9"
 hilt = "2.60.1"
+ktlintPlugin = "14.2.0"
+ktlintEngine = "1.8.0"
+detekt = "2.0.0-alpha.5"
+composeRules = "0.5.9"
 
 
 [libraries]
@@ -51,6 +55,7 @@ androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscree
 
 hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
 hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
+compose-rules-ktlint = { module = "io.nlopez.compose.rules:ktlint", version.ref = "composeRules" }
 
 
 [plugins]
@@ -62,6 +67,8 @@ jetbrains-kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serializati
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 
 hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintPlugin" }
+detekt = { id = "dev.detekt", version.ref = "detekt" }
 
 
 
