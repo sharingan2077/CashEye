@@ -24,6 +24,15 @@ output.json
 # Local configuration and signing
 local.properties
 */local.properties
+.env
+.env.*
+!.env.example
+.figma-token
+**/.figma-token
+figma-token.txt
+**/figma-token.txt
+*.token
+*.tokens
 .signing/
 *.jks
 *.keystore
@@ -80,8 +89,9 @@ gen-external-apklibs
 .codex/
 
 # Coursework-local files
-documentation.yaml
-prompts/
-HW_1_android_HW_1_Android.md
-pictures/
-app_maket/
+local/
+local/documentation.yaml
+local/prompts/
+local/HW_1_android_HW_1_Android.md
+local/pictures/
+local/app_maket/
