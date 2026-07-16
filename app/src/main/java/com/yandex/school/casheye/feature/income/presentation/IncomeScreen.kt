@@ -34,20 +34,23 @@ fun IncomeScreen(
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
+        modifier =
+            modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background),
     ) {
         IncomeHero(
-            total = formatAmount(
-                amount = state.total,
-                currencyCode = state.currencyCode,
-            ),
+            total =
+                formatAmount(
+                    amount = state.total,
+                    currencyCode = state.currencyCode,
+                ),
         )
         LazyColumn(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
         ) {
             items(
                 items = state.transactions,
@@ -56,10 +59,11 @@ fun IncomeScreen(
                 MoneyListItem(
                     emoji = transaction.category.emoji,
                     title = transaction.category.name,
-                    amount = formatAmount(
-                        amount = transaction.amount,
-                        currencyCode = transaction.account.currency,
-                    ),
+                    amount =
+                        formatAmount(
+                            amount = transaction.amount,
+                            currencyCode = transaction.account.currency,
+                        ),
                 )
             }
         }
@@ -69,10 +73,11 @@ fun IncomeScreen(
 @Composable
 private fun IncomeHero(total: String) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(117.dp)
-            .padding(start = 20.dp, top = 12.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .height(117.dp)
+                .padding(start = 20.dp, top = 12.dp),
     ) {
         Text(
             text = "доходы, всего",

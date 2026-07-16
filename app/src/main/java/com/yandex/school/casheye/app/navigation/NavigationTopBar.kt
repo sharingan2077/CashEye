@@ -41,36 +41,41 @@ import java.util.Locale
 @Composable
 fun NavigationTopBar(
     date: LocalDate,
+    modifier: Modifier = Modifier,
     onDateClick: () -> Unit = {},
     onAnalyticsClick: () -> Unit = {},
     onFilterClick: () -> Unit = {},
 ) {
-    val dateFormatter = remember {
-        DateTimeFormatter.ofPattern(
-            "d MMMM",
-            Locale.forLanguageTag("ru"),
-        )
-    }
+    val dateFormatter =
+        remember {
+            DateTimeFormatter.ofPattern(
+                "d MMMM",
+                Locale.forLanguageTag("ru"),
+            )
+        }
     val dateInteractionSource = remember { MutableInteractionSource() }
 
     TopAppBar(
+        modifier = modifier,
         title = {
             Box(
-                modifier = Modifier
-                    .offset(x = (-4).dp)
-                    .height(48.dp)
-                    .clickable(
-                        interactionSource = dateInteractionSource,
-                        indication = null,
-                        role = Role.Button,
-                        onClick = onDateClick,
-                    ),
+                modifier =
+                    Modifier
+                        .offset(x = (-4).dp)
+                        .height(48.dp)
+                        .clickable(
+                            interactionSource = dateInteractionSource,
+                            indication = null,
+                            role = Role.Button,
+                            onClick = onDateClick,
+                        ),
                 contentAlignment = Alignment.Center,
             ) {
                 Surface(
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .indication(dateInteractionSource, ripple()),
+                    modifier =
+                        Modifier
+                            .clip(CircleShape)
+                            .indication(dateInteractionSource, ripple()),
                     color = MaterialTheme.colorScheme.surfaceContainer,
                     shape = CircleShape,
                 ) {
@@ -115,9 +120,10 @@ fun NavigationTopBar(
                 }
             }
         },
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-        ),
+        colors =
+            TopAppBarDefaults.topAppBarColors(
+                containerColor = MaterialTheme.colorScheme.surface,
+            ),
     )
 }
 

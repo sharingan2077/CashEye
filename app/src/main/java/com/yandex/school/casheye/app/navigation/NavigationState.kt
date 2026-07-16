@@ -25,79 +25,80 @@ import kotlinx.serialization.modules.polymorphic
 class NavigationState(
     val startRoute: NavKey,
     topLevelRoute: MutableState<NavKey>,
-    val backStacks: Map<NavKey, NavBackStack<NavKey>>
+    val backStacks: Map<NavKey, NavBackStack<NavKey>>,
 ) {
-
     var topLevelRoute by topLevelRoute
 
     val stackInUse: List<NavKey>
-        get() = if (topLevelRoute == startRoute) {
-            listOf(startRoute)
-        } else {
-            listOf(startRoute, topLevelRoute)
-        }
-
+        get() =
+            if (topLevelRoute == startRoute) {
+                listOf(startRoute)
+            } else {
+                listOf(startRoute, topLevelRoute)
+            }
 }
 
 @Composable
 fun rememberNavigationState(
     startRoute: NavKey,
-    topLevelRoutes: Set<NavKey>
+    topLevelRoutes: Set<NavKey>,
 ): NavigationState {
-    val topLevelRoute = rememberSerializable(
-        startRoute,
-        topLevelRoutes,
-        configuration = serializersConfig,
-        serializer = MutableStateSerializer(PolymorphicSerializer(NavKey::class))
-    ) {
-        mutableStateOf(startRoute)
-    }
-
-    val backStacks = topLevelRoutes.associateWith { key ->
-        rememberNavBackStack(
+    val topLevelRoute =
+        rememberSerializable(
+            startRoute,
+            topLevelRoutes,
             configuration = serializersConfig,
-            key
-        )
-    }
+            serializer = MutableStateSerializer(PolymorphicSerializer(NavKey::class)),
+        ) {
+            mutableStateOf(startRoute)
+        }
+
+    val backStacks =
+        topLevelRoutes.associateWith { key ->
+            rememberNavBackStack(
+                configuration = serializersConfig,
+                key,
+            )
+        }
 
     return remember(startRoute, topLevelRoutes) {
         NavigationState(
             startRoute = startRoute,
             topLevelRoute = topLevelRoute,
-            backStacks = backStacks
+            backStacks = backStacks,
         )
     }
-
 }
 
 @Composable
-fun NavigationState.toEntries(
-    entryProvider: (NavKey) -> NavEntry<NavKey>
-): SnapshotStateList<NavEntry<NavKey>> {
-    val decoratedEntries = backStacks.mapValues { (_, stack) ->
-        val decorators = listOf(
-            rememberSaveableStateHolderNavEntryDecorator<NavKey>(),
-            rememberViewModelStoreNavEntryDecorator()
-        )
-        rememberDecoratedNavEntries(
-            backStack = stack,
-            entryDecorators = decorators,
-            entryProvider = entryProvider
-        )
-    }
+fun NavigationState.toEntries(entryProvider: (NavKey) -> NavEntry<NavKey>): SnapshotStateList<NavEntry<NavKey>> {
+    val decoratedEntries =
+        backStacks.mapValues { (_, stack) ->
+            val decorators =
+                listOf(
+                    rememberSaveableStateHolderNavEntryDecorator<NavKey>(),
+                    rememberViewModelStoreNavEntryDecorator(),
+                )
+            rememberDecoratedNavEntries(
+                backStack = stack,
+                entryDecorators = decorators,
+                entryProvider = entryProvider,
+            )
+        }
 
     return stackInUse
         .flatMap { decoratedEntries[it] ?: emptyList() }
         .toMutableStateList()
-
 }
 
-val serializersConfig = SavedStateConfiguration {
-    serializersModule = SerializersModule {
-        polymorphic(NavKey::class) {
-            subclass(Route.Expenses::class, Route.Expenses.serializer())
-            subclass(Route.Income::class, Route.Income.serializer())
-            subclass(Route.Account::class, Route.Account.serializer())
-        }
+val serializersConfig =
+    SavedStateConfiguration {
+        serializersModule =
+            SerializersModule {
+                polymorphic(NavKey::class) {
+                    subclass(Route.Expenses::class, Route.Expenses.serializer())
+                    subclass(Route.Income::class, Route.Income.serializer())
+                    subclass(Route.Account::class, Route.Account.serializer())
+                }
+            }
     }
-}

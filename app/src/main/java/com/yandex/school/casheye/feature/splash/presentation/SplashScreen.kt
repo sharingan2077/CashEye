@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -26,39 +27,43 @@ import com.yandex.school.casheye.R
 
 @Composable
 fun SplashScreen(
-    onFinished: () -> Unit,
+    onFinish: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val splashBackground = colorResource(R.color.splash_background)
+    val currentOnFinish by rememberUpdatedState(onFinish)
 
     SplashSystemBarStyleEffect()
 
-    val compositionResult = rememberLottieComposition(
-        spec = LottieCompositionSpec.RawRes(R.raw.splash_screen_animation),
-    )
+    val compositionResult =
+        rememberLottieComposition(
+            spec = LottieCompositionSpec.RawRes(R.raw.splash_screen_animation),
+        )
     val composition by compositionResult
     val progress by animateLottieCompositionAsState(
         composition = composition,
         iterations = 1,
-        clipSpec = LottieClipSpec.Progress(
-            min = 0f,
-            max = SPLASH_END_PROGRESS,
-        ),
+        clipSpec =
+            LottieClipSpec.Progress(
+                min = 0f,
+                max = SPLASH_END_PROGRESS,
+            ),
     )
 
     LaunchedEffect(compositionResult.isFailure, composition, progress) {
         if (
             compositionResult.isFailure ||
-            composition != null && progress >= SPLASH_END_PROGRESS
+            (composition != null && progress >= SPLASH_END_PROGRESS)
         ) {
-            onFinished()
+            currentOnFinish()
         }
     }
 
     Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(splashBackground),
+        modifier =
+            modifier
+                .fillMaxSize()
+                .background(splashBackground),
         contentAlignment = Alignment.Center,
     ) {
         LottieAnimation(
@@ -78,11 +83,12 @@ private fun SplashSystemBarStyleEffect() {
         val window = view.context.findActivity().window
         val insetsController = WindowCompat.getInsetsController(window, view)
         val previousLightIcons = insetsController.isAppearanceLightNavigationBars
-        val previousContrastEnforced = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            window.isNavigationBarContrastEnforced
-        } else {
-            null
-        }
+        val previousContrastEnforced =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                window.isNavigationBarContrastEnforced
+            } else {
+                null
+            }
 
         insetsController.isAppearanceLightNavigationBars = true
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -98,10 +104,11 @@ private fun SplashSystemBarStyleEffect() {
     }
 }
 
-private tailrec fun Context.findActivity(): Activity = when (this) {
-    is Activity -> this
-    is ContextWrapper -> baseContext.findActivity()
-    else -> error("SplashScreen must be hosted in an Activity")
-}
+private tailrec fun Context.findActivity(): Activity =
+    when (this) {
+        is Activity -> this
+        is ContextWrapper -> baseContext.findActivity()
+        else -> error("SplashScreen must be hosted in an Activity")
+    }
 
 private const val SPLASH_END_PROGRESS = 0.6f

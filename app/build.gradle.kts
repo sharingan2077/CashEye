@@ -9,7 +9,6 @@ plugins {
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.ktlint)
     alias(libs.plugins.detekt)
-
 }
 
 android {
@@ -74,7 +73,6 @@ dependencies {
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     ktlintRuleset(libs.compose.rules.ktlint)
-
 }
 
 ktlint {

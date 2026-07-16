@@ -19,15 +19,6 @@ fun MoneyListItem(
         lead = {
             EmojiCircle(emoji = emoji)
         },
-        content = {
-            Text(
-                text = title,
-                color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.titleMedium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        },
         trail = {
             Text(
                 text = amount,
@@ -36,5 +27,13 @@ fun MoneyListItem(
                 textAlign = TextAlign.End,
             )
         },
-    )
+    ) {
+        Text(
+            text = title,
+            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.titleMedium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
 }

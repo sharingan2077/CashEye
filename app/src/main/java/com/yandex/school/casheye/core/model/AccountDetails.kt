@@ -7,5 +7,5 @@ data class AccountDetails(
     val incomeStats: List<CategoryStatistic>,
     val expenseStats: List<CategoryStatistic>,
     val createdAt: Instant,
-    val updatedAt: Instant
+    val updatedAt: Instant,
 )

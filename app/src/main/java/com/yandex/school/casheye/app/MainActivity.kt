@@ -27,7 +27,7 @@ class MainActivity : ComponentActivity() {
                 var isSplashVisible by remember { mutableStateOf(showLottieSplash) }
 
                 if (isSplashVisible) {
-                    SplashScreen(onFinished = { isSplashVisible = false })
+                    SplashScreen(onFinish = { isSplashVisible = false })
                 } else {
                     NavigationRoot()
                 }

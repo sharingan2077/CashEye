@@ -15,7 +15,6 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavKey
 import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
 
-
 @Composable
 fun BottomNavigationBar(
     selectedKey: NavKey,
@@ -25,19 +24,19 @@ fun BottomNavigationBar(
     val borderColor = MaterialTheme.colorScheme.outline
 
     NavigationBar(
-        modifier = modifier.drawWithContent {
-            drawContent()
+        modifier =
+            modifier.drawWithContent {
+                drawContent()
 
-            val strokeWidth = 1.dp.toPx()
-            drawLine(
-                color = borderColor,
-                start = Offset(0f, strokeWidth / 2),
-                end = Offset(size.width, strokeWidth / 2),
-                strokeWidth = strokeWidth,
-            )
-        },
+                val strokeWidth = 1.dp.toPx()
+                drawLine(
+                    color = borderColor,
+                    start = Offset(0f, strokeWidth / 2),
+                    end = Offset(size.width, strokeWidth / 2),
+                    strokeWidth = strokeWidth,
+                )
+            },
     ) {
-
         TOP_LEVEL_DESTINATIONS.forEach { (destination, data) ->
             NavigationBarItem(
                 selected = selectedKey == destination,

@@ -27,9 +27,10 @@ private fun ThemePreview() {
     CashEyeTheme(dynamicColor = false) {
         Surface(color = MaterialTheme.colorScheme.background) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 ColorPreviewRow()
@@ -38,9 +39,10 @@ private fun ThemePreview() {
                     Text(text = "Primary action")
                 }
                 Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    ),
+                    colors =
+                        CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        ),
                     shape = RoundedCornerShape(12.dp),
                 ) {
                     Text(
@@ -68,9 +70,10 @@ private fun ColorPreviewRow() {
 @Composable
 private fun ColorSwatch(color: Color) {
     Box(
-        modifier = Modifier
-            .size(56.dp)
-            .background(color = color, shape = RoundedCornerShape(8.dp)),
+        modifier =
+            Modifier
+                .size(56.dp)
+                .background(color = color, shape = RoundedCornerShape(8.dp)),
     )
 }
 

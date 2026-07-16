@@ -39,20 +39,23 @@ fun AccountScreen(
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
+        modifier =
+            modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background),
     ) {
         AccountHero(
-            total = formatAmount(
-                amount = state.total,
-                currencyCode = state.currencyCode,
-            ),
+            total =
+                formatAmount(
+                    amount = state.total,
+                    currencyCode = state.currencyCode,
+                ),
         )
         LazyColumn(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
         ) {
             items(
                 items = state.accounts,
@@ -61,10 +64,11 @@ fun AccountScreen(
                 MoneyListItem(
                     emoji = accountItem.emoji,
                     title = accountItem.account.name,
-                    amount = formatAmount(
-                        amount = accountItem.account.balance,
-                        currencyCode = accountItem.account.currency,
-                    ),
+                    amount =
+                        formatAmount(
+                            amount = accountItem.account.balance,
+                            currencyCode = accountItem.account.currency,
+                        ),
                 )
             }
         }
@@ -74,10 +78,11 @@ fun AccountScreen(
 @Composable
 private fun AccountHero(total: String) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(117.dp)
-            .padding(start = 20.dp, top = 12.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .height(117.dp)
+                .padding(start = 20.dp, top = 12.dp),
     ) {
         Text(
             text = "баланс, всего",

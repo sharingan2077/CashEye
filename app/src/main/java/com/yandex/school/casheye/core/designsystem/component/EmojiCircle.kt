@@ -19,13 +19,14 @@ fun EmojiCircle(
     modifier: Modifier = Modifier,
 ) {
     Box(
-        modifier = modifier
-            .size(40.dp)
-            .border(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.outline,
-                shape = CircleShape,
-            ),
+        modifier =
+            modifier
+                .size(40.dp)
+                .border(
+                    width = 1.dp,
+                    color = MaterialTheme.colorScheme.outline,
+                    shape = CircleShape,
+                ),
         contentAlignment = Alignment.Center,
     ) {
         Text(

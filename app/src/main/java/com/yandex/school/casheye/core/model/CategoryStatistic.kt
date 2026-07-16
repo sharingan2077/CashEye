@@ -6,5 +6,5 @@ data class CategoryStatistic(
     val categoryId: Int,
     val categoryName: String,
     val emoji: String,
-    val amount: BigDecimal
+    val amount: BigDecimal,
 )

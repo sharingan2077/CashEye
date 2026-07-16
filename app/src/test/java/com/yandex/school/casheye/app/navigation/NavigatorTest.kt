@@ -7,7 +7,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class NavigatorTest {
-
     @Test
     fun `navigate switches to a top-level destination`() {
         val state = navigationState()

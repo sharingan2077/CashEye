@@ -11,5 +11,5 @@ data class Transaction(
     val transactionDate: Instant,
     val comment: String?,
     val createdAt: Instant,
-    val updatedAt: Instant
+    val updatedAt: Instant,
 )

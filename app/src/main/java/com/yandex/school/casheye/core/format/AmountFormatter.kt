@@ -18,6 +18,5 @@ fun formatAmount(
             currency = amountCurrency
             minimumFractionDigits = 0
             maximumFractionDigits = amountCurrency.defaultFractionDigits
-        }
-        .format(amount)
+        }.format(amount)
 }

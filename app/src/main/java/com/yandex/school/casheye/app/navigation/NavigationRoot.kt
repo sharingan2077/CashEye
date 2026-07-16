@@ -25,21 +25,19 @@ import com.yandex.school.casheye.feature.income.presentation.IncomeScreen
 import com.yandex.school.casheye.feature.income.presentation.incomeUiStateMock
 import java.time.LocalDate
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NavigationRoot(
-    modifier: Modifier = Modifier
-) {
+fun NavigationRoot(modifier: Modifier = Modifier) {
+    val navigationState =
+        rememberNavigationState(
+            startRoute = Route.Expenses,
+            topLevelRoutes = TOP_LEVEL_DESTINATIONS.keys,
+        )
 
-    val navigationState = rememberNavigationState(
-        startRoute = Route.Expenses,
-        topLevelRoutes = TOP_LEVEL_DESTINATIONS.keys
-    )
-
-    val navigator = remember {
-        Navigator(navigationState)
-    }
+    val navigator =
+        remember {
+            Navigator(navigationState)
+        }
 
     Scaffold(
         modifier = modifier,
@@ -48,7 +46,7 @@ fun NavigationRoot(
                 selectedKey = navigationState.topLevelRoute,
                 onSelectKey = {
                     navigator.navigate(it)
-                }
+                },
             )
         },
         topBar = {
@@ -58,31 +56,30 @@ fun NavigationRoot(
             FloatingButton {
                 // TODO: Implement onCLick
             }
-        }
+        },
     ) { innerPadding ->
         NavDisplay(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
             onBack = navigator::goBack,
-            entries = navigationState.toEntries(
-                entryProvider {
-                    entry<Route.Expenses> {
-                        ExpenseScreen(state = expensesUiStateMock)
-                    }
-                    entry<Route.Income> {
-                        IncomeScreen(state = incomeUiStateMock)
-                    }
-                    entry<Route.Account> {
-                        AccountScreen(state = accountsUiStateMock)
-                    }
-
-                },
-            )
+            entries =
+                navigationState.toEntries(
+                    entryProvider {
+                        entry<Route.Expenses> {
+                            ExpenseScreen(state = expensesUiStateMock)
+                        }
+                        entry<Route.Income> {
+                            IncomeScreen(state = incomeUiStateMock)
+                        }
+                        entry<Route.Account> {
+                            AccountScreen(state = accountsUiStateMock)
+                        }
+                    },
+                ),
         )
     }
-
-
 }
 
 @Composable
@@ -91,16 +88,17 @@ private fun FloatingButton(onClick: () -> Unit) {
         onClick = {
             onClick()
         },
-        modifier = Modifier
-            .size(56.dp)
+        modifier =
+            Modifier
+                .size(56.dp),
     ) {
         Icon(
             painter = painterResource(R.drawable.plus),
             contentDescription = "Добавить",
-            modifier = Modifier
-                .size(24.dp)
+            modifier =
+                Modifier
+                    .size(24.dp),
         )
-
     }
 }
 
@@ -109,7 +107,6 @@ private fun FloatingButton(onClick: () -> Unit) {
 private fun FloatingButtonPreview() {
     CashEyeTheme(dynamicColor = false) {
         FloatingButton {
-
         }
     }
 }
