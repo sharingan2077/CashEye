@@ -5,16 +5,15 @@ import java.text.NumberFormat
 import java.util.Currency
 import java.util.Locale
 
-private val RussianLocale = Locale.forLanguageTag("ru-RU")
-
 fun formatAmount(
     amount: BigDecimal,
     currencyCode: String,
+    locale: Locale = Locale.getDefault(),
 ): String {
     val amountCurrency = Currency.getInstance(currencyCode)
 
     return NumberFormat
-        .getCurrencyInstance(RussianLocale)
+        .getCurrencyInstance(locale)
         .apply {
             currency = amountCurrency
             minimumFractionDigits = 0
