@@ -82,6 +82,6 @@ gen-external-apklibs
 # Coursework-local files
 documentation.yaml
 prompts/
-AGENTS.md
 HW_1_android_HW_1_Android.md
 pictures/
+app_maket/
