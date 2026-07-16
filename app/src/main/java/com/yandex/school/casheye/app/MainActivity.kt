@@ -9,6 +9,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import com.yandex.school.casheye.app.navigation.NavigationRoot
 import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
 import com.yandex.school.casheye.feature.splash.presentation.SplashScreen
 
@@ -28,7 +29,7 @@ class MainActivity : ComponentActivity() {
                 if (isSplashVisible) {
                     SplashScreen(onFinished = { isSplashVisible = false })
                 } else {
-                    CashEyeApp()
+                    NavigationRoot()
                 }
             }
         }
