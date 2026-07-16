@@ -20,13 +20,6 @@ import com.yandex.school.casheye.core.designsystem.component.MoneyListItem
 import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
 import com.yandex.school.casheye.core.format.formatAmount
 import com.yandex.school.casheye.core.model.Transaction
-import java.math.BigDecimal
-
-data class IncomeUiState(
-    val total: BigDecimal,
-    val currencyCode: String,
-    val transactions: List<Transaction>,
-)
 
 @Composable
 fun IncomeScreen(

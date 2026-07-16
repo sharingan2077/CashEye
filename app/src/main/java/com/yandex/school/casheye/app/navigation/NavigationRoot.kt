@@ -27,7 +27,10 @@ import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NavigationRoot(modifier: Modifier = Modifier) {
+fun NavigationRoot(
+    modifier: Modifier = Modifier,
+    onAddClick: () -> Unit = {},
+) {
     val navigationState =
         rememberNavigationState(
             startRoute = Route.Expenses,
@@ -50,12 +53,10 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
             )
         },
         topBar = {
-            NavigationTopBar(LocalDate.of(2026, 6, 12))
+            NavigationTopBar(date = navigationDate)
         },
         floatingActionButton = {
-            FloatingButton {
-                // TODO: Implement onCLick
-            }
+            FloatingButton(onClick = onAddClick)
         },
     ) { innerPadding ->
         NavDisplay(
@@ -110,3 +111,5 @@ private fun FloatingButtonPreview() {
         }
     }
 }
+
+private val navigationDate: LocalDate = LocalDate.of(2026, 6, 12)

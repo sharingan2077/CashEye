@@ -58,73 +58,99 @@ fun NavigationTopBar(
     TopAppBar(
         modifier = modifier,
         title = {
-            Box(
-                modifier =
-                    Modifier
-                        .offset(x = (-4).dp)
-                        .height(48.dp)
-                        .clickable(
-                            interactionSource = dateInteractionSource,
-                            indication = null,
-                            role = Role.Button,
-                            onClick = onDateClick,
-                        ),
-                contentAlignment = Alignment.Center,
-            ) {
-                Surface(
-                    modifier =
-                        Modifier
-                            .clip(CircleShape)
-                            .indication(dateInteractionSource, ripple()),
-                    color = MaterialTheme.colorScheme.surfaceContainer,
-                    shape = CircleShape,
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.calendar_month),
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(20.dp),
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = date.format(dateFormatter),
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-            }
+            NavigationTopBarTitle(
+                date = date,
+                dateFormatter = dateFormatter,
+                interactionSource = dateInteractionSource,
+                onClick = onDateClick,
+            )
         },
         actions = {
-            Row(
-                modifier = Modifier.padding(end = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                IconButton(onClick = onAnalyticsClick) {
-                    Icon(
-                        painter = painterResource(R.drawable.analytics),
-                        contentDescription = "Аналитика",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                IconButton(onClick = onFilterClick) {
-                    Icon(
-                        painter = painterResource(R.drawable.sliders_horizontal),
-                        contentDescription = "Фильтры",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
+            NavigationTopBarActions(
+                onAnalyticsClick = onAnalyticsClick,
+                onFilterClick = onFilterClick,
+            )
         },
         colors =
             TopAppBarDefaults.topAppBarColors(
                 containerColor = MaterialTheme.colorScheme.surface,
             ),
     )
+}
+
+@Composable
+private fun NavigationTopBarTitle(
+    date: LocalDate,
+    dateFormatter: DateTimeFormatter,
+    interactionSource: MutableInteractionSource,
+    onClick: () -> Unit,
+) {
+    Box(
+        modifier =
+            Modifier
+                .offset(x = (-4).dp)
+                .height(48.dp)
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = null,
+                    role = Role.Button,
+                    onClick = onClick,
+                ),
+        contentAlignment = Alignment.Center,
+    ) {
+        Surface(
+            modifier =
+                Modifier
+                    .clip(CircleShape)
+                    .indication(interactionSource, ripple()),
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            shape = CircleShape,
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.calendar_month),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp),
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = date.format(dateFormatter),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun NavigationTopBarActions(
+    onAnalyticsClick: () -> Unit,
+    onFilterClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.padding(end = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        IconButton(onClick = onAnalyticsClick) {
+            Icon(
+                painter = painterResource(R.drawable.analytics),
+                contentDescription = "Аналитика",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        IconButton(onClick = onFilterClick) {
+            Icon(
+                painter = painterResource(R.drawable.sliders_horizontal),
+                contentDescription = "Фильтры",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
 }
 
 @Preview(showBackground = true, widthDp = 412)
