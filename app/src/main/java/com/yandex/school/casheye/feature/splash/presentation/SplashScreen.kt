@@ -31,7 +31,7 @@ fun SplashScreen(
 ) {
     val splashBackground = colorResource(R.color.splash_background)
 
-    SplashNavigationBarEffect()
+    SplashSystemBarStyleEffect()
 
     val compositionResult = rememberLottieComposition(
         spec = LottieCompositionSpec.RawRes(R.raw.splash_screen_animation),
@@ -71,7 +71,7 @@ fun SplashScreen(
 }
 
 @Composable
-private fun SplashNavigationBarEffect() {
+private fun SplashSystemBarStyleEffect() {
     val view = LocalView.current
 
     DisposableEffect(view) {
