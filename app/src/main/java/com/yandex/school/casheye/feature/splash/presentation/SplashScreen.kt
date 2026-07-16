@@ -13,7 +13,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.colorResource
@@ -32,9 +31,7 @@ fun SplashScreen(
 ) {
     val splashBackground = colorResource(R.color.splash_background)
 
-    SplashNavigationBarEffect(
-        navigationBarColor = splashBackground.toArgb(),
-    )
+    SplashNavigationBarEffect()
 
     val compositionResult = rememberLottieComposition(
         spec = LottieCompositionSpec.RawRes(R.raw.splash_screen_animation),
@@ -73,15 +70,13 @@ fun SplashScreen(
     }
 }
 
-@Suppress("DEPRECATION")
 @Composable
-private fun SplashNavigationBarEffect(navigationBarColor: Int) {
+private fun SplashNavigationBarEffect() {
     val view = LocalView.current
 
-    DisposableEffect(view, navigationBarColor) {
+    DisposableEffect(view) {
         val window = view.context.findActivity().window
         val insetsController = WindowCompat.getInsetsController(window, view)
-        val previousColor = window.navigationBarColor
         val previousLightIcons = insetsController.isAppearanceLightNavigationBars
         val previousContrastEnforced = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             window.isNavigationBarContrastEnforced
@@ -89,14 +84,12 @@ private fun SplashNavigationBarEffect(navigationBarColor: Int) {
             null
         }
 
-        window.navigationBarColor = navigationBarColor
         insetsController.isAppearanceLightNavigationBars = true
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             window.isNavigationBarContrastEnforced = false
         }
 
         onDispose {
-            window.navigationBarColor = previousColor
             insetsController.isAppearanceLightNavigationBars = previousLightIcons
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && previousContrastEnforced != null) {
                 window.isNavigationBarContrastEnforced = previousContrastEnforced
