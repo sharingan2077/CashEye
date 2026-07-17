@@ -89,9 +89,4 @@ gen-external-apklibs
 .codex/
 
 # Coursework-local files
-local/
-local/documentation.yaml
-local/prompts/
-local/HW_1_android_HW_1_Android.md
-local/pictures/
-local/app_maket/
+/local/

@@ -1,3 +1,31 @@
+# Архитектура
+
+Проект использует multi-module Clean Architecture с MVVM и MVI-style presentation.
+
+```text
+app
+├── core:model
+├── core:designsystem
+├── core:ui
+├── feature:expenses ── domain:expenses
+├── feature:income
+├── feature:accounts
+├── feature:analytics
+├── feature:splash
+└── data:expenses ──── domain:expenses
+```
+
+- `:app` содержит application entry point, DI composition и root navigation.
+- `:core:*` содержит только переиспользуемые модели, UI и design system.
+- `:feature:*` содержит Route, Screen, ViewModel, UiState, Intent и Effect конкретного экрана.
+- `:domain:*` содержит бизнес-контракты и use cases без Android-зависимостей.
+- `:data:*` реализует domain-контракты, API, DTO и mappers.
+
+Зависимости направлены внутрь: `app -> feature/data`, `feature -> domain/core`, `data -> domain/core`.
+Feature не зависит от другого feature. Runtime mocks для экранов без API остаются внутри соответствующего feature.
+
+## Описание задания
+
 Привет!
 Ваша миссия на ближайший месяц — создать приложение-телепорт в мир финансовой осознанности. Представляете, ваши пользователи наконец-то смогут ответить на извечный вопрос «Куда делись все деньги до зарплаты?».
 Что должен уметь ваш цифровой финансовый детектив:
