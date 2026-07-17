@@ -6,9 +6,10 @@ plugins {
 
     alias(libs.plugins.ksp)
 
-    alias(libs.plugins.hilt.android)
     alias(libs.plugins.ktlint)
     alias(libs.plugins.detekt)
+
+    alias(libs.plugins.metro)
 }
 
 android {
@@ -35,11 +36,17 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
     buildFeatures {
         compose = true
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
     }
 }
 
@@ -81,15 +88,12 @@ dependencies {
 
     implementation(libs.androidx.core.splashscreen)
 
-    implementation(libs.hilt.android)
-    ksp(libs.hilt.compiler)
-    ktlintRuleset(libs.compose.rules.ktlint)
-
     implementation(libs.vico.compose)
     implementation(libs.vico.compose.m3)
-    implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
 
     implementation(libs.kotlinx.coroutines.android)
+
+    implementation(libs.metro.viewmodel.compose)
 }
 
 ktlint {
