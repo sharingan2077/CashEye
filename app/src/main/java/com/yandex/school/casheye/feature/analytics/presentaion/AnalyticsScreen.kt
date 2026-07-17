@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -30,6 +29,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.yandex.school.casheye.core.designsystem.component.EmojiCircle
+import com.yandex.school.casheye.core.designsystem.component.FilterItem
 import com.yandex.school.casheye.core.designsystem.component.ListItem
 import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
 import com.yandex.school.casheye.core.format.formatAmount
@@ -172,28 +172,6 @@ fun AnalyticsFilterItem(
         trail = { FilterItem(title = filter) },
         height = 56.dp,
     )
-}
-
-@Composable
-fun FilterItem(
-    title: String,
-    modifier: Modifier = Modifier,
-) {
-    Box(
-        modifier =
-            modifier
-                .height(24.dp)
-                .wrapContentWidth()
-                .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
-                .padding(horizontal = 12.dp, vertical = 4.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = title,
-            color = MaterialTheme.colorScheme.onSurface,
-            style = MaterialTheme.typography.labelLarge,
-        )
-    }
 }
 
 @Composable
