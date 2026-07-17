@@ -17,13 +17,10 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import com.yandex.school.casheye.R
 import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
-import com.yandex.school.casheye.feature.accounts.presentation.AccountScreen
-import com.yandex.school.casheye.feature.accounts.presentation.accountsUiStateMock
-import com.yandex.school.casheye.feature.analytics.presentaion.AnalyticsScreen
-import com.yandex.school.casheye.feature.expenses.presentation.ExpenseScreen
-import com.yandex.school.casheye.feature.expenses.presentation.expensesUiStateMock
-import com.yandex.school.casheye.feature.income.presentation.IncomeScreen
-import com.yandex.school.casheye.feature.income.presentation.incomeUiStateMock
+import com.yandex.school.casheye.feature.accounts.presentation.AccountsRoute
+import com.yandex.school.casheye.feature.analytics.presentation.AnalyticsRoute
+import com.yandex.school.casheye.feature.expenses.presentation.ExpensesRoute
+import com.yandex.school.casheye.feature.income.presentation.IncomeRoute
 import java.time.LocalDate
 
 @Composable
@@ -101,10 +98,10 @@ private fun NavigationContent(
         entries =
             navigationState.toEntries(
                 entryProvider {
-                    entry<Route.Expenses> { ExpenseScreen(state = expensesUiStateMock) }
-                    entry<Route.Income> { IncomeScreen(state = incomeUiStateMock) }
-                    entry<Route.Account> { AccountScreen(state = accountsUiStateMock) }
-                    entry<Route.Analytics> { AnalyticsScreen() }
+                    entry<Route.Expenses> { ExpensesRoute() }
+                    entry<Route.Income> { IncomeRoute() }
+                    entry<Route.Account> { AccountsRoute() }
+                    entry<Route.Analytics> { AnalyticsRoute() }
                 },
             ),
     )
@@ -127,4 +124,4 @@ private fun FloatingButtonPreview() {
     CashEyeTheme(dynamicColor = false) { FloatingButton {} }
 }
 
-private val navigationDate: LocalDate = LocalDate.of(2026, 6, 12)
+private val navigationDate: LocalDate = LocalDate.now()

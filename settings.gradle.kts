@@ -24,3 +24,16 @@ dependencyResolutionManagement {
 
 rootProject.name = "CashEye"
 include(":app")
+
+include(":core:model")
+include(":core:designsystem")
+include(":core:ui")
+
+include(":domain:expenses")
+include(":data:expenses")
+
+include(":feature:expenses")
+include(":feature:income")
+include(":feature:accounts")
+include(":feature:analytics")
+include(":feature:splash")
