@@ -115,31 +115,20 @@ function Invoke-DemoFinanceApi
 
 function Get-DemoFinanceCategories
 {
-    param(
-        [Parameter(Mandatory)]
-        [string]$ApiKey
-    )
-
     $localCategoriesPath = Join-Path (Get-DemoFinanceProjectRoot) "local\categories.json"
     if (-not (Test-Path -LiteralPath $localCategoriesPath))
     {
         throw "Local category reference was not found: $localCategoriesPath"
     }
 
-    $localCategories = @(Get-Content -LiteralPath $localCategoriesPath -Raw -Encoding UTF8 | ConvertFrom-Json)
-    $apiCategories = @(Invoke-DemoFinanceApi -Method Get -RelativePath "categories" -ApiKey $ApiKey)
-
-    return [pscustomobject]@{
-        Local = $localCategories
-        Api = $apiCategories
-    }
+    return @(Get-Content -LiteralPath $localCategoriesPath -Raw -Encoding UTF8 | ConvertFrom-Json)
 }
 
 function Resolve-DemoFinanceCategoryId
 {
     param(
         [Parameter(Mandatory)]
-        [object]$CategorySource,
+        [object[]]$Categories,
 
         [Parameter(Mandatory)]
         [string]$Name,
@@ -148,19 +137,13 @@ function Resolve-DemoFinanceCategoryId
         [bool]$IsIncome
     )
 
-    $localCategory = @($CategorySource.Local | Where-Object { $_.name -eq $Name -and $_.isIncome -eq $IsIncome }) | Select-Object -First 1
-    if ($null -eq $localCategory)
+    $matches = @($Categories | Where-Object { $_.name -eq $Name -and $_.isIncome -eq $IsIncome })
+    if ($matches.Count -ne 1)
     {
-        throw "Category '$Name' with isIncome=$IsIncome is absent from local/categories.json."
+        throw "Expected exactly one category '$Name' with isIncome=$IsIncome, found $( $matches.Count )."
     }
 
-    $apiCategory = @($CategorySource.Api | Where-Object { $_.name -eq $Name -and $_.isIncome -eq $IsIncome }) | Select-Object -First 1
-    if ($null -eq $apiCategory)
-    {
-        throw "Category '$Name' with isIncome=$IsIncome is absent from the API response."
-    }
-
-    return [int]$apiCategory.id
+    return [int]$matches[0].id
 }
 
 function New-DemoFinanceManifest

@@ -15,7 +15,7 @@ if (Test-Path -LiteralPath (Get-DemoFinanceManifestPath))
 }
 
 $apiKey = Get-DemoFinanceApiKey
-$categories = Get-DemoFinanceCategories -ApiKey $apiKey
+$categories = Get-DemoFinanceCategories
 $manifest = New-DemoFinanceManifest
 Save-DemoFinanceManifest -Manifest $manifest
 
@@ -80,7 +80,7 @@ try
                 $today.AddDays(-$transactionSpecification.DaysAgo).ToDateTime([TimeOnly]::Parse("12:00")),
                 [DateTimeKind]::Utc
         ).ToString("o")
-        $categoryId = Resolve-DemoFinanceCategoryId -CategorySource $categories -Name $transactionSpecification.Category -IsIncome $transactionSpecification.IsIncome
+        $categoryId = Resolve-DemoFinanceCategoryId -Categories $categories -Name $transactionSpecification.Category -IsIncome $transactionSpecification.IsIncome
         $transaction = Invoke-DemoFinanceApi -Method Post -RelativePath "transactions" -ApiKey $apiKey -Body ([ordered]@{
             accountId = $accountIds[$transactionSpecification.Account]
             categoryId = $categoryId
