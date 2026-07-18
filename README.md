@@ -7,12 +7,12 @@ app
 ├── core:model
 ├── core:designsystem
 ├── core:ui
-├── feature:expenses ── domain:expenses
-├── feature:income
+├── feature:expenses ── domain:finance
+├── feature:income ── domain:finance
 ├── feature:accounts
 ├── feature:analytics
 ├── feature:splash
-└── data:expenses ──── domain:expenses
+└── data:finance ──── domain:finance
 ```
 
 - `:app` содержит application entry point, DI composition и root navigation.

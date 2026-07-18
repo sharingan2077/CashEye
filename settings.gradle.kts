@@ -29,8 +29,8 @@ include(":core:model")
 include(":core:designsystem")
 include(":core:ui")
 
-include(":domain:expenses")
-include(":data:expenses")
+include(":domain:finance")
+include(":data:finance")
 
 include(":feature:expenses")
 include(":feature:income")

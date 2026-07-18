@@ -2,9 +2,10 @@ package com.yandex.school.casheye.feature.expenses.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.yandex.school.casheye.domain.expenses.ExpensesFailureReason
-import com.yandex.school.casheye.domain.expenses.ExpensesLoadResult
-import com.yandex.school.casheye.domain.expenses.GetExpensesUseCase
+import com.yandex.school.casheye.domain.finance.FinanceFailureReason
+import com.yandex.school.casheye.domain.finance.FinanceLoadResult
+import com.yandex.school.casheye.domain.finance.GetDailySummaryUseCase
+import com.yandex.school.casheye.domain.finance.TransactionKind
 import dev.zacsweers.metro.Inject
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -19,7 +20,7 @@ import java.time.LocalDate
 
 @Inject
 class ExpensesViewModel(
-    private val getExpenses: GetExpensesUseCase,
+    private val getDailySummary: GetDailySummaryUseCase,
     private val clock: Clock = Clock.systemDefaultZone(),
 ) : ViewModel() {
     private val _state = MutableStateFlow<ExpensesUiState>(ExpensesUiState.Loading)
@@ -56,12 +57,13 @@ class ExpensesViewModel(
                 _state.value = ExpensesUiState.Loading
                 when (
                     val result =
-                        getExpenses(
+                        getDailySummary(
                             date = date,
                             currencyCode = CURRENCY_RUB,
+                            transactionKind = TransactionKind.Expense,
                         )
                 ) {
-                    is ExpensesLoadResult.Success -> {
+                    is FinanceLoadResult.Success -> {
                         val summary = result.summary
                         _state.value =
                             if (summary.transactions.isEmpty()) {
@@ -75,7 +77,7 @@ class ExpensesViewModel(
                             }
                     }
 
-                    is ExpensesLoadResult.Failure -> {
+                    is FinanceLoadResult.Failure -> {
                         val message = result.reason.toUserMessage()
                         _state.value = ExpensesUiState.Error(message)
                         _effects.emit(ExpensesEffect.ShowError(message))
@@ -85,12 +87,12 @@ class ExpensesViewModel(
     }
 }
 
-private fun ExpensesFailureReason.toUserMessage(): String =
+private fun FinanceFailureReason.toUserMessage(): String =
     when (this) {
-        ExpensesFailureReason.Network -> "Проверьте подключение к интернету"
-        ExpensesFailureReason.Authorization -> "Не удалось авторизоваться"
-        ExpensesFailureReason.Server -> "Сервер временно недоступен"
-        ExpensesFailureReason.Unknown -> "Не удалось загрузить расходы"
+        FinanceFailureReason.Network -> "Проверьте подключение к интернету"
+        FinanceFailureReason.Authorization -> "Не удалось авторизоваться"
+        FinanceFailureReason.Server -> "Сервер временно недоступен"
+        FinanceFailureReason.Unknown -> "Не удалось загрузить расходы"
     }
 
 private const val CURRENCY_RUB = "RUB"

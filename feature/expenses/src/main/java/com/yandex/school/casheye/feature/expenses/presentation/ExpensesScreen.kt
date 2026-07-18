@@ -100,7 +100,7 @@ private fun ExpensesContent(
 @Composable
 private fun EmptyExpenses(modifier: Modifier = Modifier) {
     Text(
-        text = "Сегодня расходов нет",
+        text = "Расходов нет",
         modifier = modifier.padding(24.dp),
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         style = MaterialTheme.typography.bodyLarge,

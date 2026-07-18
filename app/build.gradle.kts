@@ -66,7 +66,7 @@ kotlin {
 
 dependencies {
     implementation(project(":core:designsystem"))
-    implementation(project(":data:expenses"))
+    implementation(project(":data:finance"))
     implementation(project(":feature:accounts"))
     implementation(project(":feature:analytics"))
     implementation(project(":feature:expenses"))

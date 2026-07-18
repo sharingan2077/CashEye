@@ -3,11 +3,12 @@ package com.yandex.school.casheye.feature.expenses.presentation
 import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.Category
 import com.yandex.school.casheye.core.model.Transaction
-import com.yandex.school.casheye.domain.expenses.ExpensesFailureReason
-import com.yandex.school.casheye.domain.expenses.ExpensesLoadResult
-import com.yandex.school.casheye.domain.expenses.ExpensesRepository
-import com.yandex.school.casheye.domain.expenses.ExpensesSummary
-import com.yandex.school.casheye.domain.expenses.GetExpensesUseCase
+import com.yandex.school.casheye.domain.finance.FinanceFailureReason
+import com.yandex.school.casheye.domain.finance.FinanceLoadResult
+import com.yandex.school.casheye.domain.finance.FinanceRepository
+import com.yandex.school.casheye.domain.finance.FinanceSummary
+import com.yandex.school.casheye.domain.finance.GetDailySummaryUseCase
+import com.yandex.school.casheye.domain.finance.TransactionKind
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -46,46 +47,32 @@ class ExpensesViewModelTest {
     }
 
     @Test
-    fun `successful load exposes content`() =
+    fun `successful load exposes content for expenses`() =
         runTest {
-            val summary =
-                ExpensesSummary(
-                    total = BigDecimal("25.00"),
-                    currencyCode = "RUB",
-                    transactions = listOf(transaction()),
-                )
-            val viewModel =
-                ExpensesViewModel(
-                    getExpenses = GetExpensesUseCase(FakeExpensesRepository(ExpensesLoadResult.Success(summary))),
-                    clock = clock,
-                )
+            val summary = FinanceSummary(BigDecimal("25.00"), "RUB", listOf(transaction()))
+            val repository = FakeFinanceRepository(FinanceLoadResult.Success(summary))
+            val viewModel = ExpensesViewModel(GetDailySummaryUseCase(repository), clock)
 
             advanceUntilIdle()
 
             assertEquals(
-                ExpensesUiState.Content(
-                    total = summary.total,
-                    currencyCode = summary.currencyCode,
-                    transactions = summary.transactions,
-                ),
+                ExpensesUiState.Content(summary.total, summary.currencyCode, summary.transactions),
                 viewModel.state.value,
             )
+            assertEquals(listOf(TransactionKind.Expense), repository.requestedKinds)
         }
 
     @Test
-    fun `successful empty load exposes empty state`() =
+    fun `empty load exposes empty state`() =
         runTest {
             val viewModel =
                 ExpensesViewModel(
-                    getExpenses =
-                        GetExpensesUseCase(
-                            FakeExpensesRepository(
-                                ExpensesLoadResult.Success(
-                                    ExpensesSummary(BigDecimal.ZERO, "RUB", emptyList()),
-                                ),
-                            ),
+                    GetDailySummaryUseCase(
+                        FakeFinanceRepository(
+                            FinanceLoadResult.Success(FinanceSummary(BigDecimal.ZERO, "RUB", emptyList())),
                         ),
-                    clock = clock,
+                    ),
+                    clock,
                 )
 
             advanceUntilIdle()
@@ -98,79 +85,52 @@ class ExpensesViewModelTest {
         runTest {
             val viewModel =
                 ExpensesViewModel(
-                    getExpenses =
-                        GetExpensesUseCase(
-                            FakeExpensesRepository(
-                                ExpensesLoadResult.Failure(ExpensesFailureReason.Network),
-                            ),
-                        ),
-                    clock = clock,
+                    GetDailySummaryUseCase(
+                        FakeFinanceRepository(FinanceLoadResult.Failure(FinanceFailureReason.Network)),
+                    ),
+                    clock,
                 )
-            val effect =
-                async(start = CoroutineStart.UNDISPATCHED) {
-                    viewModel.effects.first()
-                }
+            val effect = async(start = CoroutineStart.UNDISPATCHED) { viewModel.effects.first() }
 
             advanceUntilIdle()
 
             assertTrue(viewModel.state.value is ExpensesUiState.Error)
-            assertEquals(
-                ExpensesEffect.ShowError("Проверьте подключение к интернету"),
-                effect.await(),
-            )
+            assertEquals(ExpensesEffect.ShowError("Проверьте подключение к интернету"), effect.await())
         }
 
     @Test
-    fun `retry performs another load`() =
+    fun `selecting date reloads the selected day`() =
         runTest {
             val repository =
-                FakeExpensesRepository(
-                    ExpensesLoadResult.Failure(ExpensesFailureReason.Server),
-                    ExpensesLoadResult.Success(
-                        ExpensesSummary(BigDecimal("25.00"), "RUB", listOf(transaction())),
-                    ),
+                FakeFinanceRepository(
+                    FinanceLoadResult.Success(FinanceSummary(BigDecimal.ZERO, "RUB", emptyList())),
+                    FinanceLoadResult.Success(FinanceSummary(BigDecimal.ZERO, "RUB", emptyList())),
                 )
-            val viewModel = ExpensesViewModel(GetExpensesUseCase(repository), clock)
+            val viewModel = ExpensesViewModel(GetDailySummaryUseCase(repository), clock)
+            val selectedDate = LocalDate.of(2026, 6, 18)
+
+            advanceUntilIdle()
+            viewModel.onIntent(ExpensesIntent.SelectDate(selectedDate))
             advanceUntilIdle()
 
-            viewModel.onIntent(ExpensesIntent.Retry)
-            advanceUntilIdle()
-
-            assertEquals(2, repository.requestedDates.size)
-            assertTrue(viewModel.state.value is ExpensesUiState.Content)
-        }
-
-    @Test
-    fun `load requests the current day from injected clock`() =
-        runTest {
-            val repository =
-                FakeExpensesRepository(
-                    ExpensesLoadResult.Success(
-                        ExpensesSummary(BigDecimal.ZERO, "RUB", emptyList()),
-                    ),
-                )
-
-            ExpensesViewModel(GetExpensesUseCase(repository), clock)
-            advanceUntilIdle()
-
-            assertEquals(listOf(LocalDate.of(2026, 7, 17)), repository.requestedDates)
-            assertEquals(listOf("RUB"), repository.requestedCurrencies)
+            assertEquals(listOf(LocalDate.of(2026, 7, 17), selectedDate), repository.requestedDates)
         }
 }
 
-private class FakeExpensesRepository(
-    vararg results: ExpensesLoadResult,
-) : ExpensesRepository {
+private class FakeFinanceRepository(
+    vararg results: FinanceLoadResult,
+) : FinanceRepository {
     private val results = ArrayDeque(results.toList())
     val requestedDates = mutableListOf<LocalDate>()
-    val requestedCurrencies = mutableListOf<String>()
+    val requestedKinds = mutableListOf<TransactionKind>()
 
-    override suspend fun getExpenses(
+    override suspend fun getDailySummary(
         date: LocalDate,
         currencyCode: String,
-    ): ExpensesLoadResult {
+        transactionKind: TransactionKind,
+    ): FinanceLoadResult {
         requestedDates += date
-        requestedCurrencies += currencyCode
+        requestedKinds += transactionKind
         return results.removeFirst()
     }
 }
@@ -179,7 +139,7 @@ private fun transaction(): Transaction {
     val instant = Instant.parse("2026-07-17T10:00:00Z")
     return Transaction(
         id = 1,
-        account = Account(1, "Основной счёт", emoji = "\uD83D\uDCB5", BigDecimal("1000.00"), "RUB"),
+        account = Account(1, "Основной счёт", "💵", BigDecimal("1000.00"), "RUB"),
         category = Category(1, "Продукты", "🛒", false),
         amount = BigDecimal("25.00"),
         transactionDate = instant,

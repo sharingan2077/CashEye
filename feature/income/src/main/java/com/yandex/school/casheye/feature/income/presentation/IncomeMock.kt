@@ -18,7 +18,7 @@ private val MockAccount =
     )
 
 internal val incomeUiStateMock =
-    IncomeUiState(
+    IncomeUiState.Content(
         total = BigDecimal("323524"),
         currencyCode = CURRENCY_RUB,
         transactions =

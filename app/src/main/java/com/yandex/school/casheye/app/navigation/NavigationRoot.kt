@@ -145,7 +145,12 @@ private fun NavigationContent(
                             snackbarHostState = snackbarHostState,
                         )
                     }
-                    entry<Route.Income> { IncomeRoute() }
+                    entry<Route.Income> {
+                        IncomeRoute(
+                            selectedDate = selectedDate,
+                            snackbarHostState = snackbarHostState,
+                        )
+                    }
                     entry<Route.Account> { AccountsRoute() }
                     entry<Route.Analytics> { AnalyticsRoute() }
                 },
