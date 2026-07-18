@@ -1,15 +1,10 @@
 package com.yandex.school.casheye.feature.expenses.presentation
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.zacsweers.metrox.viewmodel.metroViewModel
@@ -19,11 +14,11 @@ import java.time.LocalDate
 @Composable
 fun ExpensesRoute(
     selectedDate: LocalDate,
+    snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
     viewModel: ExpensesViewModel = metroViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(selectedDate, viewModel) {
         viewModel.onIntent(ExpensesIntent.SelectDate(selectedDate))
@@ -46,14 +41,8 @@ fun ExpensesRoute(
         }
     }
 
-    Box(modifier = modifier.fillMaxSize()) {
-        ExpenseScreen(
-            state = state,
-            onRetry = { viewModel.onIntent(ExpensesIntent.Retry) },
-        )
-        SnackbarHost(
-            hostState = snackbarHostState,
-            modifier = Modifier.align(Alignment.BottomCenter),
-        )
-    }
+    ExpenseScreen(
+        state = state,
+        modifier = modifier,
+    )
 }

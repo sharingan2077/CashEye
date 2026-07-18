@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -30,7 +29,6 @@ import com.yandex.school.casheye.core.model.Transaction
 @Composable
 fun ExpenseScreen(
     state: ExpensesUiState,
-    onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -55,7 +53,6 @@ fun ExpenseScreen(
             is ExpensesUiState.Error -> {
                 ExpensesError(
                     message = state.message,
-                    onRetry = onRetry,
                     modifier = Modifier.align(Alignment.Center),
                 )
             }
@@ -114,7 +111,6 @@ private fun EmptyExpenses(modifier: Modifier = Modifier) {
 @Composable
 private fun ExpensesError(
     message: String,
-    onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -128,9 +124,6 @@ private fun ExpensesError(
             style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center,
         )
-        Button(onClick = onRetry) {
-            Text("Повторить")
-        }
     }
 }
 
@@ -164,7 +157,6 @@ private fun ExpenseScreenPreview() {
         Surface(color = MaterialTheme.colorScheme.background) {
             ExpenseScreen(
                 state = expensesUiStateMock,
-                onRetry = {},
             )
         }
     }

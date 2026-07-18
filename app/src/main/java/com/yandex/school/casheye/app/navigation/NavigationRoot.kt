@@ -7,6 +7,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
@@ -37,6 +39,8 @@ fun NavigationRoot(
     var selectedDateEpochDay by rememberSaveable {
         mutableLongStateOf(LocalDate.now().toEpochDay())
     }
+    val snackbarHostState = remember { SnackbarHostState() }
+
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
     val selectedDate = LocalDate.ofEpochDay(selectedDateEpochDay)
     val navigationState =
@@ -45,10 +49,10 @@ fun NavigationRoot(
             topLevelRoutes = TOP_LEVEL_DESTINATIONS.keys,
         )
     val navigator = remember { Navigator(navigationState) }
-
     NavigationScaffold(
         modifier = modifier,
         navigationState = navigationState,
+        snackbarHostState = snackbarHostState,
         navigator = navigator,
         selectedDate = selectedDate,
         onDateClick = { showDatePicker = true },
@@ -71,6 +75,7 @@ fun NavigationRoot(
 @Composable
 private fun NavigationScaffold(
     navigationState: NavigationState,
+    snackbarHostState: SnackbarHostState,
     navigator: Navigator,
     selectedDate: LocalDate,
     modifier: Modifier = Modifier,
@@ -104,9 +109,15 @@ private fun NavigationScaffold(
         floatingActionButton = {
             if (showBars) FloatingButton(onClick = onAddClick)
         },
+        snackbarHost = {
+            SnackbarHost(
+                hostState = snackbarHostState,
+            )
+        },
     ) { innerPadding ->
         NavigationContent(
             navigationState = navigationState,
+            snackbarHostState = snackbarHostState,
             navigator = navigator,
             selectedDate = selectedDate,
             modifier = Modifier.padding(innerPadding),
@@ -117,6 +128,7 @@ private fun NavigationScaffold(
 @Composable
 private fun NavigationContent(
     navigationState: NavigationState,
+    snackbarHostState: SnackbarHostState,
     navigator: Navigator,
     selectedDate: LocalDate,
     modifier: Modifier = Modifier,
@@ -127,7 +139,12 @@ private fun NavigationContent(
         entries =
             navigationState.toEntries(
                 entryProvider {
-                    entry<Route.Expenses> { ExpensesRoute(selectedDate = selectedDate) }
+                    entry<Route.Expenses> {
+                        ExpensesRoute(
+                            selectedDate = selectedDate,
+                            snackbarHostState = snackbarHostState,
+                        )
+                    }
                     entry<Route.Income> { IncomeRoute() }
                     entry<Route.Account> { AccountsRoute() }
                     entry<Route.Analytics> { AnalyticsRoute() }
