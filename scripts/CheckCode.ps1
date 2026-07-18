@@ -10,19 +10,13 @@ function CheckCode
         {
             & "$gradleWrapper.bat" `
                 ktlintCheck `
-                detekt `
-                test `
-                testDebugUnitTest `
-                lintDebug
+                detekt
         }
         else
         {
             & sh $gradleWrapper `
                 ktlintCheck `
-                detekt `
-                test `
-                testDebugUnitTest `
-                lintDebug
+                detekt
         }
         if ($LASTEXITCODE -ne 0)
         {

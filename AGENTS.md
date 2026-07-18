@@ -1,3 +1,13 @@
+## Code search
+
+For any code search or project exploration in CashEye, use the
+`casheye-code-search` skill first. It defines the Android/Kotlin-specific
+workflow and uses `ast-index` as the primary CLI.
+
+Use the general `ast-index` skill only when the CashEye skill does not cover
+the requested language, command, or workflow. Use `rg` only for string
+literals, comments, regex searches, or when `ast-index` returns no results.
+
 ## Architecture
 
 Project uses multi-module Clean Architecture with MVVM + MVI-style presentation.
@@ -97,29 +107,18 @@ git add app/src/main/java/com/example/data/TransactionRepository.kt
 git commit -m "fix: preserve transaction cache after refresh"
 ```
 
-# ast-index Rules
-
-All commands: `ast-index <command>`
+# Additional ast-index rules
 
 ## Keep Index Up To Date
 
 After `git pull`, `git rebase`, `git checkout`, or `git switch`, run
 `ast-index update`.
 
-For active development, keep the watcher running:
+For active development, run the watcher in a separate terminal:
 
 ```bash
 ast-index watch
-# or, from the current shell:
-ast-index watch &
 ```
-
-## Mandatory Search Rules
-
-1. **ALWAYS use ast-index FIRST** for any code search task.
-2. **NEVER duplicate results** — if ast-index found results, that is the complete answer.
-3. **DO NOT run grep** after ast-index returns results.
-4. Use Grep only when ast-index returns empty or for regex/string-literal search.
 
 ## Mandatory Read Rules
 
@@ -134,7 +133,10 @@ the prompt. Many agent systems do not automatically pass project rules to
 subagents.
 
 ```text
-Use `ast-index` via Bash for code search before grep/Grep:
+For CashEye Android/Kotlin code search, use the `casheye-code-search` skill
+first. It uses `ast-index` as the primary CLI. If the skill is unavailable or
+does not cover the requested workflow, use `ast-index` via Bash before
+grep/Grep:
 - search "query" — universal search
 - file "Name" — find file
 - usages "Name" — find all usages
@@ -148,25 +150,3 @@ Before using the Read tool on any file longer than 500 lines, first run
 `ast-index outline <file>` to get its structure, then Read only the targeted
 slice via offset/limit. Never bulk-read large files.
 ```
-
-## Commands
-
-- **Search:** `search`, `file`, `symbol`, `class` — find files and symbols by name
-- **Usages:** `usages`, `callers`, `call-tree`, `refs` — find where symbols are used
-- **Hierarchy:** `implementations`, `hierarchy`, `extensions` — class hierarchy
-- **Modules:** `module`, `deps`, `dependents`, `api` — module dependencies
-- **Files:** `outline`, `imports`, `changed` — file analysis
-- **iOS:** `storyboard-usages`, `asset-usages`, `asset-unused` — storyboard/asset search
-- **Quality:** `todo`, `deprecated` — find TODOs and deprecated items
-- **Index:** `rebuild`, `update`, `watch`, `stats` — index management
-
-## Common Use Cases
-
-- `ast-index usages "PaymentViewController"` — where is this class used?
-- `ast-index implementations "PaymentProcessing"` — what implements this protocol?
-- `ast-index callers "processPayment"` — what calls this function?
-- `ast-index call-tree "processPayment" -d 3` — call hierarchy
-- `ast-index deps "PaymentFeature"` — module dependencies
-- `ast-index dependents "NetworkKit"` — what depends on this module?
-- `ast-index changed` — what changed in my branch?
-- `ast-index todo` — find all TODOs
