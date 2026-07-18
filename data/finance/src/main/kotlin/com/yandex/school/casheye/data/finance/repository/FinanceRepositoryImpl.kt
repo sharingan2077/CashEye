@@ -4,6 +4,10 @@ import com.yandex.school.casheye.data.finance.api.FinanceApi
 import com.yandex.school.casheye.data.finance.mapper.toDomain
 import com.yandex.school.casheye.domain.finance.AccountsLoadResult
 import com.yandex.school.casheye.domain.finance.AccountsSummary
+import com.yandex.school.casheye.domain.finance.AnalyticsLoadResult
+import com.yandex.school.casheye.domain.finance.AnalyticsQuery
+import com.yandex.school.casheye.domain.finance.AnalyticsSummary
+import com.yandex.school.casheye.domain.finance.AnalyticsTransactionKind
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import com.yandex.school.casheye.domain.finance.FinanceLoadResult
 import com.yandex.school.casheye.domain.finance.FinanceRepository
@@ -30,6 +34,67 @@ class FinanceRepositoryImpl(
     private val api: FinanceApi,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : FinanceRepository {
+    override suspend fun getAnalytics(query: AnalyticsQuery): AnalyticsLoadResult =
+        try {
+            withContext(ioDispatcher) {
+                val accounts = api.getAccounts().map { it.toDomain() }
+                val requestedAccounts =
+                    query.accountId?.let { selectedId -> accounts.filter { it.id == selectedId } } ?: accounts
+                val transactions =
+                    coroutineScope {
+                        requestedAccounts
+                            .map { account ->
+                                async {
+                                    api.getTransactions(
+                                        accountId = account.id,
+                                        startDate = query.startDate.toString(),
+                                        endDate = query.endDate.toString(),
+                                    )
+                                }
+                            }.awaitAll()
+                            .flatten()
+                            .map { it.toDomain() }
+                    }
+                val kindFiltered =
+                    transactions.filter { transaction ->
+                        when (query.transactionKind) {
+                            AnalyticsTransactionKind.Income -> transaction.category.isIncome
+                            AnalyticsTransactionKind.Expense -> !transaction.category.isIncome
+                            AnalyticsTransactionKind.All -> true
+                        }
+                    }
+                val availableCategories =
+                    kindFiltered
+                        .map { it.category }
+                        .distinctBy { it.id }
+                        .sortedBy { it.name }
+                val filtered =
+                    kindFiltered
+                        .filter { transaction ->
+                            query.categoryIds.isEmpty() || transaction.category.id in query.categoryIds
+                        }.sortedByDescending { it.transactionDate }
+
+                AnalyticsLoadResult.Success(
+                    summary =
+                        AnalyticsSummary(
+                            total = filtered.fold(BigDecimal.ZERO) { total, transaction -> total + transaction.amount },
+                            currencyCode = query.currencyCode,
+                            transactions = filtered,
+                            accounts = accounts,
+                            availableCategories = availableCategories,
+                        ),
+                )
+            }
+        } catch (error: CancellationException) {
+            throw error
+        } catch (_: IOException) {
+            AnalyticsLoadResult.Failure(FinanceFailureReason.Network)
+        } catch (error: HttpException) {
+            AnalyticsLoadResult.Failure(error.toFailureReason())
+        } catch (_: Exception) {
+            AnalyticsLoadResult.Failure(FinanceFailureReason.Unknown)
+        }
+
     override suspend fun getDailySummary(
         date: LocalDate,
         currencyCode: String,

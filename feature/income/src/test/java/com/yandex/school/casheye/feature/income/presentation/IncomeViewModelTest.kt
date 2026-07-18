@@ -4,6 +4,8 @@ import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.Category
 import com.yandex.school.casheye.core.model.Transaction
 import com.yandex.school.casheye.domain.finance.AccountsLoadResult
+import com.yandex.school.casheye.domain.finance.AnalyticsLoadResult
+import com.yandex.school.casheye.domain.finance.AnalyticsQuery
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import com.yandex.school.casheye.domain.finance.FinanceLoadResult
 import com.yandex.school.casheye.domain.finance.FinanceRepository
@@ -146,6 +148,10 @@ private class FakeIncomeFinanceRepository(
     }
 
     override suspend fun getAccountsSummary(currencyCode: String): AccountsLoadResult {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getAnalytics(query: AnalyticsQuery): AnalyticsLoadResult {
         TODO("Not yet implemented")
     }
 }

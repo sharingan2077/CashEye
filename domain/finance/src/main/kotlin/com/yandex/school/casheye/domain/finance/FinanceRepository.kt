@@ -1,6 +1,7 @@
 package com.yandex.school.casheye.domain.finance
 
 import com.yandex.school.casheye.core.model.Account
+import com.yandex.school.casheye.core.model.Category
 import com.yandex.school.casheye.core.model.Transaction
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -13,6 +14,41 @@ interface FinanceRepository {
     ): FinanceLoadResult
 
     suspend fun getAccountsSummary(currencyCode: String): AccountsLoadResult
+
+    suspend fun getAnalytics(query: AnalyticsQuery): AnalyticsLoadResult
+}
+
+data class AnalyticsQuery(
+    val startDate: LocalDate,
+    val endDate: LocalDate,
+    val currencyCode: String,
+    val transactionKind: AnalyticsTransactionKind,
+    val accountId: Int?,
+    val categoryIds: Set<Int>,
+)
+
+enum class AnalyticsTransactionKind {
+    Income,
+    Expense,
+    All,
+}
+
+data class AnalyticsSummary(
+    val total: BigDecimal,
+    val currencyCode: String,
+    val transactions: List<Transaction>,
+    val accounts: List<Account>,
+    val availableCategories: List<Category>,
+)
+
+sealed interface AnalyticsLoadResult {
+    data class Success(
+        val summary: AnalyticsSummary,
+    ) : AnalyticsLoadResult
+
+    data class Failure(
+        val reason: FinanceFailureReason,
+    ) : AnalyticsLoadResult
 }
 
 data class AccountsSummary(
