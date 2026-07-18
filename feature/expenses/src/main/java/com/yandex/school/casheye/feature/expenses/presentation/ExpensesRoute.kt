@@ -14,14 +14,20 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.zacsweers.metrox.viewmodel.metroViewModel
 import kotlinx.coroutines.flow.collectLatest
+import java.time.LocalDate
 
 @Composable
 fun ExpensesRoute(
+    selectedDate: LocalDate,
     modifier: Modifier = Modifier,
     viewModel: ExpensesViewModel = metroViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(selectedDate, viewModel) {
+        viewModel.onIntent(ExpensesIntent.SelectDate(selectedDate))
+    }
 
     LaunchedEffect(viewModel, snackbarHostState) {
         viewModel.effects.collectLatest { effect ->

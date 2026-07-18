@@ -4,10 +4,10 @@ import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.Category
 import com.yandex.school.casheye.core.model.Transaction
 import com.yandex.school.casheye.domain.expenses.ExpensesFailureReason
-import com.yandex.school.casheye.domain.expenses.GetExpensesUseCase
 import com.yandex.school.casheye.domain.expenses.ExpensesLoadResult
 import com.yandex.school.casheye.domain.expenses.ExpensesRepository
 import com.yandex.school.casheye.domain.expenses.ExpensesSummary
+import com.yandex.school.casheye.domain.expenses.GetExpensesUseCase
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -78,11 +78,13 @@ class ExpensesViewModelTest {
             val viewModel =
                 ExpensesViewModel(
                     getExpenses =
-                        GetExpensesUseCase(FakeExpensesRepository(
-                            ExpensesLoadResult.Success(
-                                ExpensesSummary(BigDecimal.ZERO, "RUB", emptyList()),
+                        GetExpensesUseCase(
+                            FakeExpensesRepository(
+                                ExpensesLoadResult.Success(
+                                    ExpensesSummary(BigDecimal.ZERO, "RUB", emptyList()),
+                                ),
                             ),
-                        )),
+                        ),
                     clock = clock,
                 )
 
@@ -97,9 +99,11 @@ class ExpensesViewModelTest {
             val viewModel =
                 ExpensesViewModel(
                     getExpenses =
-                        GetExpensesUseCase(FakeExpensesRepository(
-                            ExpensesLoadResult.Failure(ExpensesFailureReason.Network),
-                        )),
+                        GetExpensesUseCase(
+                            FakeExpensesRepository(
+                                ExpensesLoadResult.Failure(ExpensesFailureReason.Network),
+                            ),
+                        ),
                     clock = clock,
                 )
             val effect =
@@ -175,7 +179,7 @@ private fun transaction(): Transaction {
     val instant = Instant.parse("2026-07-17T10:00:00Z")
     return Transaction(
         id = 1,
-        account = Account(1, "Основной счёт", BigDecimal("1000.00"), "RUB"),
+        account = Account(1, "Основной счёт", emoji = "\uD83D\uDCB5", BigDecimal("1000.00"), "RUB"),
         category = Category(1, "Продукты", "🛒", false),
         amount = BigDecimal("25.00"),
         transactionDate = instant,

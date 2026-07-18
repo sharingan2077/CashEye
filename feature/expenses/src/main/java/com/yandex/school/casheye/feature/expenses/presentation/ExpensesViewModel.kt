@@ -29,18 +29,27 @@ class ExpensesViewModel(
     val effects: SharedFlow<ExpensesEffect> = _effects.asSharedFlow()
 
     private var loadJob: Job? = null
+    private var selectedDate = LocalDate.now(clock)
 
     init {
-        loadExpenses()
+        loadExpenses(selectedDate)
     }
 
     fun onIntent(intent: ExpensesIntent) {
         when (intent) {
-            ExpensesIntent.Retry -> loadExpenses()
+            ExpensesIntent.Retry -> loadExpenses(selectedDate)
+            is ExpensesIntent.SelectDate -> selectDate(intent.date)
         }
     }
 
-    private fun loadExpenses() {
+    private fun selectDate(date: LocalDate) {
+        if (date == selectedDate) return
+
+        selectedDate = date
+        loadExpenses(date)
+    }
+
+    private fun loadExpenses(date: LocalDate) {
         loadJob?.cancel()
         loadJob =
             viewModelScope.launch {
@@ -48,7 +57,7 @@ class ExpensesViewModel(
                 when (
                     val result =
                         getExpenses(
-                            date = LocalDate.now(clock),
+                            date = date,
                             currencyCode = CURRENCY_RUB,
                         )
                 ) {

@@ -2,6 +2,7 @@ package com.yandex.school.casheye.feature.expenses.presentation
 
 import com.yandex.school.casheye.core.model.Transaction
 import java.math.BigDecimal
+import java.time.LocalDate
 
 sealed interface ExpensesUiState {
     data object Loading : ExpensesUiState
@@ -21,6 +22,10 @@ sealed interface ExpensesUiState {
 
 sealed interface ExpensesIntent {
     data object Retry : ExpensesIntent
+
+    data class SelectDate(
+        val date: LocalDate,
+    ) : ExpensesIntent
 }
 
 sealed interface ExpensesEffect {

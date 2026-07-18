@@ -6,10 +6,11 @@ function CheckCode
     try
     {
         & .\gradlew.bat `
-            :app:ktlintCheck `
-            :app:detekt `
-            :app:lintDebug
-
+            ktlintCheck `
+            detekt `
+            test `
+            testDebugUnitTest `
+            lintDebug
         if ($LASTEXITCODE -ne 0)
         {
             exit $LASTEXITCODE

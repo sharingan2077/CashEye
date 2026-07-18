@@ -8,7 +8,12 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -19,6 +24,7 @@ import com.yandex.school.casheye.R
 import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
 import com.yandex.school.casheye.feature.accounts.presentation.AccountsRoute
 import com.yandex.school.casheye.feature.analytics.presentation.AnalyticsRoute
+import com.yandex.school.casheye.feature.expenses.presentation.ExpensesDatePickerDialog
 import com.yandex.school.casheye.feature.expenses.presentation.ExpensesRoute
 import com.yandex.school.casheye.feature.income.presentation.IncomeRoute
 import java.time.LocalDate
@@ -28,6 +34,11 @@ fun NavigationRoot(
     modifier: Modifier = Modifier,
     onAddClick: () -> Unit = {},
 ) {
+    var selectedDateEpochDay by rememberSaveable {
+        mutableLongStateOf(LocalDate.now().toEpochDay())
+    }
+    var showDatePicker by rememberSaveable { mutableStateOf(false) }
+    val selectedDate = LocalDate.ofEpochDay(selectedDateEpochDay)
     val navigationState =
         rememberNavigationState(
             startRoute = Route.Expenses,
@@ -39,8 +50,21 @@ fun NavigationRoot(
         modifier = modifier,
         navigationState = navigationState,
         navigator = navigator,
+        selectedDate = selectedDate,
+        onDateClick = { showDatePicker = true },
         onAddClick = onAddClick,
     )
+
+    if (showDatePicker) {
+        ExpensesDatePickerDialog(
+            selectedDate = selectedDate,
+            onDateSelected = { date ->
+                selectedDateEpochDay = date.toEpochDay()
+                showDatePicker = false
+            },
+            onDismiss = { showDatePicker = false },
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -48,7 +72,9 @@ fun NavigationRoot(
 private fun NavigationScaffold(
     navigationState: NavigationState,
     navigator: Navigator,
+    selectedDate: LocalDate,
     modifier: Modifier = Modifier,
+    onDateClick: () -> Unit = {},
     onAddClick: () -> Unit = {},
 ) {
     val currentRoute = navigationState.backStacks[navigationState.topLevelRoute]?.lastOrNull()
@@ -67,7 +93,8 @@ private fun NavigationScaffold(
         topBar = {
             if (showBars) {
                 NavigationTopBar(
-                    date = navigationDate,
+                    date = selectedDate,
+                    onDateClick = onDateClick,
                     onAnalyticsClick = { navigator.navigate(Route.Analytics) },
                 )
             } else {
@@ -81,6 +108,7 @@ private fun NavigationScaffold(
         NavigationContent(
             navigationState = navigationState,
             navigator = navigator,
+            selectedDate = selectedDate,
             modifier = Modifier.padding(innerPadding),
         )
     }
@@ -90,6 +118,7 @@ private fun NavigationScaffold(
 private fun NavigationContent(
     navigationState: NavigationState,
     navigator: Navigator,
+    selectedDate: LocalDate,
     modifier: Modifier = Modifier,
 ) {
     NavDisplay(
@@ -98,7 +127,7 @@ private fun NavigationContent(
         entries =
             navigationState.toEntries(
                 entryProvider {
-                    entry<Route.Expenses> { ExpensesRoute() }
+                    entry<Route.Expenses> { ExpensesRoute(selectedDate = selectedDate) }
                     entry<Route.Income> { IncomeRoute() }
                     entry<Route.Account> { AccountsRoute() }
                     entry<Route.Analytics> { AnalyticsRoute() }
@@ -123,5 +152,3 @@ private fun FloatingButton(onClick: () -> Unit) {
 private fun FloatingButtonPreview() {
     CashEyeTheme(dynamicColor = false) { FloatingButton {} }
 }
-
-private val navigationDate: LocalDate = LocalDate.now()
