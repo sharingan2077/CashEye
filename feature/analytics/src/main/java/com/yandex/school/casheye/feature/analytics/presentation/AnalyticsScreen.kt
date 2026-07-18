@@ -1,5 +1,7 @@
 package com.yandex.school.casheye.feature.analytics.presentation
 
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.ScrollScope
@@ -16,15 +18,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DatePickerDefaults
-import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -32,21 +35,28 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.RadioButton
-import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberDateRangePickerState
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Velocity
@@ -61,10 +71,11 @@ import com.yandex.school.casheye.core.model.Category
 import com.yandex.school.casheye.core.model.Transaction
 import com.yandex.school.casheye.feature.analytics.R
 import java.math.RoundingMode
-import java.time.Instant
+import java.time.DayOfWeek
 import java.time.LocalDate
-import java.time.ZoneOffset
+import java.time.YearMonth
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @Composable
 fun AnalyticsScreen(
@@ -272,7 +283,7 @@ private fun AnalyticsBottomSheet(
         }
 
         AnalyticsSheet.Period -> {
-            PeriodSheet(state.data.filters.period.preset, onIntent)
+            PeriodSheet(state.data.filters.period, onIntent)
         }
 
         is AnalyticsSheet.CustomPeriod -> {
@@ -399,7 +410,7 @@ private fun TypeSheet(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PeriodSheet(
-    selectedPreset: AnalyticsPeriodPreset,
+    period: AnalyticsPeriod,
     onIntent: (AnalyticsIntent) -> Unit,
 ) {
     AnalyticsModalBottomSheet(onDismissRequest = { onIntent(AnalyticsIntent.DismissSheet) }) {
@@ -415,8 +426,21 @@ private fun PeriodSheet(
                         .padding(horizontal = 20.dp, vertical = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(text = preset.title, modifier = Modifier.weight(1f))
-                if (preset == selectedPreset) Text(text = "✓", color = MaterialTheme.colorScheme.primary)
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = preset.title,
+                        fontWeight = FontWeight.Medium,
+                    )
+                    if (preset == AnalyticsPeriodPreset.Custom && period.preset == preset) {
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = period.formatted(),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+                if (preset == period.preset) Text(text = "✓", color = MaterialTheme.colorScheme.primary)
             }
             HorizontalDivider()
         }
@@ -431,50 +455,101 @@ private fun CustomPeriodSheet(
     currentDate: LocalDate,
     onIntent: (AnalyticsIntent) -> Unit,
 ) {
-    val todayMillis = currentDate.toEpochMillis()
-    val selectableDates =
-        remember(todayMillis) {
-            object : SelectableDates {
-                override fun isSelectableDate(utcTimeMillis: Long): Boolean = utcTimeMillis <= todayMillis
+    var selectedStartDate by remember(sheet.startDate) { mutableStateOf(sheet.startDate) }
+    var selectedEndDate by remember(sheet.endDate) { mutableStateOf(sheet.endDate) }
+    val currentMonth = remember(currentDate) { YearMonth.from(currentDate) }
+    val latestFirstMonth = remember(currentMonth) { currentMonth.minusMonths(1) }
+    var firstVisibleMonth by
+    remember(sheet.startDate, currentDate) {
+        val selectedMonth = sheet.startDate?.let(YearMonth::from) ?: latestFirstMonth
+        mutableStateOf(minOf(selectedMonth, latestFirstMonth))
+    }
+    val valid = selectedStartDate != null && selectedEndDate != null && selectedEndDate!! <= currentDate
+
+    AnalyticsModalBottomSheet(onDismissRequest = { onIntent(AnalyticsIntent.DismissSheet) }) {
+        Text(
+            text = "Произвольный период",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(start = 24.dp, top = 8.dp, end = 24.dp, bottom = 14.dp),
+        )
+        DateRangeFields(
+            startDate = selectedStartDate,
+            endDate = selectedEndDate,
+            modifier = Modifier.padding(horizontal = 24.dp),
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+        LazyColumn(
+            modifier = Modifier.fillMaxWidth().heightIn(max = 400.dp),
+        ) {
+            item {
+                CalendarMonthHeader(
+                    month = firstVisibleMonth,
+                    canNavigateForward = firstVisibleMonth < latestFirstMonth,
+                    onPrevious = { firstVisibleMonth = firstVisibleMonth.minusMonths(1) },
+                    onNext = { firstVisibleMonth = firstVisibleMonth.plusMonths(1) },
+                )
+            }
+            item { CalendarWeekdays(modifier = Modifier.padding(horizontal = 44.dp)) }
+            item {
+                CalendarMonthGrid(
+                    month = firstVisibleMonth,
+                    currentDate = currentDate,
+                    selectedStartDate = selectedStartDate,
+                    selectedEndDate = selectedEndDate,
+                    onDateClick = { date ->
+                        val selection = selectRangeDate(date, selectedStartDate, selectedEndDate)
+                        selectedStartDate = selection.first
+                        selectedEndDate = selection.second
+                    },
+                    modifier = Modifier.padding(horizontal = 44.dp),
+                )
+            }
+            item {
+                Text(
+                    text = firstVisibleMonth.plusMonths(1).formattedMonth(),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 8.dp),
+                )
+            }
+            item { CalendarWeekdays(modifier = Modifier.padding(horizontal = 44.dp)) }
+            item {
+                CalendarMonthGrid(
+                    month = firstVisibleMonth.plusMonths(1),
+                    currentDate = currentDate,
+                    selectedStartDate = selectedStartDate,
+                    selectedEndDate = selectedEndDate,
+                    onDateClick = { date ->
+                        val selection = selectRangeDate(date, selectedStartDate, selectedEndDate)
+                        selectedStartDate = selection.first
+                        selectedEndDate = selection.second
+                    },
+                    modifier = Modifier.padding(horizontal = 44.dp),
+                )
             }
         }
-    val pickerState =
-        rememberDateRangePickerState(
-            initialSelectedStartDateMillis = sheet.startDate?.toEpochMillis(),
-            initialSelectedEndDateMillis = sheet.endDate?.toEpochMillis(),
-            selectableDates = selectableDates,
-        )
-    val valid =
-        pickerState.selectedStartDateMillis != null &&
-            pickerState.selectedEndDateMillis != null &&
-            pickerState.selectedEndDateMillis!! <= todayMillis
-    AnalyticsModalBottomSheet(onDismissRequest = { onIntent(AnalyticsIntent.DismissSheet) }) {
-        SheetTitle("Произвольный период")
-        DateRangePicker(
-            state = pickerState,
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 520.dp),
-            colors = DatePickerDefaults.colors(),
-        )
         Row(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
+                    .padding(start = 24.dp, top = 12.dp, end = 24.dp, bottom = 16.dp),
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Button(onClick = { onIntent(AnalyticsIntent.DismissSheet) }) { Text("Отмена") }
-            Spacer(modifier = Modifier.size(8.dp))
+            TextButton(onClick = { onIntent(AnalyticsIntent.DismissSheet) }) { Text("Отмена") }
+            Spacer(modifier = Modifier.width(12.dp))
             Button(
                 enabled = valid,
+                shape = RoundedCornerShape(20.dp),
+                contentPadding = ButtonDefaults.ContentPadding,
+                modifier = Modifier.height(40.dp).width(124.dp),
                 onClick = {
                     onIntent(
                         AnalyticsIntent.UpdateCustomPeriod(
-                            pickerState.selectedStartDateMillis?.toLocalDate(),
-                            pickerState.selectedEndDateMillis?.toLocalDate(),
+                            selectedStartDate,
+                            selectedEndDate,
                         ),
                     )
                     onIntent(AnalyticsIntent.ApplyCustomPeriod)
@@ -483,6 +558,225 @@ private fun CustomPeriodSheet(
         }
     }
 }
+
+@Composable
+private fun DateRangeFields(
+    startDate: LocalDate?,
+    endDate: LocalDate?,
+    modifier: Modifier = Modifier,
+) {
+    Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        DateField(startDate, Modifier.weight(1f))
+        Text(
+            text = "–",
+            color = MaterialTheme.colorScheme.outline,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.width(36.dp),
+        )
+        DateField(endDate, Modifier.weight(1f))
+    }
+}
+
+@Composable
+private fun DateField(
+    date: LocalDate?,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier =
+            modifier
+                .height(40.dp)
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
+                .padding(horizontal = 8.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = date?.format(CALENDAR_DATE_FORMATTER).orEmpty(),
+            style = MaterialTheme.typography.bodyMedium,
+            maxLines = 1,
+        )
+    }
+}
+
+@Composable
+private fun CalendarMonthHeader(
+    month: YearMonth,
+    canNavigateForward: Boolean,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        CalendarNavigationButton(pointsRight = false, enabled = true, onClick = onPrevious)
+        Text(
+            text = month.formattedMonth(),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.weight(1f),
+        )
+        CalendarNavigationButton(pointsRight = true, enabled = canNavigateForward, onClick = onNext)
+    }
+}
+
+@Composable
+private fun CalendarNavigationButton(
+    pointsRight: Boolean,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    val color = MaterialTheme.colorScheme.onSurface
+    Box(
+        modifier =
+            Modifier
+                .size(48.dp)
+                .alpha(if (enabled) 1f else 0.38f)
+                .clickable(enabled = enabled, role = Role.Button, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Canvas(modifier = Modifier.size(16.dp)) {
+            val xStart = if (pointsRight) size.width * 0.35f else size.width * 0.65f
+            val xEnd = if (pointsRight) size.width * 0.65f else size.width * 0.35f
+            drawLine(
+                color = color,
+                start = Offset(xStart, size.height * 0.2f),
+                end = Offset(xEnd, size.height * 0.5f),
+                strokeWidth = 2.dp.toPx(),
+                cap = StrokeCap.Round,
+            )
+            drawLine(
+                color = color,
+                start = Offset(xEnd, size.height * 0.5f),
+                end = Offset(xStart, size.height * 0.8f),
+                strokeWidth = 2.dp.toPx(),
+                cap = StrokeCap.Round,
+            )
+        }
+    }
+}
+
+@Composable
+private fun CalendarWeekdays(modifier: Modifier = Modifier) {
+    Row(modifier = modifier.fillMaxWidth()) {
+        CALENDAR_WEEKDAYS.forEach { day ->
+            Text(
+                text = day,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.weight(1f).padding(vertical = 4.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun CalendarMonthGrid(
+    month: YearMonth,
+    currentDate: LocalDate,
+    selectedStartDate: LocalDate?,
+    selectedEndDate: LocalDate?,
+    onDateClick: (LocalDate) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val firstDayOffset = month.atDay(1).dayOfWeek.value - DayOfWeek.MONDAY.value
+    val numberOfWeeks = (firstDayOffset + month.lengthOfMonth() + 6) / 7
+    Column(modifier = modifier.fillMaxWidth()) {
+        repeat(numberOfWeeks) { week ->
+            Row(modifier = Modifier.fillMaxWidth()) {
+                repeat(7) { weekday ->
+                    val day = week * 7 + weekday - firstDayOffset + 1
+                    if (day in 1..month.lengthOfMonth()) {
+                        val date = month.atDay(day)
+                        CalendarDay(
+                            date = date,
+                            enabled = date <= currentDate,
+                            isStart = date == selectedStartDate,
+                            isEnd = date == selectedEndDate,
+                            isInRange =
+                                selectedStartDate != null &&
+                                    selectedEndDate != null &&
+                                    date > selectedStartDate &&
+                                    date < selectedEndDate,
+                            hasRangeBefore = selectedStartDate != null && date > selectedStartDate,
+                            hasRangeAfter = selectedEndDate != null && date < selectedEndDate,
+                            onClick = { onDateClick(date) },
+                            modifier = Modifier.weight(1f),
+                        )
+                    } else {
+                        Spacer(modifier = Modifier.weight(1f).height(40.dp))
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CalendarDay(
+    date: LocalDate,
+    enabled: Boolean,
+    isStart: Boolean,
+    isEnd: Boolean,
+    isInRange: Boolean,
+    hasRangeBefore: Boolean,
+    hasRangeAfter: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val rangeColor = MaterialTheme.colorScheme.primaryContainer
+    val selectionColor = MaterialTheme.colorScheme.primary
+    Box(
+        modifier =
+            modifier
+                .height(40.dp)
+                .drawBehind {
+                    when {
+                        isInRange -> drawRect(rangeColor)
+                        isStart && isEnd -> Unit
+                        isStart && hasRangeAfter -> {
+                            drawRect(rangeColor, topLeft = Offset(size.width / 2f, 0f))
+                        }
+
+                        isEnd && hasRangeBefore -> {
+                            drawRect(rangeColor, size = Size(size.width / 2f, size.height))
+                        }
+                    }
+                    if (isStart || isEnd) {
+                        drawCircle(selectionColor, radius = size.minDimension / 2f)
+                    }
+                }
+                .clickable(enabled = enabled, role = Role.Button, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = date.dayOfMonth.toString(),
+            style = MaterialTheme.typography.bodyMedium,
+            color =
+                when {
+                    isStart || isEnd -> MaterialTheme.colorScheme.onPrimary
+                    enabled -> MaterialTheme.colorScheme.onSurface
+                    else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                },
+        )
+    }
+}
+
+private fun selectRangeDate(
+    date: LocalDate,
+    selectedStartDate: LocalDate?,
+    selectedEndDate: LocalDate?,
+): Pair<LocalDate, LocalDate?> =
+    when {
+        selectedStartDate == null || selectedEndDate != null -> date to null
+        date < selectedStartDate -> date to null
+        else -> selectedStartDate to date
+    }
+
+private fun YearMonth.formattedMonth(): String =
+    atDay(1).format(CALENDAR_MONTH_FORMATTER).replaceFirstChar { it.titlecase(CALENDAR_LOCALE) }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -726,8 +1020,10 @@ private fun categoriesTitle(
     }
 }
 
-private fun LocalDate.toEpochMillis(): Long = atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
-
-private fun Long.toLocalDate(): LocalDate = Instant.ofEpochMilli(this).atZone(ZoneOffset.UTC).toLocalDate()
-
 private val DATE_FORMATTER = DateTimeFormatter.ofPattern("dd.MM.yyyy")
+private val CALENDAR_LOCALE: Locale = Locale.forLanguageTag("ru")
+private val CALENDAR_DATE_FORMATTER: DateTimeFormatter =
+    DateTimeFormatter.ofPattern("d MMM. yyyy", CALENDAR_LOCALE)
+private val CALENDAR_MONTH_FORMATTER: DateTimeFormatter =
+    DateTimeFormatter.ofPattern("LLLL yyyy", CALENDAR_LOCALE)
+private val CALENDAR_WEEKDAYS = listOf("Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс")
