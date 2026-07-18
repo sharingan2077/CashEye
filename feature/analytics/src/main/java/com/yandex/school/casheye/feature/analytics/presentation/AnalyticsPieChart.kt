@@ -31,35 +31,38 @@ import com.yandex.school.casheye.core.designsystem.theme.ChartPink
 import com.yandex.school.casheye.core.designsystem.theme.ChartPurple
 import com.yandex.school.casheye.core.designsystem.theme.ChartTeal
 
-private val chartColors = listOf(ChartPurple, ChartTeal, ChartPink)
+private val chartPalette = listOf(ChartPurple, ChartTeal, ChartPink)
 
 @Composable
 fun AnalyticsPieChart(
     total: String,
-    articles: Map<String, Int>,
+    categories: List<AnalyticsCategorySummary>,
     modifier: Modifier = Modifier,
+    showLegend: Boolean = true,
 ) {
     val modelProducer = remember { PieChartModelProducer() }
-    LaunchedEffect(articles) {
-        modelProducer.runTransaction { pieSeries { series(articles.values) } }
+    val colors = categories.map { analyticsColorForCategory(it.category.id) }
+    LaunchedEffect(categories) {
+        modelProducer.runTransaction { pieSeries { series(categories.map { it.amount }) } }
     }
 
     Column(
         modifier =
             modifier
                 .fillMaxWidth()
-                .padding(bottom = 32.dp, top = 32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+                .padding(vertical = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(24.dp),
     ) {
-        PieChartWithTotal(total = total, modelProducer = modelProducer)
-        AnalyticsLegend(articles = articles)
+        PieChartWithTotal(total = total, colors = colors, modelProducer = modelProducer)
+        if (showLegend) AnalyticsLegend(categories = categories, colors = colors)
     }
 }
 
 @Composable
 private fun PieChartWithTotal(
     total: String,
+    colors: List<Color>,
     modelProducer: PieChartModelProducer,
 ) {
     Box(modifier = Modifier.size(220.dp), contentAlignment = Alignment.Center) {
@@ -68,65 +71,68 @@ private fun PieChartWithTotal(
                 rememberPieChart(
                     sliceProvider =
                         PieChart.SliceProvider.series(
-                            chartColors.map { color -> PieChart.Slice(fill = Fill(color)) },
+                            colors.map { color -> PieChart.Slice(fill = Fill(color)) },
                         ),
                     innerSize = PieSize.Inner.fixed(172.dp),
                 ),
             modelProducer = modelProducer,
             modifier = Modifier.size(220.dp),
         )
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 text = "Всего за период",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.labelLarge,
             )
-            Text(
-                text = total,
-                color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.headlineMedium,
-            )
+            Text(text = total, style = MaterialTheme.typography.headlineMedium)
         }
     }
 }
 
 @Composable
-private fun AnalyticsLegend(articles: Map<String, Int>) {
+private fun AnalyticsLegend(
+    categories: List<AnalyticsCategorySummary>,
+    colors: List<Color>,
+) {
     FlowRow(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        articles.keys.forEachIndexed { index, article ->
-            LegendItem(title = article, color = chartColors[index % chartColors.size])
+        categories.forEachIndexed { index, summary ->
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Spacer(
+                    modifier =
+                        Modifier
+                            .size(12.dp)
+                            .background(colors[index], CircleShape),
+                )
+                Text(
+                    text = summary.category.name,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.labelLarge,
+                )
+            }
         }
     }
 }
 
-@Composable
-private fun LegendItem(
-    title: String,
-    color: Color,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Spacer(
-            modifier =
-                Modifier
-                    .size(12.dp)
-                    .background(color, CircleShape),
-        )
-        Text(
-            text = title,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.labelLarge,
-        )
-    }
+internal fun analyticsColorForCategory(categoryId: Int): Color {
+    val hash = categoryId * GOLDEN_RATIO_HASH
+    val bucket = (hash.toLong() and UINT_MASK).rem(COLOR_BUCKETS).toInt()
+    if (bucket < chartPalette.size) return chartPalette[bucket]
+
+    val hue = (hash.toLong() and UINT_MASK).rem(FULL_HUE).toFloat()
+    return Color.hsv(hue = hue, saturation = 0.58f, value = 0.88f)
 }
+
+private const val GOLDEN_RATIO_HASH = -1640531527
+private const val UINT_MASK = 0xffffffffL
+private const val COLOR_BUCKETS = 12L
+private const val FULL_HUE = 360L

@@ -15,5 +15,14 @@ sealed interface Route : NavKey {
     data object Account : Route
 
     @Serializable
-    data object Analytics : Route
+    data class Analytics(
+        val entryPoint: AnalyticsRouteEntryPoint,
+    ) : Route
+}
+
+@Serializable
+enum class AnalyticsRouteEntryPoint {
+    Expenses,
+    Income,
+    Accounts,
 }

@@ -25,6 +25,7 @@ import androidx.navigation3.ui.NavDisplay
 import com.yandex.school.casheye.R
 import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
 import com.yandex.school.casheye.feature.accounts.presentation.AccountsRoute
+import com.yandex.school.casheye.feature.analytics.presentation.AnalyticsEntryPoint
 import com.yandex.school.casheye.feature.analytics.presentation.AnalyticsRoute
 import com.yandex.school.casheye.feature.expenses.presentation.ExpensesDatePickerDialog
 import com.yandex.school.casheye.feature.expenses.presentation.ExpensesRoute
@@ -83,7 +84,7 @@ private fun NavigationScaffold(
     onAddClick: () -> Unit = {},
 ) {
     val currentRoute = navigationState.backStacks[navigationState.topLevelRoute]?.lastOrNull()
-    val showBars = currentRoute != Route.Analytics
+    val showBars = currentRoute !is Route.Analytics
 
     Scaffold(
         modifier = modifier,
@@ -100,7 +101,11 @@ private fun NavigationScaffold(
                 NavigationTopBar(
                     date = selectedDate,
                     onDateClick = onDateClick,
-                    onAnalyticsClick = { navigator.navigate(Route.Analytics) },
+                    onAnalyticsClick = {
+                        navigator.navigate(
+                            Route.Analytics(navigationState.topLevelRoute.toAnalyticsEntryPoint()),
+                        )
+                    },
                 )
             } else {
                 ArrowTopBar(title = "Аналитика", onBackClick = navigator::goBack)
@@ -156,11 +161,30 @@ private fun NavigationContent(
                             snackbarHostState = snackbarHostState,
                         )
                     }
-                    entry<Route.Analytics> { AnalyticsRoute() }
+                    entry<Route.Analytics> { route ->
+                        AnalyticsRoute(
+                            entryPoint = route.entryPoint.toFeatureEntryPoint(),
+                            snackbarHostState = snackbarHostState,
+                        )
+                    }
                 },
             ),
     )
 }
+
+private fun androidx.navigation3.runtime.NavKey.toAnalyticsEntryPoint(): AnalyticsRouteEntryPoint =
+    when (this) {
+        Route.Income -> AnalyticsRouteEntryPoint.Income
+        Route.Account -> AnalyticsRouteEntryPoint.Accounts
+        else -> AnalyticsRouteEntryPoint.Expenses
+    }
+
+private fun AnalyticsRouteEntryPoint.toFeatureEntryPoint(): AnalyticsEntryPoint =
+    when (this) {
+        AnalyticsRouteEntryPoint.Expenses -> AnalyticsEntryPoint.Expenses
+        AnalyticsRouteEntryPoint.Income -> AnalyticsEntryPoint.Income
+        AnalyticsRouteEntryPoint.Accounts -> AnalyticsEntryPoint.Accounts
+    }
 
 @Composable
 private fun FloatingButton(onClick: () -> Unit) {
