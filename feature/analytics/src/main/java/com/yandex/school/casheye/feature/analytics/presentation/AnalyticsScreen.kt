@@ -1,9 +1,13 @@
 package com.yandex.school.casheye.feature.analytics.presentation
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.FlingBehavior
+import androidx.compose.foundation.gestures.ScrollScope
+import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,7 +17,9 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
@@ -29,15 +35,21 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDateRangePickerState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.yandex.school.casheye.core.designsystem.component.EmojiCircle
@@ -283,11 +295,95 @@ private fun AnalyticsBottomSheet(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+private fun AnalyticsModalBottomSheet(
+    onDismissRequest: () -> Unit,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(
+        onDismissRequest = onDismissRequest,
+        sheetState = sheetState,
+        content = content,
+    )
+}
+
+private class SheetDragBlockingNestedScrollConnection(
+    private val listState: LazyListState,
+    private val listFlingBehavior: FlingBehavior,
+) : NestedScrollConnection,
+    FlingBehavior {
+    private var userGestureInProgress = false
+    private var blockSheetForGesture = true
+
+    override fun onPreScroll(
+        available: Offset,
+        source: NestedScrollSource,
+    ): Offset {
+        if (
+            source == NestedScrollSource.UserInput &&
+            !userGestureInProgress &&
+            available.y != 0f
+        ) {
+            userGestureInProgress = true
+            blockSheetForGesture = listState.canScrollBackward || available.y < 0f
+        }
+        return Offset.Zero
+    }
+
+    override fun onPostScroll(
+        consumed: Offset,
+        available: Offset,
+        source: NestedScrollSource,
+    ): Offset =
+        if (source != NestedScrollSource.UserInput || blockSheetForGesture) {
+            Offset(x = 0f, y = available.y)
+        } else {
+            Offset.Zero
+        }
+
+    override suspend fun onPostFling(
+        consumed: Velocity,
+        available: Velocity,
+    ): Velocity {
+        val consumedVelocity =
+            if (userGestureInProgress && !blockSheetForGesture) {
+                Velocity.Zero
+            } else {
+                Velocity(x = 0f, y = available.y)
+            }
+        userGestureInProgress = false
+        blockSheetForGesture = true
+        return consumedVelocity
+    }
+
+    override suspend fun ScrollScope.performFling(initialVelocity: Float): Float {
+        if (userGestureInProgress && !blockSheetForGesture) return initialVelocity
+
+        val scrollScope = this
+        return with(listFlingBehavior) {
+            scrollScope.performFling(initialVelocity)
+        }
+    }
+}
+
+@Composable
+private fun rememberSheetListGestureCoordinator(listState: LazyListState): SheetDragBlockingNestedScrollConnection {
+    val listFlingBehavior = ScrollableDefaults.flingBehavior()
+    return remember(listState, listFlingBehavior) {
+        SheetDragBlockingNestedScrollConnection(
+            listState = listState,
+            listFlingBehavior = listFlingBehavior,
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
 private fun TypeSheet(
     sheet: AnalyticsSheet.Type,
     onIntent: (AnalyticsIntent) -> Unit,
 ) {
-    ModalBottomSheet(onDismissRequest = { onIntent(AnalyticsIntent.DismissSheet) }) {
+    AnalyticsModalBottomSheet(onDismissRequest = { onIntent(AnalyticsIntent.DismissSheet) }) {
         SheetTitle("Тип")
         AnalyticsType.entries.forEach { type ->
             SelectionRow(
@@ -306,7 +402,7 @@ private fun PeriodSheet(
     selectedPreset: AnalyticsPeriodPreset,
     onIntent: (AnalyticsIntent) -> Unit,
 ) {
-    ModalBottomSheet(onDismissRequest = { onIntent(AnalyticsIntent.DismissSheet) }) {
+    AnalyticsModalBottomSheet(onDismissRequest = { onIntent(AnalyticsIntent.DismissSheet) }) {
         SheetTitle("Период")
         AnalyticsPeriodPreset.entries.forEach { preset ->
             Row(
@@ -315,7 +411,8 @@ private fun PeriodSheet(
                         .fillMaxWidth()
                         .clickable {
                             onIntent(AnalyticsIntent.SelectPeriodPreset(preset))
-                        }.padding(horizontal = 20.dp, vertical = 16.dp),
+                        }
+                        .padding(horizontal = 20.dp, vertical = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(text = preset.title, modifier = Modifier.weight(1f))
@@ -351,7 +448,7 @@ private fun CustomPeriodSheet(
         pickerState.selectedStartDateMillis != null &&
             pickerState.selectedEndDateMillis != null &&
             pickerState.selectedEndDateMillis!! <= todayMillis
-    ModalBottomSheet(onDismissRequest = { onIntent(AnalyticsIntent.DismissSheet) }) {
+    AnalyticsModalBottomSheet(onDismissRequest = { onIntent(AnalyticsIntent.DismissSheet) }) {
         SheetTitle("Произвольный период")
         DateRangePicker(
             state = pickerState,
@@ -394,13 +491,19 @@ private fun CategoriesSheet(
     categories: List<Category>,
     onIntent: (AnalyticsIntent) -> Unit,
 ) {
-    ModalBottomSheet(onDismissRequest = { onIntent(AnalyticsIntent.DismissSheet) }) {
+    val listState = rememberLazyListState()
+    val gestureCoordinator = rememberSheetListGestureCoordinator(listState)
+    AnalyticsModalBottomSheet(onDismissRequest = { onIntent(AnalyticsIntent.DismissSheet) }) {
         SheetTitle("Статьи")
         LazyColumn(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .heightIn(max = 440.dp),
+                    .heightIn(max = 440.dp)
+                    .nestedScroll(gestureCoordinator),
+            state = listState,
+            flingBehavior = gestureCoordinator,
+            overscrollEffect = null,
         ) {
             items(categories, key = Category::id) { category ->
                 Row(
@@ -409,7 +512,8 @@ private fun CategoriesSheet(
                             .fillMaxWidth()
                             .clickable {
                                 onIntent(AnalyticsIntent.ToggleDraftCategory(category.id))
-                            }.padding(horizontal = 20.dp, vertical = 8.dp),
+                            }
+                            .padding(horizontal = 20.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     EmojiCircle(emoji = category.emoji)
@@ -438,13 +542,19 @@ private fun AccountSheet(
     data: AnalyticsScreenData,
     onIntent: (AnalyticsIntent) -> Unit,
 ) {
-    ModalBottomSheet(onDismissRequest = { onIntent(AnalyticsIntent.DismissSheet) }) {
+    val listState = rememberLazyListState()
+    val gestureCoordinator = rememberSheetListGestureCoordinator(listState)
+    AnalyticsModalBottomSheet(onDismissRequest = { onIntent(AnalyticsIntent.DismissSheet) }) {
         SheetTitle("Счёт")
         LazyColumn(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .heightIn(max = 440.dp),
+                    .heightIn(max = 440.dp)
+                    .nestedScroll(gestureCoordinator),
+            state = listState,
+            flingBehavior = gestureCoordinator,
+            overscrollEffect = null,
         ) {
             item {
                 AccountRow(
@@ -473,13 +583,19 @@ private fun DetailsSheet(
     state: AnalyticsUiState.Content,
     onIntent: (AnalyticsIntent) -> Unit,
 ) {
-    ModalBottomSheet(onDismissRequest = { onIntent(AnalyticsIntent.DismissSheet) }) {
+    val listState = rememberLazyListState()
+    val gestureCoordinator = rememberSheetListGestureCoordinator(listState)
+    AnalyticsModalBottomSheet(onDismissRequest = { onIntent(AnalyticsIntent.DismissSheet) }) {
         SheetTitle("Детализация")
         LazyColumn(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .heightIn(max = 720.dp),
+                    .heightIn(max = 720.dp)
+                    .nestedScroll(gestureCoordinator),
+            state = listState,
+            flingBehavior = gestureCoordinator,
+            overscrollEffect = null,
         ) {
             item {
                 AnalyticsPieChart(
