@@ -1,6 +1,8 @@
 package com.yandex.school.casheye.feature.accounts.presentation
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -8,38 +10,62 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.yandex.school.casheye.core.designsystem.component.MoneyListItem
 import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
 import com.yandex.school.casheye.core.format.formatAmount
-import com.yandex.school.casheye.core.model.Account
-import java.math.BigDecimal
-
-data class AccountsUiState(
-    val total: BigDecimal,
-    val currencyCode: String,
-    val accounts: List<Account>,
-)
 
 @Composable
-fun AccountScreen(
+fun AccountsScreen(
     state: AccountsUiState,
     modifier: Modifier = Modifier,
 ) {
-    Column(
+    Box(
         modifier =
             modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background),
     ) {
-        AccountHero(
+        when (state) {
+            AccountsUiState.Loading -> {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+            }
+
+            AccountsUiState.Empty -> {
+                EmptyAccounts(modifier = Modifier.align(Alignment.Center))
+            }
+
+            is AccountsUiState.Content -> {
+                AccountsContent(state = state)
+            }
+
+            is AccountsUiState.Error -> {
+                AccountsError(
+                    message = state.message,
+                    modifier = Modifier.align(Alignment.Center),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AccountsContent(
+    state: AccountsUiState.Content,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier.fillMaxSize()) {
+        AccountsHero(
             total =
                 formatAmount(
                     amount = state.total,
@@ -71,7 +97,37 @@ fun AccountScreen(
 }
 
 @Composable
-private fun AccountHero(total: String) {
+private fun EmptyAccounts(modifier: Modifier = Modifier) {
+    Text(
+        text = "Счетов нет",
+        modifier = modifier.padding(24.dp),
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        style = MaterialTheme.typography.bodyLarge,
+        textAlign = TextAlign.Center,
+    )
+}
+
+@Composable
+private fun AccountsError(
+    message: String,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(
+            text = message,
+            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.bodyLarge,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+@Composable
+private fun AccountsHero(total: String) {
     Column(
         modifier =
             Modifier
@@ -95,10 +151,10 @@ private fun AccountHero(total: String) {
 
 @Preview(showBackground = true, widthDp = 412, heightDp = 892)
 @Composable
-private fun AccountScreenPreview() {
+private fun AccountsScreenPreview() {
     CashEyeTheme(dynamicColor = false) {
         Surface(color = MaterialTheme.colorScheme.background) {
-            AccountScreen(state = accountsUiStateMock)
+            AccountsScreen(state = accountsUiStateMock)
         }
     }
 }

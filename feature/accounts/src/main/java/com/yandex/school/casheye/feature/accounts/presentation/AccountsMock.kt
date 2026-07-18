@@ -6,7 +6,7 @@ import java.math.BigDecimal
 private const val CURRENCY_RUB = "RUB"
 
 internal val accountsUiStateMock =
-    AccountsUiState(
+    AccountsUiState.Content(
         total = BigDecimal("1322444"),
         currencyCode = CURRENCY_RUB,
         accounts =

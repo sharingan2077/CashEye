@@ -30,6 +30,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.kotlinx.coroutines.android)
     implementation(libs.metro.runtime)
     implementation(libs.metro.viewmodel.compose)
     debugImplementation(libs.androidx.compose.ui.tooling)

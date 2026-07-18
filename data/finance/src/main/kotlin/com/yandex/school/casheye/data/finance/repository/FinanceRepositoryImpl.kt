@@ -2,6 +2,8 @@ package com.yandex.school.casheye.data.finance.repository
 
 import com.yandex.school.casheye.data.finance.api.FinanceApi
 import com.yandex.school.casheye.data.finance.mapper.toDomain
+import com.yandex.school.casheye.domain.finance.AccountsLoadResult
+import com.yandex.school.casheye.domain.finance.AccountsSummary
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import com.yandex.school.casheye.domain.finance.FinanceLoadResult
 import com.yandex.school.casheye.domain.finance.FinanceRepository
@@ -79,6 +81,32 @@ class FinanceRepositoryImpl(
             FinanceLoadResult.Failure(error.toFailureReason())
         } catch (_: Exception) {
             FinanceLoadResult.Failure(FinanceFailureReason.Unknown)
+        }
+
+    override suspend fun getAccountsSummary(currencyCode: String): AccountsLoadResult =
+        try {
+            withContext(ioDispatcher) {
+                val accounts = api.getAccounts().map { it.toDomain() }
+                AccountsLoadResult.Success(
+                    summary =
+                        AccountsSummary(
+                            total =
+                                accounts.fold(BigDecimal.ZERO) { total, account ->
+                                    total + account.balance
+                                },
+                            currencyCode = currencyCode,
+                            accounts = accounts,
+                        ),
+                )
+            }
+        } catch (error: CancellationException) {
+            throw error
+        } catch (_: IOException) {
+            AccountsLoadResult.Failure(FinanceFailureReason.Network)
+        } catch (error: HttpException) {
+            AccountsLoadResult.Failure(error.toFailureReason())
+        } catch (_: Exception) {
+            AccountsLoadResult.Failure(FinanceFailureReason.Unknown)
         }
 }
 

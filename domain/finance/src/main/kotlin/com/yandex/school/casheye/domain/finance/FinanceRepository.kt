@@ -1,5 +1,6 @@
 package com.yandex.school.casheye.domain.finance
 
+import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.Transaction
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -10,6 +11,24 @@ interface FinanceRepository {
         currencyCode: String,
         transactionKind: TransactionKind,
     ): FinanceLoadResult
+
+    suspend fun getAccountsSummary(currencyCode: String): AccountsLoadResult
+}
+
+data class AccountsSummary(
+    val total: BigDecimal,
+    val currencyCode: String,
+    val accounts: List<Account>,
+)
+
+sealed interface AccountsLoadResult {
+    data class Success(
+        val summary: AccountsSummary,
+    ) : AccountsLoadResult
+
+    data class Failure(
+        val reason: FinanceFailureReason,
+    ) : AccountsLoadResult
 }
 
 enum class TransactionKind {

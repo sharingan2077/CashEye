@@ -3,6 +3,7 @@ package com.yandex.school.casheye.feature.expenses.presentation
 import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.Category
 import com.yandex.school.casheye.core.model.Transaction
+import com.yandex.school.casheye.domain.finance.AccountsLoadResult
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import com.yandex.school.casheye.domain.finance.FinanceLoadResult
 import com.yandex.school.casheye.domain.finance.FinanceRepository
@@ -132,6 +133,10 @@ private class FakeFinanceRepository(
         requestedDates += date
         requestedKinds += transactionKind
         return results.removeFirst()
+    }
+
+    override suspend fun getAccountsSummary(currencyCode: String): AccountsLoadResult {
+        TODO("Not yet implemented")
     }
 }
 
