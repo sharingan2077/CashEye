@@ -8,7 +8,6 @@ import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.ScrollScope
 import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
@@ -31,6 +30,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.RadioButton
@@ -42,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -392,10 +393,11 @@ private fun DetailsCategoryRow(
 ) {
     val fraction =
         if (total.signum() == 0) {
-            0f
+            BigDecimal.ZERO
         } else {
-            summary.amount.divide(total, 4, RoundingMode.HALF_UP).toFloat()
+            summary.amount.divide(total, 4, RoundingMode.HALF_UP)
         }
+    val percentage = fraction.movePointRight(2).setScale(1, RoundingMode.HALF_UP)
     Column(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -417,28 +419,25 @@ private fun DetailsCategoryRow(
             )
             Text(text = formatAmount(summary.amount, currencyCode), style = MaterialTheme.typography.titleMedium)
             Text(
-                text = "(${(fraction * 100).toInt()}%)",
+                text = "(${percentage.toPlainString()}%)",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodyMedium,
             )
         }
         val progressShape = RoundedCornerShape(100.dp)
-        Box(
+        LinearProgressIndicator(
             modifier =
                 Modifier
                     .fillMaxWidth()
                     .height(6.dp)
-                    .clip(progressShape)
-                    .background(MaterialTheme.colorScheme.outline),
-        ) {
-            Spacer(
-                modifier =
-                    Modifier
-                        .fillMaxWidth(fraction.coerceIn(0f, 1f))
-                        .height(6.dp)
-                        .background(analyticsColorForCategory(summary.category.id)),
-            )
-        }
+                    .clip(progressShape),
+            progress = { fraction.toFloat() },
+            color = analyticsColorForCategory(summary.category.id),
+            trackColor = MaterialTheme.colorScheme.outline,
+            strokeCap = StrokeCap.Butt,
+            gapSize = 0.dp,
+            drawStopIndicator = {},
+        )
     }
 }
 
