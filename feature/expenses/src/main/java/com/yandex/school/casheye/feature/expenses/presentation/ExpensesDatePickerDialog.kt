@@ -18,7 +18,7 @@ import java.time.ZoneOffset
 @Composable
 fun ExpensesDatePickerDialog(
     selectedDate: LocalDate,
-    onDateSelected: (LocalDate) -> Unit,
+    onDateSelect: (LocalDate) -> Unit,
     onDismiss: () -> Unit,
 ) {
     val datePickerState =
@@ -34,7 +34,7 @@ fun ExpensesDatePickerDialog(
                 onClick = {
                     datePickerState.selectedDateMillis
                         ?.toLocalDateUtc()
-                        ?.let(onDateSelected)
+                        ?.let(onDateSelect)
                 },
             ) {
                 Text("ОК")

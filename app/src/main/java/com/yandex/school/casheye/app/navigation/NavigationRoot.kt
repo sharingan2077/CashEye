@@ -63,7 +63,7 @@ fun NavigationRoot(
     if (showDatePicker) {
         ExpensesDatePickerDialog(
             selectedDate = selectedDate,
-            onDateSelected = { date ->
+            onDateSelect = { date ->
                 selectedDateEpochDay = date.toEpochDay()
                 showDatePicker = false
             },

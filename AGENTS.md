@@ -95,6 +95,7 @@ Requirements:
 - Print the corresponding `git commit` command on a separate line after all of its `git add`
   commands.
 - Each command must be a single line that can be pasted and executed.
+    - Use Conventional Commits without scopes. Never add parentheses after the commit type.
 
 Example format:
 

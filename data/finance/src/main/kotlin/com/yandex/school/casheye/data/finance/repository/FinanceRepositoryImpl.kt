@@ -177,7 +177,14 @@ class FinanceRepositoryImpl(
 
 private fun HttpException.toFailureReason(): FinanceFailureReason =
     when (code()) {
-        401, 403 -> FinanceFailureReason.Authorization
-        in 500..599 -> FinanceFailureReason.Server
+        HttpStatus.UNAUTHORIZED, HttpStatus.FORBIDDEN -> FinanceFailureReason.Authorization
+        in HttpStatus.SERVER_ERROR_MIN..HttpStatus.SERVER_ERROR_MAX -> FinanceFailureReason.Server
         else -> FinanceFailureReason.Unknown
     }
+
+private object HttpStatus {
+    const val UNAUTHORIZED = 401
+    const val FORBIDDEN = 403
+    const val SERVER_ERROR_MIN = 500
+    const val SERVER_ERROR_MAX = 599
+}

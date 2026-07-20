@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.sp
 import com.yandex.school.casheye.core.designsystem.component.MoneyListItem
 import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
 import com.yandex.school.casheye.core.format.formatAmount
+import com.yandex.school.casheye.core.model.Account
 
 @Composable
 fun AccountsScreen(
@@ -80,7 +81,7 @@ private fun AccountsContent(
         ) {
             items(
                 items = state.accounts,
-                key = { it.id },
+                key = Account::id,
             ) { accountItem ->
                 MoneyListItem(
                     emoji = accountItem.emoji,
