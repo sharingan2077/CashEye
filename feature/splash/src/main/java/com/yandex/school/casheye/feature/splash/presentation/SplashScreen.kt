@@ -3,6 +3,7 @@ package com.yandex.school.casheye.feature.splash.presentation
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
+import android.content.res.Configuration
 import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -17,12 +18,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.view.WindowCompat
+import com.airbnb.lottie.LottieComposition
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieClipSpec
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
+import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
 import com.yandex.school.casheye.feature.splash.R
 
 @Composable
@@ -30,7 +34,6 @@ fun SplashScreen(
     onFinish: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val splashBackground = colorResource(R.color.splash_background)
     val currentOnFinish by rememberUpdatedState(onFinish)
 
     SplashSystemBarStyleEffect()
@@ -59,6 +62,20 @@ fun SplashScreen(
         }
     }
 
+    SplashContent(
+        composition = composition,
+        progress = progress,
+        modifier = modifier,
+    )
+}
+
+@Composable
+private fun SplashContent(
+    composition: LottieComposition?,
+    progress: Float,
+    modifier: Modifier = Modifier,
+) {
+    val splashBackground = colorResource(R.color.splash_background)
     Box(
         modifier =
             modifier
@@ -72,6 +89,27 @@ fun SplashScreen(
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop,
         )
+    }
+}
+
+@Preview(
+    name = "Light",
+    showBackground = true,
+    widthDp = 412,
+    heightDp = 892,
+    uiMode = Configuration.UI_MODE_NIGHT_NO,
+)
+@Preview(
+    name = "Dark",
+    showBackground = true,
+    widthDp = 412,
+    heightDp = 892,
+    uiMode = Configuration.UI_MODE_NIGHT_YES,
+)
+@Composable
+private fun SplashScreenPreview() {
+    CashEyeTheme(dynamicColor = false) {
+        SplashContent(composition = null, progress = 0f)
     }
 }
 

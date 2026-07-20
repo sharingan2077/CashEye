@@ -10,7 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -87,14 +87,19 @@ private fun AnalyticsContent(
         }
         item { FilterView(data = state.data, onIntent = onIntent) }
         item { TransactionsHeading() }
-        items(items = state.transactions, key = Transaction::id) { transaction ->
+        itemsIndexed(
+            items = state.transactions,
+            key = { _, transaction -> transaction.id },
+        ) { index: Int, transaction: Transaction ->
             TransactionItem(
                 emoji = transaction.category.emoji,
                 title = transaction.category.name,
                 comment = transaction.comment,
                 amount = formatAmount(transaction.amount, state.currencyCode),
             )
-            HorizontalDivider()
+            if (index != state.transactions.lastIndex) {
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline)
+            }
         }
     }
 }
@@ -184,21 +189,21 @@ private fun FilterView(
             value = filters.type.title,
             onClick = { onIntent(AnalyticsIntent.OpenFilter(AnalyticsFilterKind.Type)) },
         )
-        HorizontalDivider()
+        HorizontalDivider(color = MaterialTheme.colorScheme.outline)
         AnalyticsFilterItem(
             iconPainter = painterResource(R.drawable.calendar),
             title = "Период",
             value = filters.period.formatted(),
             onClick = { onIntent(AnalyticsIntent.OpenFilter(AnalyticsFilterKind.Period)) },
         )
-        HorizontalDivider()
+        HorizontalDivider(color = MaterialTheme.colorScheme.outline)
         AnalyticsFilterItem(
             iconPainter = painterResource(R.drawable.tag),
             title = "Статьи",
             value = categoriesTitle(filters.categoryIds, data.categories),
             onClick = { onIntent(AnalyticsIntent.OpenFilter(AnalyticsFilterKind.Categories)) },
         )
-        HorizontalDivider()
+        HorizontalDivider(color = MaterialTheme.colorScheme.outline)
         AnalyticsFilterItem(
             iconPainter = painterResource(R.drawable.credit_card),
             title = "Счёт",

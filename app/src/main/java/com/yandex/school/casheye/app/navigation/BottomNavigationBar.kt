@@ -47,7 +47,19 @@ fun BottomNavigationBar(
                         contentDescription = data.title,
                     )
                 },
-                label = { Text(text = data.title) },
+                label = {
+                    Text(
+                        text = data.title,
+                        color =
+                            if (selectedKey ==
+                                destination
+                            ) {
+                                MaterialTheme.colorScheme.onSurface
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                    )
+                },
             )
         }
     }

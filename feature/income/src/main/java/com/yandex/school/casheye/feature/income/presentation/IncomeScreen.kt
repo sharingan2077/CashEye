@@ -1,5 +1,6 @@
 package com.yandex.school.casheye.feature.income.presentation
 
+import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -139,6 +140,7 @@ private fun IncomeHero(total: String) {
                 .fillMaxWidth()
                 .height(117.dp)
                 .padding(start = 20.dp, top = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Text(
             text = "доходы, всего",
@@ -147,14 +149,27 @@ private fun IncomeHero(total: String) {
         )
         Text(
             text = total,
-            modifier = Modifier.padding(top = 4.dp),
+            modifier = Modifier.fillMaxWidth(),
             style = MaterialTheme.typography.displayMedium,
             color = MaterialTheme.colorScheme.onSurface,
         )
     }
 }
 
-@Preview(showBackground = true, widthDp = 412, heightDp = 892)
+@Preview(
+    name = "Light",
+    showBackground = true,
+    widthDp = 412,
+    heightDp = 892,
+    uiMode = Configuration.UI_MODE_NIGHT_NO,
+)
+@Preview(
+    name = "Dark",
+    showBackground = true,
+    widthDp = 412,
+    heightDp = 892,
+    uiMode = Configuration.UI_MODE_NIGHT_YES,
+)
 @Composable
 private fun IncomeScreenPreview() {
     CashEyeTheme(dynamicColor = false) {
