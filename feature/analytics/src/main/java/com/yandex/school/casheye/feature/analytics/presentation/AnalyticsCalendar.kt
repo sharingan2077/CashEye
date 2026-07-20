@@ -61,6 +61,11 @@ internal fun CustomPeriodSheet(
             mutableStateOf(minOf(selectedMonth, latestFirstMonth))
         }
     val valid = selectedStartDate != null && selectedEndDate != null && selectedEndDate!! <= currentDate
+    val onDateClick: (LocalDate) -> Unit = { date ->
+        val (startDate, endDate) = selectRangeDate(date, selectedStartDate, selectedEndDate)
+        selectedStartDate = startDate
+        selectedEndDate = endDate
+    }
 
     AnalyticsModalBottomSheet(onDismissRequest = { onIntent(AnalyticsIntent.DismissSheet) }) {
         Text(
@@ -75,83 +80,108 @@ internal fun CustomPeriodSheet(
             modifier = Modifier.padding(horizontal = 24.dp),
         )
         Spacer(modifier = Modifier.height(12.dp))
-        LazyColumn(
-            modifier = Modifier.fillMaxWidth().heightIn(max = 400.dp),
-        ) {
-            item {
-                CalendarMonthHeader(
-                    month = firstVisibleMonth,
-                    canNavigateForward = firstVisibleMonth < latestFirstMonth,
-                    onPrevious = { firstVisibleMonth = firstVisibleMonth.minusMonths(1) },
-                    onNext = { firstVisibleMonth = firstVisibleMonth.plusMonths(1) },
-                )
-            }
-            item { CalendarWeekdays(modifier = Modifier.padding(horizontal = 44.dp)) }
-            item {
-                CalendarMonthGrid(
-                    month = firstVisibleMonth,
-                    currentDate = currentDate,
-                    selectedStartDate = selectedStartDate,
-                    selectedEndDate = selectedEndDate,
-                    onDateClick = { date ->
-                        val selection = selectRangeDate(date, selectedStartDate, selectedEndDate)
-                        selectedStartDate = selection.first
-                        selectedEndDate = selection.second
-                    },
-                    modifier = Modifier.padding(horizontal = 44.dp),
-                )
-            }
-            item {
-                Text(
-                    text = firstVisibleMonth.plusMonths(1).formattedMonth(),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 8.dp),
-                )
-            }
-            item { CalendarWeekdays(modifier = Modifier.padding(horizontal = 44.dp)) }
-            item {
-                CalendarMonthGrid(
-                    month = firstVisibleMonth.plusMonths(1),
-                    currentDate = currentDate,
-                    selectedStartDate = selectedStartDate,
-                    selectedEndDate = selectedEndDate,
-                    onDateClick = { date ->
-                        val selection = selectRangeDate(date, selectedStartDate, selectedEndDate)
-                        selectedStartDate = selection.first
-                        selectedEndDate = selection.second
-                    },
-                    modifier = Modifier.padding(horizontal = 44.dp),
-                )
-            }
+        CalendarMonthSelector(
+            firstVisibleMonth = firstVisibleMonth,
+            latestFirstMonth = latestFirstMonth,
+            currentDate = currentDate,
+            selectedStartDate = selectedStartDate,
+            selectedEndDate = selectedEndDate,
+            onPreviousMonth = { firstVisibleMonth = firstVisibleMonth.minusMonths(1) },
+            onNextMonth = { firstVisibleMonth = firstVisibleMonth.plusMonths(1) },
+            onDateClick = onDateClick,
+        )
+        CustomPeriodActions(
+            valid = valid,
+            startDate = selectedStartDate,
+            endDate = selectedEndDate,
+            onIntent = onIntent,
+        )
+    }
+}
+
+@Composable
+private fun CalendarMonthSelector(
+    firstVisibleMonth: YearMonth,
+    latestFirstMonth: YearMonth,
+    currentDate: LocalDate,
+    selectedStartDate: LocalDate?,
+    selectedEndDate: LocalDate?,
+    onPreviousMonth: () -> Unit,
+    onNextMonth: () -> Unit,
+    onDateClick: (LocalDate) -> Unit,
+) {
+    LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = 400.dp)) {
+        item {
+            CalendarMonthHeader(
+                month = firstVisibleMonth,
+                canNavigateForward = firstVisibleMonth < latestFirstMonth,
+                onPrevious = onPreviousMonth,
+                onNext = onNextMonth,
+            )
         }
-        Row(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(start = 24.dp, top = 12.dp, end = 24.dp, bottom = 16.dp),
-            horizontalArrangement = Arrangement.End,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            TextButton(onClick = { onIntent(AnalyticsIntent.DismissSheet) }) { Text("Отмена") }
-            Spacer(modifier = Modifier.width(12.dp))
-            Button(
-                enabled = valid,
-                shape = RoundedCornerShape(20.dp),
-                contentPadding = ButtonDefaults.ContentPadding,
-                modifier = Modifier.height(40.dp).width(124.dp),
-                onClick = {
-                    onIntent(
-                        AnalyticsIntent.UpdateCustomPeriod(
-                            selectedStartDate,
-                            selectedEndDate,
-                        ),
-                    )
-                    onIntent(AnalyticsIntent.ApplyCustomPeriod)
-                },
-            ) { Text("Применить") }
+        item { CalendarWeekdays(modifier = Modifier.padding(horizontal = 44.dp)) }
+        item {
+            CalendarMonthGrid(
+                month = firstVisibleMonth,
+                currentDate = currentDate,
+                selectedStartDate = selectedStartDate,
+                selectedEndDate = selectedEndDate,
+                onDateClick = onDateClick,
+                modifier = Modifier.padding(horizontal = 44.dp),
+            )
         }
+        item {
+            Text(
+                text =
+                    firstVisibleMonth
+                        .plusMonths(1)
+                        .atDay(1)
+                        .format(CALENDAR_MONTH_FORMATTER)
+                        .replaceFirstChar { it.titlecase(CALENDAR_LOCALE) },
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 8.dp),
+            )
+        }
+        item { CalendarWeekdays(modifier = Modifier.padding(horizontal = 44.dp)) }
+        item {
+            CalendarMonthGrid(
+                month = firstVisibleMonth.plusMonths(1),
+                currentDate = currentDate,
+                selectedStartDate = selectedStartDate,
+                selectedEndDate = selectedEndDate,
+                onDateClick = onDateClick,
+                modifier = Modifier.padding(horizontal = 44.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun CustomPeriodActions(
+    valid: Boolean,
+    startDate: LocalDate?,
+    endDate: LocalDate?,
+    onIntent: (AnalyticsIntent) -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(start = 24.dp, top = 12.dp, end = 24.dp, bottom = 16.dp),
+        horizontalArrangement = Arrangement.End,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        TextButton(onClick = { onIntent(AnalyticsIntent.DismissSheet) }) { Text("Отмена") }
+        Spacer(modifier = Modifier.width(12.dp))
+        Button(
+            enabled = valid,
+            shape = RoundedCornerShape(20.dp),
+            contentPadding = ButtonDefaults.ContentPadding,
+            modifier = Modifier.height(40.dp).width(124.dp),
+            onClick = {
+                onIntent(AnalyticsIntent.UpdateCustomPeriod(startDate, endDate))
+                onIntent(AnalyticsIntent.ApplyCustomPeriod)
+            },
+        ) { Text("Применить") }
     }
 }
 
@@ -211,7 +241,10 @@ private fun CalendarMonthHeader(
     ) {
         CalendarNavigationButton(pointsRight = false, enabled = true, onClick = onPrevious)
         Text(
-            text = month.formattedMonth(),
+            text =
+                month
+                    .format(CALENDAR_MONTH_FORMATTER)
+                    .replaceFirstChar { it.titlecase(CALENDAR_LOCALE) },
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold,
             textAlign = TextAlign.Center,
@@ -232,25 +265,25 @@ private fun CalendarNavigationButton(
         modifier =
             Modifier
                 .size(48.dp)
-                .alpha(if (enabled) 1f else 0.38f)
+                .alpha(if (enabled) 1f else DISABLED_ARROW_ALPHA)
                 .clickable(enabled = enabled, role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Canvas(modifier = Modifier.size(16.dp)) {
-            val xStart = if (pointsRight) size.width * 0.35f else size.width * 0.65f
-            val xEnd = if (pointsRight) size.width * 0.65f else size.width * 0.35f
+            val xStart = if (pointsRight) size.width * ARROW_START_X else size.width * ARROW_END_X
+            val xEnd = if (pointsRight) size.width * ARROW_END_X else size.width * ARROW_START_X
             drawLine(
                 color = color,
-                start = Offset(xStart, size.height * 0.2f),
-                end = Offset(xEnd, size.height * 0.5f),
-                strokeWidth = 2.dp.toPx(),
+                start = Offset(xStart, size.height * ARROW_TOP_Y),
+                end = Offset(xEnd, size.height * ARROW_MIDDLE_Y),
+                strokeWidth = ARROW_STROKE_WIDTH.toPx(),
                 cap = StrokeCap.Round,
             )
             drawLine(
                 color = color,
-                start = Offset(xEnd, size.height * 0.5f),
-                end = Offset(xStart, size.height * 0.8f),
-                strokeWidth = 2.dp.toPx(),
+                start = Offset(xEnd, size.height * ARROW_MIDDLE_Y),
+                end = Offset(xStart, size.height * ARROW_BOTTOM_Y),
+                strokeWidth = ARROW_STROKE_WIDTH.toPx(),
                 cap = StrokeCap.Round,
             )
         }
@@ -286,8 +319,8 @@ private fun CalendarMonthGrid(
     Column(modifier = modifier.fillMaxWidth()) {
         repeat(numberOfWeeks) { week ->
             Row(modifier = Modifier.fillMaxWidth()) {
-                repeat(7) { weekday ->
-                    val day = week * 7 + weekday - firstDayOffset + 1
+                repeat(CALENDAR_DAYS_IN_WEEK) { weekday ->
+                    val day = week * CALENDAR_DAYS_IN_WEEK + weekday - firstDayOffset + 1
                     if (day in 1..month.lengthOfMonth()) {
                         val date = month.atDay(day)
                         CalendarDay(
@@ -379,12 +412,17 @@ private fun selectRangeDate(
         else -> selectedStartDate to date
     }
 
-private fun YearMonth.formattedMonth(): String =
-    atDay(1).format(CALENDAR_MONTH_FORMATTER).replaceFirstChar { it.titlecase(CALENDAR_LOCALE) }
-
 private val CALENDAR_LOCALE: Locale = Locale.forLanguageTag("ru")
 private val CALENDAR_DATE_FORMATTER: DateTimeFormatter =
     DateTimeFormatter.ofPattern("d MMM. yyyy", CALENDAR_LOCALE)
 private val CALENDAR_MONTH_FORMATTER: DateTimeFormatter =
     DateTimeFormatter.ofPattern("LLLL yyyy", CALENDAR_LOCALE)
 private val CALENDAR_WEEKDAYS = listOf("Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс")
+private const val ARROW_START_X = 0.35f
+private const val ARROW_END_X = 0.65f
+private const val ARROW_TOP_Y = 0.2f
+private const val ARROW_MIDDLE_Y = 0.5f
+private const val ARROW_BOTTOM_Y = 0.8f
+private val ARROW_STROKE_WIDTH = 2.dp
+private const val DISABLED_ARROW_ALPHA = 0.38f
+private const val CALENDAR_DAYS_IN_WEEK = 7

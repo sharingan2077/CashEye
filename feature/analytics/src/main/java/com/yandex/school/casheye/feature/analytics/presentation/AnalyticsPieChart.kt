@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -38,6 +39,7 @@ fun AnalyticsPieChart(
     total: String,
     categories: List<AnalyticsCategorySummary>,
     modifier: Modifier = Modifier,
+    paddingValues: PaddingValues = PaddingValues(vertical = 32.dp),
     showLegend: Boolean = true,
 ) {
     val modelProducer = remember { PieChartModelProducer() }
@@ -50,8 +52,8 @@ fun AnalyticsPieChart(
         modifier =
             modifier
                 .fillMaxWidth()
-                .padding(vertical = 32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+                .padding(paddingValues),
+        horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(24.dp),
     ) {
         PieChartWithTotal(total = total, colors = colors, modelProducer = modelProducer)
@@ -65,7 +67,7 @@ private fun PieChartWithTotal(
     colors: List<Color>,
     modelProducer: PieChartModelProducer,
 ) {
-    Box(modifier = Modifier.size(220.dp), contentAlignment = Alignment.Center) {
+    Box(modifier = Modifier.size(240.dp), contentAlignment = Alignment.Center) {
         PieChartHost(
             chart =
                 rememberPieChart(
@@ -73,10 +75,10 @@ private fun PieChartWithTotal(
                         PieChart.SliceProvider.series(
                             colors.map { color -> PieChart.Slice(fill = Fill(color)) },
                         ),
-                    innerSize = PieSize.Inner.fixed(172.dp),
+                    innerSize = PieSize.Inner.fixed(192.dp),
                 ),
             modelProducer = modelProducer,
-            modifier = Modifier.size(220.dp),
+            modifier = Modifier.size(240.dp),
         )
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
@@ -99,7 +101,7 @@ private fun AnalyticsLegend(
             Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
+        horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         categories.forEachIndexed { index, summary ->

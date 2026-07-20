@@ -22,6 +22,7 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.temporal.TemporalAdjusters
 
+@Suppress("TooManyFunctions")
 @Inject
 class AnalyticsViewModel(
     private val getAnalytics: GetAnalyticsUseCase,
@@ -40,6 +41,7 @@ class AnalyticsViewModel(
     private var initialized = false
     private var loadJob: Job? = null
 
+    @Suppress("CyclomaticComplexMethod")
     fun onIntent(intent: AnalyticsIntent) {
         when (intent) {
             is AnalyticsIntent.Initialize -> initialize(intent.entryPoint)
@@ -163,6 +165,7 @@ class AnalyticsViewModel(
         updateSheet(AnalyticsSheet.CustomPeriod(startDate, endDate))
     }
 
+    @Suppress("ReturnCount")
     private fun applyCustomPeriod() {
         val sheet = screenData.activeSheet as? AnalyticsSheet.CustomPeriod ?: return
         val startDate = sheet.startDate ?: return
