@@ -7,7 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.yandex.school.casheye.app.navigation.NavigationRoot
@@ -20,9 +20,6 @@ class MainActivity : ComponentActivity() {
         installSplashScreen()
         super.onCreate(savedInstanceState)
 
-        val showLottieSplash = !SplashSession.hasShownLottie
-        SplashSession.hasShownLottie = true
-
         enableEdgeToEdge()
         val appGraph = (application as CashEyeApplication).appGraph
         setContent {
@@ -30,10 +27,15 @@ class MainActivity : ComponentActivity() {
                 LocalMetroViewModelFactory provides appGraph.metroViewModelFactory,
             ) {
                 CashEyeTheme {
-                    var isSplashVisible by remember { mutableStateOf(showLottieSplash) }
+                    var isSplashVisible by rememberSaveable { mutableStateOf(!SplashSession.hasFinishedLottie) }
 
                     if (isSplashVisible) {
-                        SplashScreen(onFinish = { isSplashVisible = false })
+                        SplashScreen(
+                            onFinish = {
+                                SplashSession.hasFinishedLottie = true
+                                isSplashVisible = false
+                            },
+                        )
                     } else {
                         NavigationRoot()
                     }
@@ -44,5 +46,5 @@ class MainActivity : ComponentActivity() {
 }
 
 private object SplashSession {
-    var hasShownLottie: Boolean = false
+    var hasFinishedLottie: Boolean = false
 }
