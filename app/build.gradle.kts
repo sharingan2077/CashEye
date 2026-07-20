@@ -8,9 +8,6 @@ plugins {
 
     alias(libs.plugins.ksp)
 
-    alias(libs.plugins.ktlint)
-    alias(libs.plugins.detekt)
-
     alias(libs.plugins.metro)
 }
 
@@ -110,20 +107,4 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
 
     implementation(libs.metro.viewmodel.compose)
-}
-
-ktlint {
-    version.set(libs.versions.ktlintEngine.get())
-    android.set(true)
-    outputToConsole.set(true)
-    ignoreFailures.set(false)
-
-    filter {
-        exclude("**/generated/**")
-    }
-}
-
-detekt {
-    config.setFrom(rootProject.files("config/detekt/detekt.yml"))
-    buildUponDefaultConfig = true
 }
