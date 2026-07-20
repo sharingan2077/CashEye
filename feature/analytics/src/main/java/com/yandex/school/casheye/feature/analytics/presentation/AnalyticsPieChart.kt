@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -31,8 +32,10 @@ import com.patrykandpatrick.vico.compose.pie.rememberPieChart
 import com.yandex.school.casheye.core.designsystem.theme.ChartPink
 import com.yandex.school.casheye.core.designsystem.theme.ChartPurple
 import com.yandex.school.casheye.core.designsystem.theme.ChartTeal
+import java.math.BigDecimal
 
 private val chartPalette = listOf(ChartPurple, ChartTeal, ChartPink)
+private val singleCategoryPlaceholderRatio = BigDecimal("0.000001")
 
 @Composable
 fun AnalyticsPieChart(
@@ -41,11 +44,18 @@ fun AnalyticsPieChart(
     modifier: Modifier = Modifier,
     paddingValues: PaddingValues = PaddingValues(vertical = 32.dp),
     showLegend: Boolean = true,
+    modelProducer: PieChartModelProducer? = null,
+    animateIn: Boolean = true,
+    onChartDispose: (() -> Unit)? = null,
 ) {
-    val modelProducer = remember { PieChartModelProducer() }
+    val internalModelProducer = remember { PieChartModelProducer() }
+    val chartModelProducer = modelProducer ?: internalModelProducer
     val colors = categories.map { analyticsColorForCategory(it.category.id) }
-    LaunchedEffect(categories) {
-        modelProducer.runTransaction { pieSeries { series(categories.map { it.amount }) } }
+    val chartColors = if (categories.size == 1) colors + Color.Transparent else colors
+    if (modelProducer == null) {
+        LaunchedEffect(categories) {
+            chartModelProducer.runTransaction { pieSeries { series(analyticsPieChartValues(categories)) } }
+        }
     }
 
     Column(
@@ -56,7 +66,13 @@ fun AnalyticsPieChart(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(24.dp),
     ) {
-        PieChartWithTotal(total = total, colors = colors, modelProducer = modelProducer)
+        PieChartWithTotal(
+            total = total,
+            colors = chartColors,
+            modelProducer = chartModelProducer,
+            animateIn = animateIn,
+            onChartDispose = onChartDispose,
+        )
         if (showLegend) AnalyticsLegend(categories = categories, colors = colors)
     }
 }
@@ -66,7 +82,12 @@ private fun PieChartWithTotal(
     total: String,
     colors: List<Color>,
     modelProducer: PieChartModelProducer,
+    animateIn: Boolean,
+    onChartDispose: (() -> Unit)?,
 ) {
+    DisposableEffect(onChartDispose) {
+        onDispose { onChartDispose?.invoke() }
+    }
     Box(modifier = Modifier.size(240.dp), contentAlignment = Alignment.Center) {
         PieChartHost(
             chart =
@@ -79,6 +100,7 @@ private fun PieChartWithTotal(
                 ),
             modelProducer = modelProducer,
             modifier = Modifier.size(240.dp),
+            animateIn = animateIn,
         )
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
@@ -132,6 +154,15 @@ internal fun analyticsColorForCategory(categoryId: Int): Color {
 
     val hue = (hash.toLong() and UINT_MASK).rem(FULL_HUE).toFloat()
     return Color.hsv(hue = hue, saturation = 0.58f, value = 0.88f)
+}
+
+internal fun analyticsPieChartValues(categories: List<AnalyticsCategorySummary>): List<BigDecimal> {
+    val amounts = categories.map(AnalyticsCategorySummary::amount)
+    return if (amounts.size == 1) {
+        amounts + amounts.single().multiply(singleCategoryPlaceholderRatio)
+    } else {
+        amounts
+    }
 }
 
 private const val GOLDEN_RATIO_HASH = -1640531527

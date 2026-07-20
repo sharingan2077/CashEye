@@ -16,6 +16,11 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
@@ -24,6 +29,8 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.patrykandpatrick.vico.compose.pie.data.PieChartModelProducer
+import com.patrykandpatrick.vico.compose.pie.data.pieSeries
 import com.yandex.school.casheye.core.designsystem.component.EmojiCircle
 import com.yandex.school.casheye.core.designsystem.component.FilterItem
 import com.yandex.school.casheye.core.designsystem.component.IconCircle
@@ -55,11 +62,22 @@ private fun AnalyticsContent(
     state: AnalyticsUiState.Content,
     onIntent: (AnalyticsIntent) -> Unit,
 ) {
+    val chartModelProducer = remember { PieChartModelProducer() }
+    var animateChartIn by remember { mutableStateOf(true) }
+    LaunchedEffect(state.categorySummaries) {
+        chartModelProducer.runTransaction {
+            pieSeries { series(analyticsPieChartValues(state.categorySummaries)) }
+        }
+    }
+
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         item {
             AnalyticsPieChart(
                 total = formatAmount(state.total, state.currencyCode),
                 categories = state.categorySummaries,
+                modelProducer = chartModelProducer,
+                animateIn = animateChartIn,
+                onChartDispose = { animateChartIn = false },
                 modifier =
                     Modifier.clickable(
                         role = Role.Button,
