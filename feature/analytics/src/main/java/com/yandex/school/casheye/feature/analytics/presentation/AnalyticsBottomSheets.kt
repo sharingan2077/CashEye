@@ -8,6 +8,7 @@ import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.ScrollScope
 import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
@@ -107,6 +108,20 @@ internal fun AnalyticsModalBottomSheet(
         onDismissRequest = onDismissRequest,
         sheetState = sheetState,
         content = content,
+        dragHandle = {
+            Box(
+                modifier = Modifier.fillMaxWidth().height(24.dp),
+                contentAlignment = Alignment.TopCenter,
+            ) {
+                Spacer(
+                    modifier =
+                        Modifier
+                            .padding(top = 12.dp)
+                            .size(width = 32.dp, height = 4.dp)
+                            .background(MaterialTheme.colorScheme.outline, RoundedCornerShape(100.dp)),
+                )
+            }
+        },
     )
 }
 
@@ -188,7 +203,7 @@ private fun TypeSheet(
 ) {
     AnalyticsModalBottomSheet(onDismissRequest = { onIntent(AnalyticsIntent.DismissSheet) }) {
         Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-            SheetTitle("Тип")
+            SheetTitle(title = "Тип")
             AnalyticsType.entries.forEach { type ->
                 SelectionRow(
                     title = type.title,

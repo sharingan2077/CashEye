@@ -72,7 +72,7 @@ internal fun CustomPeriodSheet(
             text = "Произвольный период",
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(start = 24.dp, top = 8.dp, end = 24.dp, bottom = 14.dp),
+            modifier = Modifier.padding(start = 24.dp, top = 4.dp, end = 24.dp, bottom = 14.dp),
         )
         DateRangeFields(
             startDate = selectedStartDate,
