@@ -98,7 +98,7 @@ class IncomeViewModelTest {
             advanceUntilIdle()
 
             assertTrue(viewModel.state.value is IncomeUiState.Error)
-            assertEquals(IncomeEffect.ShowError("Проверьте подключение к интернету"), effect.await())
+            assertEquals(IncomeEffect.ShowError(FinanceFailureReason.Network), effect.await())
         }
 
     @Test

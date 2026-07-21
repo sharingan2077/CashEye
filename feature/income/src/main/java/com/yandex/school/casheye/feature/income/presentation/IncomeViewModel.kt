@@ -81,21 +81,12 @@ class IncomeViewModel(
                     }
 
                     is FinanceLoadResult.Failure -> {
-                        val message = result.reason.toUserMessage()
-                        _state.value = IncomeUiState.Error(message)
-                        _effects.emit(IncomeEffect.ShowError(message))
+                        _state.value = IncomeUiState.Error(result.reason)
+                        _effects.emit(IncomeEffect.ShowError(result.reason))
                     }
                 }
             }
     }
 }
-
-fun FinanceFailureReason.toUserMessage(): String =
-    when (this) {
-        FinanceFailureReason.Network -> "Проверьте подключение к интернету"
-        FinanceFailureReason.Authorization -> "Не удалось авторизоваться"
-        FinanceFailureReason.Server -> "Сервер временно недоступен"
-        FinanceFailureReason.Unknown -> "Не удалось загрузить доходы"
-    }
 
 private const val CURRENCY_CODE = "RUB"

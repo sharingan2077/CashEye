@@ -1,6 +1,7 @@
 package com.yandex.school.casheye.feature.income.presentation
 
 import com.yandex.school.casheye.core.model.Transaction
+import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -16,7 +17,7 @@ sealed interface IncomeUiState {
     ) : IncomeUiState
 
     data class Error(
-        val message: String,
+        val reason: FinanceFailureReason,
     ) : IncomeUiState
 }
 
@@ -30,6 +31,6 @@ sealed interface IncomeIntent {
 
 sealed interface IncomeEffect {
     data class ShowError(
-        val message: String,
+        val reason: FinanceFailureReason,
     ) : IncomeEffect
 }
