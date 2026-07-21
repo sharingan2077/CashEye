@@ -24,7 +24,7 @@ kotlin { compilerOptions { jvmTarget.set(JvmTarget.JVM_21) } }
 dependencies {
     implementation(project(":core:designsystem"))
     implementation(project(":core:model"))
-    implementation(project(":core:ui"))
+    implementation(project(":core:common"))
     implementation(project(":domain:finance"))
 
     implementation(platform(libs.androidx.compose.bom))

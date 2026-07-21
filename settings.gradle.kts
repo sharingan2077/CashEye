@@ -27,7 +27,7 @@ include(":app")
 
 include(":core:model")
 include(":core:designsystem")
-include(":core:ui")
+include(":core:common")
 
 include(":domain:finance")
 include(":data:finance")
