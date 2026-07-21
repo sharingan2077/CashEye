@@ -269,9 +269,10 @@ private fun PeriodSheet(
                     }
                 }
                 if (preset == period.preset) {
-                    Text(
-                        text = "✓",
-                        color = MaterialTheme.colorScheme.primary,
+                    Icon(
+                        painter = painterResource(R.drawable.check_purple),
+                        contentDescription = stringResource(R.string.selected),
+                        tint = MaterialTheme.colorScheme.primary,
                     )
                 }
             }
