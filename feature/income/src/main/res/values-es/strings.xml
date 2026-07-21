@@ -1,1 +1,10 @@
-<resources><string name="empty_income">No hay ingresos</string><string name="income_total">ingresos, total</string><string name="retry">Reintentar</string><string name="error_network">Comprueba tu conexión a Internet</string><string name="error_authorization">Error de autorización</string><string name="error_server">El servidor no está disponible temporalmente</string><string name="error_load_income">No se pudieron cargar los ingresos</string></resources>
+<resources>
+    <string name="empty_income">No hay ingresos para esta fecha</string>
+    <string name="empty_income_description">Elige otra fecha en la barra superior para ver los ingresos.</string>
+    <string name="income_total">ingresos, total</string>
+    <string name="retry">Reintentar</string>
+    <string name="error_network">Comprueba tu conexión a Internet</string>
+    <string name="error_authorization">Error de autorización</string>
+    <string name="error_server">El servidor no está disponible temporalmente</string>
+    <string name="error_load_income">No se pudieron cargar los ingresos</string>
+</resources>

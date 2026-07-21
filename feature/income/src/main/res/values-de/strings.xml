@@ -1,1 +1,10 @@
-<resources><string name="empty_income">Keine Einnahmen</string><string name="income_total">Einnahmen, gesamt</string><string name="retry">Wiederholen</string><string name="error_network">Internetverbindung prüfen</string><string name="error_authorization">Anmeldung fehlgeschlagen</string><string name="error_server">Server ist vorübergehend nicht verfügbar</string><string name="error_load_income">Einnahmen konnten nicht geladen werden</string></resources>
+<resources>
+    <string name="empty_income">Keine Einnahmen für dieses Datum</string>
+    <string name="empty_income_description">Wählen Sie oben ein anderes Datum, um Einnahmen zu sehen.</string>
+    <string name="income_total">Einnahmen, gesamt</string>
+    <string name="retry">Wiederholen</string>
+    <string name="error_network">Internetverbindung prüfen</string>
+    <string name="error_authorization">Anmeldung fehlgeschlagen</string>
+    <string name="error_server">Server ist vorübergehend nicht verfügbar</string>
+    <string name="error_load_income">Einnahmen konnten nicht geladen werden</string>
+</resources>

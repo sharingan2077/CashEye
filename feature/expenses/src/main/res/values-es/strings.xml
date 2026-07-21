@@ -1,1 +1,13 @@
-<resources><string name="empty_expenses">No hay gastos</string><string name="expenses_total">gastos, total</string><string name="retry">Reintentar</string><string name="confirm">Aceptar</string><string name="cancel">Cancelar</string><string name="select_date">Seleccionar fecha</string><string name="error_network">Comprueba tu conexión a Internet</string><string name="error_authorization">Error de autorización</string><string name="error_server">El servidor no está disponible temporalmente</string><string name="error_load_expenses">No se pudieron cargar los gastos</string></resources>
+<resources>
+    <string name="empty_expenses">No hay gastos para esta fecha</string>
+    <string name="empty_expenses_description">Elige otra fecha en la barra superior para ver los gastos</string>
+    <string name="expenses_total">gastos, total</string>
+    <string name="retry">Reintentar</string>
+    <string name="confirm">Aceptar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="select_date">Seleccionar fecha</string>
+    <string name="error_network">Comprueba tu conexión a Internet</string>
+    <string name="error_authorization">Error de autorización</string>
+    <string name="error_server">El servidor no está disponible temporalmente</string>
+    <string name="error_load_expenses">No se pudieron cargar los gastos</string>
+</resources>

@@ -14,6 +14,7 @@
     <string name="selected_count">Выбрано: %1$d</string>
     <string name="transactions">Транзакции</string>
     <string name="empty_period">За выбранный период операций нет</string>
+    <string name="empty_period_description">Измените фильтры выше, чтобы найти нужные операции.</string>
     <string name="details">Детализация</string>
     <string name="type_expenses">Расходы</string>
     <string name="type_income">Доходы</string>

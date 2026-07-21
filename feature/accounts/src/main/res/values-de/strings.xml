@@ -1,1 +1,10 @@
-<resources><string name="empty_accounts">Keine Konten</string><string name="balance_total">Kontostand, gesamt</string><string name="retry">Wiederholen</string><string name="error_network">Internetverbindung prüfen</string><string name="error_authorization">Anmeldung fehlgeschlagen</string><string name="error_server">Server ist vorübergehend nicht verfügbar</string><string name="error_load_accounts">Konten konnten nicht geladen werden</string></resources>
+<resources>
+    <string name="empty_accounts">Noch keine Konten</string>
+    <string name="empty_accounts_description">Fügen Sie Ihr erstes Konto hinzu, um Ihren Kontostand zu verfolgen.</string>
+    <string name="balance_total">Kontostand, gesamt</string>
+    <string name="retry">Wiederholen</string>
+    <string name="error_network">Internetverbindung prüfen</string>
+    <string name="error_authorization">Anmeldung fehlgeschlagen</string>
+    <string name="error_server">Server ist vorübergehend nicht verfügbar</string>
+    <string name="error_load_accounts">Konten konnten nicht geladen werden</string>
+</resources>

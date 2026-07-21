@@ -1,5 +1,8 @@
+@file:Suppress("TooManyFunctions")
+
 package com.yandex.school.casheye.feature.analytics.presentation
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -9,6 +12,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.CircularProgressIndicator
@@ -120,11 +125,38 @@ private fun AnalyticsEmpty(
                     .fillMaxWidth(),
             contentAlignment = Alignment.Center,
         ) {
-            Text(
-                text = stringResource(R.string.empty_period),
-                style = MaterialTheme.typography.bodyLarge,
-            )
+            AnalyticsEmptyState()
         }
+    }
+}
+
+@Composable
+private fun AnalyticsEmptyState() {
+    Column(
+        modifier = Modifier.padding(horizontal = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Image(
+            painter = painterResource(R.drawable.image_empty_analytics),
+            contentDescription = stringResource(R.string.empty_period),
+            modifier =
+                Modifier
+                    .size(200.dp),
+        )
+        Text(
+            text = stringResource(R.string.empty_period),
+            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.headlineSmall,
+            textAlign = TextAlign.Center,
+        )
+        Text(
+            text = stringResource(R.string.empty_period_description),
+            modifier = Modifier.widthIn(max = 280.dp),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodyMedium,
+            textAlign = TextAlign.Center,
+        )
     }
 }
 

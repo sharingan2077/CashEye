@@ -1,1 +1,10 @@
-<resources><string name="empty_accounts">Aucun compte</string><string name="balance_total">solde, total</string><string name="retry">Réessayer</string><string name="error_network">Vérifiez votre connexion Internet</string><string name="error_authorization">Échec de l’autorisation</string><string name="error_server">Le serveur est temporairement indisponible</string><string name="error_load_accounts">Impossible de charger les comptes</string></resources>
+<resources>
+    <string name="empty_accounts">Aucun compte pour le moment</string>
+    <string name="empty_accounts_description">Ajoutez votre premier compte pour suivre votre solde.</string>
+    <string name="balance_total">solde, total</string>
+    <string name="retry">Réessayer</string>
+    <string name="error_network">Vérifiez votre connexion Internet</string>
+    <string name="error_authorization">Échec de l’autorisation</string>
+    <string name="error_server">Le serveur est temporairement indisponible</string>
+    <string name="error_load_accounts">Impossible de charger les comptes</string>
+</resources>

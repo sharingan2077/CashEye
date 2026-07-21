@@ -1,1 +1,31 @@
-<resources><string name="total_for_period">Gesamt für Zeitraum</string><string name="selected">Ausgewählt</string><string name="retry">Wiederholen</string><string name="done">Fertig</string><string name="apply">Anwenden</string><string name="cancel">Abbrechen</string><string name="filter_type">Typ</string><string name="filter_period">Zeitraum</string><string name="filter_categories">Kategorien</string><string name="filter_account">Konto</string><string name="all_accounts">Alle Konten</string><string name="all_categories">Alle Kategorien</string><string name="selected_count">Ausgewählt: %1$d</string><string name="transactions">Transaktionen</string><string name="empty_period">Keine Vorgänge im ausgewählten Zeitraum</string><string name="details">Details</string><string name="type_expenses">Ausgaben</string><string name="type_income">Einnahmen</string><string name="type_all">Alle</string><string name="period_custom">Benutzerdefiniert</string><string name="period_week">Letzte Woche</string><string name="period_month">Letzter Monat</string><string name="period_quarter">Letztes Quartal</string><string name="period_year">Letztes Jahr</string><string name="error_network">Internetverbindung prüfen</string><string name="error_authorization">Anmeldung fehlgeschlagen</string><string name="error_server">Server ist vorübergehend nicht verfügbar</string><string name="error_load_analytics">Analysen konnten nicht geladen werden</string></resources>
+<resources>
+    <string name="total_for_period">Gesamt für Zeitraum</string>
+    <string name="selected">Ausgewählt</string>
+    <string name="retry">Wiederholen</string>
+    <string name="done">Fertig</string>
+    <string name="apply">Anwenden</string>
+    <string name="cancel">Abbrechen</string>
+    <string name="filter_type">Typ</string>
+    <string name="filter_period">Zeitraum</string>
+    <string name="filter_categories">Kategorien</string>
+    <string name="filter_account">Konto</string>
+    <string name="all_accounts">Alle Konten</string>
+    <string name="all_categories">Alle Kategorien</string>
+    <string name="selected_count">Ausgewählt: %1$d</string>
+    <string name="transactions">Transaktionen</string>
+    <string name="empty_period">Keine Vorgänge im ausgewählten Zeitraum</string>
+    <string name="empty_period_description">Ändern Sie oben die Filter, um die gewünschten Vorgänge zu finden.</string>
+    <string name="details">Details</string>
+    <string name="type_expenses">Ausgaben</string>
+    <string name="type_income">Einnahmen</string>
+    <string name="type_all">Alle</string>
+    <string name="period_custom">Benutzerdefiniert</string>
+    <string name="period_week">Letzte Woche</string>
+    <string name="period_month">Letzter Monat</string>
+    <string name="period_quarter">Letztes Quartal</string>
+    <string name="period_year">Letztes Jahr</string>
+    <string name="error_network">Internetverbindung prüfen</string>
+    <string name="error_authorization">Anmeldung fehlgeschlagen</string>
+    <string name="error_server">Server ist vorübergehend nicht verfügbar</string>
+    <string name="error_load_analytics">Analysen konnten nicht geladen werden</string>
+</resources>

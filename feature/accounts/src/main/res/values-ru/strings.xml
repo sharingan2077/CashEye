@@ -1,1 +1,10 @@
-<resources><string name="empty_accounts">Счетов нет</string><string name="balance_total">баланс, всего</string><string name="retry">Повторить</string><string name="error_network">Проверьте подключение к интернету</string><string name="error_authorization">Не удалось авторизоваться</string><string name="error_server">Сервер временно недоступен</string><string name="error_load_accounts">Не удалось загрузить счета</string></resources>
+<resources>
+    <string name="empty_accounts">Счетов пока нет</string>
+    <string name="empty_accounts_description">Добавьте первый счёт, чтобы отслеживать баланс.</string>
+    <string name="balance_total">баланс, всего</string>
+    <string name="retry">Повторить</string>
+    <string name="error_network">Проверьте подключение к интернету</string>
+    <string name="error_authorization">Не удалось авторизоваться</string>
+    <string name="error_server">Сервер временно недоступен</string>
+    <string name="error_load_accounts">Не удалось загрузить счета</string>
+</resources>

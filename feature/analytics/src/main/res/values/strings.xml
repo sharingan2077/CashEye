@@ -14,6 +14,7 @@
     <string name="selected_count">Selected: %1$d</string>
     <string name="transactions">Transactions</string>
     <string name="empty_period">No transactions for the selected period</string>
+    <string name="empty_period_description">Change the filters above to find the transactions you need.</string>
     <string name="details">Details</string>
     <string name="type_expenses">Expenses</string>
     <string name="type_income">Income</string>
