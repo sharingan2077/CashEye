@@ -1,13 +1,14 @@
 package com.yandex.school.casheye.feature.income.presentation
 
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.yandex.school.casheye.core.designsystem.component.DismissSnackbarOnDispose
+import com.yandex.school.casheye.core.designsystem.component.showRetrySnackbar
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import com.yandex.school.casheye.feature.income.R
 import dev.zacsweers.metrox.viewmodel.metroViewModel
@@ -25,6 +26,8 @@ fun IncomeRoute(
     val failureMessages = localizedFailureMessages()
     val retryLabel = stringResource(R.string.retry)
 
+    DismissSnackbarOnDispose(snackbarHostState)
+
     LaunchedEffect(selectedDate, viewModel) {
         viewModel.onIntent(IncomeIntent.SelectDate(selectedDate))
     }
@@ -33,12 +36,12 @@ fun IncomeRoute(
         viewModel.effects.collectLatest { effect ->
             when (effect) {
                 is IncomeEffect.ShowError -> {
-                    val result =
-                        snackbarHostState.showSnackbar(
+                    if (
+                        snackbarHostState.showRetrySnackbar(
                             message = failureMessages.getValue(effect.reason),
-                            actionLabel = retryLabel,
+                            retryLabel = retryLabel,
                         )
-                    if (result == SnackbarResult.ActionPerformed) {
+                    ) {
                         viewModel.onIntent(IncomeIntent.Retry)
                     }
                 }
@@ -47,6 +50,7 @@ fun IncomeRoute(
     }
     IncomeScreen(
         state = state,
+        onIntent = viewModel::onIntent,
         modifier = modifier,
     )
 }

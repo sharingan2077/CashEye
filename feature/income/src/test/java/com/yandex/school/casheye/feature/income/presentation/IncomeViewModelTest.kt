@@ -80,11 +80,11 @@ class IncomeViewModelTest {
 
             advanceUntilIdle()
 
-            assertEquals(IncomeUiState.Empty, viewModel.state.value)
+            assertEquals(IncomeUiState.Empty(), viewModel.state.value)
         }
 
     @Test
-    fun `failure exposes error and emits show error effect`() =
+    fun `initial failure exposes error state`() =
         runTest {
             val viewModel =
                 IncomeViewModel(
@@ -93,11 +93,36 @@ class IncomeViewModelTest {
                     ),
                     clock,
                 )
-            val effect = async(start = CoroutineStart.UNDISPATCHED) { viewModel.effects.first() }
 
             advanceUntilIdle()
 
             assertTrue(viewModel.state.value is IncomeUiState.Error)
+        }
+
+    @Test
+    fun `failed refresh keeps content and emits show error effect`() =
+        runTest {
+            val summary = FinanceSummary(BigDecimal("125000.00"), "RUB", listOf(incomeTransaction()))
+            val viewModel =
+                IncomeViewModel(
+                    GetDailySummaryUseCase(
+                        FakeIncomeFinanceRepository(
+                            FinanceLoadResult.Success(summary),
+                            FinanceLoadResult.Failure(FinanceFailureReason.Network),
+                        ),
+                    ),
+                    clock,
+                )
+
+            advanceUntilIdle()
+            val effect = async(start = CoroutineStart.UNDISPATCHED) { viewModel.effects.first() }
+            viewModel.onIntent(IncomeIntent.Refresh)
+            advanceUntilIdle()
+
+            assertEquals(
+                IncomeUiState.Content(summary.total, summary.currencyCode, summary.transactions),
+                viewModel.state.value,
+            )
             assertEquals(IncomeEffect.ShowError(FinanceFailureReason.Network), effect.await())
         }
 
@@ -127,6 +152,23 @@ class IncomeViewModelTest {
                 listOf(TransactionKind.Income, TransactionKind.Income, TransactionKind.Income),
                 repository.requestedKinds,
             )
+        }
+
+    @Test
+    fun `refresh reloads the current date as income`() =
+        runTest {
+            val repository =
+                FakeIncomeFinanceRepository(
+                    FinanceLoadResult.Success(FinanceSummary(BigDecimal.ZERO, "RUB", emptyList())),
+                    FinanceLoadResult.Success(FinanceSummary(BigDecimal.ZERO, "RUB", emptyList())),
+                )
+            val viewModel = IncomeViewModel(GetDailySummaryUseCase(repository), clock)
+
+            advanceUntilIdle()
+            viewModel.onIntent(IncomeIntent.Refresh)
+            advanceUntilIdle()
+
+            assertEquals(listOf(LocalDate.of(2026, 7, 17), LocalDate.of(2026, 7, 17)), repository.requestedDates)
         }
 }
 

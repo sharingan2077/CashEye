@@ -1,13 +1,14 @@
 package com.yandex.school.casheye.feature.expenses.presentation
 
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.yandex.school.casheye.core.designsystem.component.DismissSnackbarOnDispose
+import com.yandex.school.casheye.core.designsystem.component.showRetrySnackbar
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import com.yandex.school.casheye.feature.expenses.R
 import dev.zacsweers.metrox.viewmodel.metroViewModel
@@ -25,6 +26,8 @@ fun ExpensesRoute(
     val failureMessages = localizedFailureMessages()
     val retryLabel = stringResource(R.string.retry)
 
+    DismissSnackbarOnDispose(snackbarHostState)
+
     LaunchedEffect(selectedDate, viewModel) {
         viewModel.onIntent(ExpensesIntent.SelectDate(selectedDate))
     }
@@ -33,12 +36,12 @@ fun ExpensesRoute(
         viewModel.effects.collectLatest { effect ->
             when (effect) {
                 is ExpensesEffect.ShowError -> {
-                    val result =
-                        snackbarHostState.showSnackbar(
+                    if (
+                        snackbarHostState.showRetrySnackbar(
                             message = failureMessages.getValue(effect.reason),
-                            actionLabel = retryLabel,
+                            retryLabel = retryLabel,
                         )
-                    if (result == SnackbarResult.ActionPerformed) {
+                    ) {
                         viewModel.onIntent(ExpensesIntent.Retry)
                     }
                 }
@@ -48,6 +51,7 @@ fun ExpensesRoute(
 
     ExpenseScreen(
         state = state,
+        onIntent = viewModel::onIntent,
         modifier = modifier,
     )
 }

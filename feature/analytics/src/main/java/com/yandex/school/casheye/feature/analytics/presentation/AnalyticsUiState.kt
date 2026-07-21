@@ -84,6 +84,9 @@ data class AnalyticsCategorySummary(
 sealed interface AnalyticsUiState {
     val data: AnalyticsScreenData
 
+    val isRefreshing: Boolean
+        get() = false
+
     data class Loading(
         override val data: AnalyticsScreenData,
     ) : AnalyticsUiState
@@ -91,6 +94,7 @@ sealed interface AnalyticsUiState {
     data class Empty(
         override val data: AnalyticsScreenData,
         val currencyCode: String,
+        override val isRefreshing: Boolean = false,
     ) : AnalyticsUiState
 
     data class Content(
@@ -99,6 +103,7 @@ sealed interface AnalyticsUiState {
         val currencyCode: String,
         val transactions: List<Transaction>,
         val categorySummaries: List<AnalyticsCategorySummary>,
+        override val isRefreshing: Boolean = false,
     ) : AnalyticsUiState
 
     data class Error(
@@ -150,6 +155,8 @@ sealed interface AnalyticsIntent {
     data object OpenDetails : AnalyticsIntent
 
     data object Retry : AnalyticsIntent
+
+    data object Refresh : AnalyticsIntent
 }
 
 sealed interface AnalyticsEffect {

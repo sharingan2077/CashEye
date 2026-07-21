@@ -2,7 +2,6 @@ package com.yandex.school.casheye.feature.income.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import com.yandex.school.casheye.domain.finance.FinanceLoadResult
 import com.yandex.school.casheye.domain.finance.GetDailySummaryUseCase
 import com.yandex.school.casheye.domain.finance.TransactionKind
@@ -40,7 +39,8 @@ class IncomeViewModel(
 
     fun onIntent(intent: IncomeIntent) {
         when (intent) {
-            IncomeIntent.Retry -> loadData(selectedDate)
+            IncomeIntent.Retry -> loadData(selectedDate, preserveContent = _state.value.isRefreshable())
+            IncomeIntent.Refresh -> loadData(selectedDate, preserveContent = true)
             is IncomeIntent.SelectDate -> selectDate(intent.date)
         }
     }
@@ -49,14 +49,28 @@ class IncomeViewModel(
         if (date == selectedDate) return
 
         selectedDate = date
-        loadData(selectedDate)
+        loadData(selectedDate, cancelPrevious = true)
     }
 
-    private fun loadData(localDate: LocalDate) {
-        loadJob?.cancel()
+    private fun loadData(
+        localDate: LocalDate,
+        preserveContent: Boolean = false,
+        cancelPrevious: Boolean = false,
+    ) {
+        if (cancelPrevious) {
+            loadJob?.cancel()
+        } else if (loadJob?.isActive == true) {
+            return
+        }
+        val keepsVisibleContent = preserveContent && _state.value.isRefreshable()
         loadJob =
             viewModelScope.launch {
-                _state.value = IncomeUiState.Loading
+                _state.value =
+                    if (keepsVisibleContent) {
+                        _state.value.withRefreshing(true)
+                    } else {
+                        IncomeUiState.Loading
+                    }
 
                 when (
                     val result =
@@ -70,7 +84,7 @@ class IncomeViewModel(
                         val summary = result.summary
                         _state.value =
                             if (summary.transactions.isEmpty()) {
-                                IncomeUiState.Empty
+                                IncomeUiState.Empty()
                             } else {
                                 IncomeUiState.Content(
                                     total = summary.total,
@@ -81,12 +95,32 @@ class IncomeViewModel(
                     }
 
                     is FinanceLoadResult.Failure -> {
-                        _state.value = IncomeUiState.Error(result.reason)
-                        _effects.emit(IncomeEffect.ShowError(result.reason))
+                        _state.value =
+                            if (keepsVisibleContent) {
+                                _state.value.withRefreshing(false)
+                            } else {
+                                IncomeUiState.Error(result.reason)
+                            }
+                        if (keepsVisibleContent) {
+                            _effects.emit(IncomeEffect.ShowError(result.reason))
+                        }
                     }
                 }
             }
     }
 }
+
+private fun IncomeUiState.isRefreshable(): Boolean = this is IncomeUiState.Content || this is IncomeUiState.Empty
+
+private fun IncomeUiState.withRefreshing(isRefreshing: Boolean): IncomeUiState =
+    when (this) {
+        is IncomeUiState.Content -> copy(isRefreshing = isRefreshing)
+
+        is IncomeUiState.Empty -> copy(isRefreshing = isRefreshing)
+
+        IncomeUiState.Loading,
+        is IncomeUiState.Error,
+        -> this
+    }
 
 private const val CURRENCY_CODE = "RUB"

@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.sp
 import com.yandex.school.casheye.core.designsystem.component.ErrorState
 import com.yandex.school.casheye.core.designsystem.component.ErrorStateType
 import com.yandex.school.casheye.core.designsystem.component.MoneyListItem
+import com.yandex.school.casheye.core.designsystem.component.PullToRefreshContainer
 import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
 import com.yandex.school.casheye.core.format.formatAmount
 import com.yandex.school.casheye.core.model.Account
@@ -39,29 +40,40 @@ import com.yandex.school.casheye.feature.accounts.R
 @Composable
 fun AccountsScreen(
     state: AccountsUiState,
+    onIntent: (AccountsIntent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Box(
-        modifier =
-            modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background),
+    PullToRefreshContainer(
+        isRefreshing = state.isRefreshing,
+        onRefresh = { onIntent(AccountsIntent.Refresh) },
+        modifier = modifier.fillMaxSize(),
     ) {
-        when (state) {
-            AccountsUiState.Loading -> {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-            }
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background),
+        ) {
+            when (state) {
+                AccountsUiState.Loading -> {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                }
 
-            AccountsUiState.Empty -> {
-                EmptyAccounts(modifier = Modifier.align(Alignment.Center))
-            }
+                is AccountsUiState.Empty -> {
+                    EmptyAccounts(modifier = Modifier.align(Alignment.Center))
+                }
 
-            is AccountsUiState.Content -> {
-                AccountsContent(state = state)
-            }
+                is AccountsUiState.Content -> {
+                    AccountsContent(state = state)
+                }
 
-            is AccountsUiState.Error -> {
-                ErrorState(type = state.reason.toErrorStateType())
+                is AccountsUiState.Error -> {
+                    ErrorState(
+                        type = state.reason.toErrorStateType(),
+                        onRetry = { onIntent(AccountsIntent.Retry) },
+                        retryLabel = stringResource(R.string.retry),
+                    )
+                }
             }
         }
     }
@@ -184,7 +196,7 @@ private fun FinanceFailureReason.toErrorStateType(): ErrorStateType =
 private fun AccountsScreenPreview() {
     CashEyeTheme(dynamicColor = false) {
         Surface(color = MaterialTheme.colorScheme.background) {
-            AccountsScreen(state = accountsUiStateMock)
+            AccountsScreen(state = accountsUiStateMock, onIntent = {})
         }
     }
 }

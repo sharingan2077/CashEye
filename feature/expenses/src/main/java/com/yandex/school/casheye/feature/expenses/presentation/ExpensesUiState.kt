@@ -6,14 +6,20 @@ import java.math.BigDecimal
 import java.time.LocalDate
 
 sealed interface ExpensesUiState {
+    val isRefreshing: Boolean
+        get() = false
+
     data object Loading : ExpensesUiState
 
-    data object Empty : ExpensesUiState
+    data class Empty(
+        override val isRefreshing: Boolean = false,
+    ) : ExpensesUiState
 
     data class Content(
         val total: BigDecimal,
         val currencyCode: String,
         val transactions: List<Transaction>,
+        override val isRefreshing: Boolean = false,
     ) : ExpensesUiState
 
     data class Error(
@@ -23,6 +29,8 @@ sealed interface ExpensesUiState {
 
 sealed interface ExpensesIntent {
     data object Retry : ExpensesIntent
+
+    data object Refresh : ExpensesIntent
 
     data class SelectDate(
         val date: LocalDate,

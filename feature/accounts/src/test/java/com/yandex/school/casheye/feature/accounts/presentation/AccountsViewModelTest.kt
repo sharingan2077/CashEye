@@ -72,11 +72,11 @@ class AccountsViewModelTest {
 
             advanceUntilIdle()
 
-            assertEquals(AccountsUiState.Empty, viewModel.state.value)
+            assertEquals(AccountsUiState.Empty(), viewModel.state.value)
         }
 
     @Test
-    fun `failure exposes error and retry loads accounts again`() =
+    fun `initial failure exposes error and retry loads accounts again`() =
         runTest {
             val repository =
                 FakeAccountsRepository(
@@ -84,18 +84,59 @@ class AccountsViewModelTest {
                     AccountsLoadResult.Success(AccountsSummary(BigDecimal.ZERO, "RUB", emptyList())),
                 )
             val viewModel = AccountsViewModel(GetAccountsUseCase(repository))
-            val effect = async(start = CoroutineStart.UNDISPATCHED) { viewModel.effects.first() }
 
             advanceUntilIdle()
 
             assertTrue(viewModel.state.value is AccountsUiState.Error)
-            assertEquals(AccountsEffect.ShowError(FinanceFailureReason.Network), effect.await())
 
             viewModel.onIntent(AccountsIntent.Retry)
             advanceUntilIdle()
 
             assertEquals(2, repository.requestedCurrencies.size)
-            assertEquals(AccountsUiState.Empty, viewModel.state.value)
+            assertEquals(AccountsUiState.Empty(), viewModel.state.value)
+        }
+
+    @Test
+    fun `failed refresh keeps content and emits show error effect`() =
+        runTest {
+            val summary = AccountsSummary(BigDecimal("125000.00"), "RUB", listOf(account()))
+            val viewModel =
+                AccountsViewModel(
+                    GetAccountsUseCase(
+                        FakeAccountsRepository(
+                            AccountsLoadResult.Success(summary),
+                            AccountsLoadResult.Failure(FinanceFailureReason.Network),
+                        ),
+                    ),
+                )
+
+            advanceUntilIdle()
+            val effect = async(start = CoroutineStart.UNDISPATCHED) { viewModel.effects.first() }
+            viewModel.onIntent(AccountsIntent.Refresh)
+            advanceUntilIdle()
+
+            assertEquals(
+                AccountsUiState.Content(summary.total, summary.currencyCode, summary.accounts),
+                viewModel.state.value,
+            )
+            assertEquals(AccountsEffect.ShowError(FinanceFailureReason.Network), effect.await())
+        }
+
+    @Test
+    fun `refresh reloads accounts`() =
+        runTest {
+            val repository =
+                FakeAccountsRepository(
+                    AccountsLoadResult.Success(AccountsSummary(BigDecimal.ZERO, "RUB", emptyList())),
+                    AccountsLoadResult.Success(AccountsSummary(BigDecimal.ZERO, "RUB", emptyList())),
+                )
+            val viewModel = AccountsViewModel(GetAccountsUseCase(repository))
+
+            advanceUntilIdle()
+            viewModel.onIntent(AccountsIntent.Refresh)
+            advanceUntilIdle()
+
+            assertEquals(listOf("RUB", "RUB"), repository.requestedCurrencies)
         }
 }
 

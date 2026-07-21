@@ -2,7 +2,6 @@ package com.yandex.school.casheye.feature.expenses.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import com.yandex.school.casheye.domain.finance.FinanceLoadResult
 import com.yandex.school.casheye.domain.finance.GetDailySummaryUseCase
 import com.yandex.school.casheye.domain.finance.TransactionKind
@@ -38,7 +37,8 @@ class ExpensesViewModel(
 
     fun onIntent(intent: ExpensesIntent) {
         when (intent) {
-            ExpensesIntent.Retry -> loadExpenses(selectedDate)
+            ExpensesIntent.Retry -> loadExpenses(selectedDate, preserveContent = _state.value.isRefreshable())
+            ExpensesIntent.Refresh -> loadExpenses(selectedDate, preserveContent = true)
             is ExpensesIntent.SelectDate -> selectDate(intent.date)
         }
     }
@@ -47,14 +47,28 @@ class ExpensesViewModel(
         if (date == selectedDate) return
 
         selectedDate = date
-        loadExpenses(date)
+        loadExpenses(date, cancelPrevious = true)
     }
 
-    private fun loadExpenses(date: LocalDate) {
-        loadJob?.cancel()
+    private fun loadExpenses(
+        date: LocalDate,
+        preserveContent: Boolean = false,
+        cancelPrevious: Boolean = false,
+    ) {
+        if (cancelPrevious) {
+            loadJob?.cancel()
+        } else if (loadJob?.isActive == true) {
+            return
+        }
+        val keepsVisibleContent = preserveContent && _state.value.isRefreshable()
         loadJob =
             viewModelScope.launch {
-                _state.value = ExpensesUiState.Loading
+                _state.value =
+                    if (keepsVisibleContent) {
+                        _state.value.withRefreshing(true)
+                    } else {
+                        ExpensesUiState.Loading
+                    }
                 when (
                     val result =
                         getDailySummary(
@@ -67,7 +81,7 @@ class ExpensesViewModel(
                         val summary = result.summary
                         _state.value =
                             if (summary.transactions.isEmpty()) {
-                                ExpensesUiState.Empty
+                                ExpensesUiState.Empty()
                             } else {
                                 ExpensesUiState.Content(
                                     total = summary.total,
@@ -78,12 +92,32 @@ class ExpensesViewModel(
                     }
 
                     is FinanceLoadResult.Failure -> {
-                        _state.value = ExpensesUiState.Error(result.reason)
-                        _effects.emit(ExpensesEffect.ShowError(result.reason))
+                        _state.value =
+                            if (keepsVisibleContent) {
+                                _state.value.withRefreshing(false)
+                            } else {
+                                ExpensesUiState.Error(result.reason)
+                            }
+                        if (keepsVisibleContent) {
+                            _effects.emit(ExpensesEffect.ShowError(result.reason))
+                        }
                     }
                 }
             }
     }
 }
+
+private fun ExpensesUiState.isRefreshable(): Boolean = this is ExpensesUiState.Content || this is ExpensesUiState.Empty
+
+private fun ExpensesUiState.withRefreshing(isRefreshing: Boolean): ExpensesUiState =
+    when (this) {
+        is ExpensesUiState.Content -> copy(isRefreshing = isRefreshing)
+
+        is ExpensesUiState.Empty -> copy(isRefreshing = isRefreshing)
+
+        ExpensesUiState.Loading,
+        is ExpensesUiState.Error,
+        -> this
+    }
 
 private const val CURRENCY_RUB = "RUB"

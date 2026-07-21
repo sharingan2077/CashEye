@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.sp
 import com.yandex.school.casheye.core.designsystem.component.ErrorState
 import com.yandex.school.casheye.core.designsystem.component.ErrorStateType
 import com.yandex.school.casheye.core.designsystem.component.MoneyListItem
+import com.yandex.school.casheye.core.designsystem.component.PullToRefreshContainer
 import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
 import com.yandex.school.casheye.core.format.formatAmount
 import com.yandex.school.casheye.core.model.Transaction
@@ -39,29 +40,40 @@ import com.yandex.school.casheye.feature.expenses.R
 @Composable
 fun ExpenseScreen(
     state: ExpensesUiState,
+    onIntent: (ExpensesIntent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Box(
-        modifier =
-            modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background),
+    PullToRefreshContainer(
+        isRefreshing = state.isRefreshing,
+        onRefresh = { onIntent(ExpensesIntent.Refresh) },
+        modifier = modifier.fillMaxSize(),
     ) {
-        when (state) {
-            ExpensesUiState.Loading -> {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-            }
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background),
+        ) {
+            when (state) {
+                ExpensesUiState.Loading -> {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                }
 
-            ExpensesUiState.Empty -> {
-                EmptyExpenses(modifier = Modifier.align(Alignment.Center))
-            }
+                is ExpensesUiState.Empty -> {
+                    EmptyExpenses(modifier = Modifier.align(Alignment.Center))
+                }
 
-            is ExpensesUiState.Content -> {
-                ExpensesContent(state = state)
-            }
+                is ExpensesUiState.Content -> {
+                    ExpensesContent(state = state)
+                }
 
-            is ExpensesUiState.Error -> {
-                ErrorState(type = state.reason.toErrorStateType())
+                is ExpensesUiState.Error -> {
+                    ErrorState(
+                        type = state.reason.toErrorStateType(),
+                        onRetry = { onIntent(ExpensesIntent.Retry) },
+                        retryLabel = stringResource(R.string.retry),
+                    )
+                }
             }
         }
     }
@@ -186,6 +198,7 @@ private fun ExpenseScreenPreview() {
         Surface(color = MaterialTheme.colorScheme.background) {
             ExpenseScreen(
                 state = expensesUiStateMock,
+                onIntent = {},
             )
         }
     }

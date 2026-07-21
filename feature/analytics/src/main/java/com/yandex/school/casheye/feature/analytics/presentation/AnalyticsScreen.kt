@@ -41,6 +41,7 @@ import com.yandex.school.casheye.core.designsystem.component.ErrorStateType
 import com.yandex.school.casheye.core.designsystem.component.FilterItem
 import com.yandex.school.casheye.core.designsystem.component.IconCircle
 import com.yandex.school.casheye.core.designsystem.component.ListItem
+import com.yandex.school.casheye.core.designsystem.component.PullToRefreshContainer
 import com.yandex.school.casheye.core.format.formatAmount
 import com.yandex.school.casheye.core.model.Category
 import com.yandex.school.casheye.core.model.Transaction
@@ -53,12 +54,33 @@ fun AnalyticsScreen(
     onIntent: (AnalyticsIntent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Box(modifier = modifier.fillMaxSize()) {
-        when (state) {
-            is AnalyticsUiState.Loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-            is AnalyticsUiState.Content -> AnalyticsContent(state, onIntent)
-            is AnalyticsUiState.Empty -> AnalyticsEmpty(state, onIntent)
-            is AnalyticsUiState.Error -> ErrorState(type = state.reason.toErrorStateType())
+    PullToRefreshContainer(
+        isRefreshing = state.isRefreshing,
+        onRefresh = { onIntent(AnalyticsIntent.Refresh) },
+        modifier = modifier.fillMaxSize(),
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            when (state) {
+                is AnalyticsUiState.Loading -> {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                }
+
+                is AnalyticsUiState.Content -> {
+                    AnalyticsContent(state, onIntent)
+                }
+
+                is AnalyticsUiState.Empty -> {
+                    AnalyticsEmpty(state, onIntent)
+                }
+
+                is AnalyticsUiState.Error -> {
+                    ErrorState(
+                        type = state.reason.toErrorStateType(),
+                        onRetry = { onIntent(AnalyticsIntent.Retry) },
+                        retryLabel = stringResource(R.string.retry),
+                    )
+                }
+            }
         }
     }
     AnalyticsBottomSheet(state = state, onIntent = onIntent)

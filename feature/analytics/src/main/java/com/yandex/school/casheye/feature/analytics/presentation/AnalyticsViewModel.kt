@@ -57,7 +57,8 @@ class AnalyticsViewModel(
             AnalyticsIntent.ApplyDraftCategories -> applyDraftCategories()
             is AnalyticsIntent.SelectAccount -> applyAccount(intent.accountId)
             AnalyticsIntent.OpenDetails -> updateSheet(AnalyticsSheet.Details)
-            AnalyticsIntent.Retry -> loadAnalytics()
+            AnalyticsIntent.Retry -> loadAnalytics(preserveContent = _state.value.isRefreshable())
+            AnalyticsIntent.Refresh -> loadAnalytics(preserveContent = true)
         }
     }
 
@@ -196,7 +197,7 @@ class AnalyticsViewModel(
 
     private fun applyFilters(filters: AnalyticsFilters) {
         screenData = screenData.copy(filters = filters, currentDate = today, activeSheet = null)
-        loadAnalytics()
+        loadAnalytics(cancelPrevious = true)
     }
 
     private fun updateSheet(sheet: AnalyticsSheet?) {
@@ -204,11 +205,24 @@ class AnalyticsViewModel(
         _state.value = _state.value.withData(screenData)
     }
 
-    private fun loadAnalytics() {
-        loadJob?.cancel()
+    private fun loadAnalytics(
+        preserveContent: Boolean = false,
+        cancelPrevious: Boolean = false,
+    ) {
+        if (cancelPrevious) {
+            loadJob?.cancel()
+        } else if (loadJob?.isActive == true) {
+            return
+        }
+        val keepsVisibleContent = preserveContent && _state.value.isRefreshable()
         loadJob =
             viewModelScope.launch {
-                _state.value = AnalyticsUiState.Loading(screenData)
+                _state.value =
+                    if (keepsVisibleContent) {
+                        _state.value.withRefreshing(true)
+                    } else {
+                        AnalyticsUiState.Loading(screenData)
+                    }
                 val filters = screenData.filters
                 when (
                     val result =
@@ -224,7 +238,7 @@ class AnalyticsViewModel(
                         )
                 ) {
                     is AnalyticsLoadResult.Success -> handleSuccess(result)
-                    is AnalyticsLoadResult.Failure -> handleFailure(result.reason)
+                    is AnalyticsLoadResult.Failure -> handleFailure(result.reason, keepsVisibleContent)
                 }
             }
     }
@@ -252,9 +266,19 @@ class AnalyticsViewModel(
             }
     }
 
-    private suspend fun handleFailure(reason: FinanceFailureReason) {
-        _state.value = AnalyticsUiState.Error(screenData, reason)
-        _effects.emit(AnalyticsEffect.ShowError(reason))
+    private suspend fun handleFailure(
+        reason: FinanceFailureReason,
+        keepsVisibleContent: Boolean,
+    ) {
+        _state.value =
+            if (keepsVisibleContent) {
+                _state.value.withRefreshing(false)
+            } else {
+                AnalyticsUiState.Error(screenData, reason)
+            }
+        if (keepsVisibleContent) {
+            _effects.emit(AnalyticsEffect.ShowError(reason))
+        }
     }
 }
 
@@ -282,6 +306,20 @@ private fun AnalyticsUiState.withData(data: AnalyticsScreenData): AnalyticsUiSta
         is AnalyticsUiState.Empty -> copy(data = data)
         is AnalyticsUiState.Content -> copy(data = data)
         is AnalyticsUiState.Error -> copy(data = data)
+    }
+
+private fun AnalyticsUiState.isRefreshable(): Boolean =
+    this is AnalyticsUiState.Content || this is AnalyticsUiState.Empty
+
+private fun AnalyticsUiState.withRefreshing(isRefreshing: Boolean): AnalyticsUiState =
+    when (this) {
+        is AnalyticsUiState.Content -> copy(isRefreshing = isRefreshing)
+
+        is AnalyticsUiState.Empty -> copy(isRefreshing = isRefreshing)
+
+        is AnalyticsUiState.Loading,
+        is AnalyticsUiState.Error,
+        -> this
     }
 
 private const val CURRENCY_RUB = "RUB"

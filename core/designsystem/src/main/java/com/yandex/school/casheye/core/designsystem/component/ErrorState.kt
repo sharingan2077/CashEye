@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -28,6 +29,8 @@ import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
 fun ErrorState(
     type: ErrorStateType,
     modifier: Modifier = Modifier,
+    onRetry: (() -> Unit)? = null,
+    retryLabel: String? = null,
 ) {
     val content = type.content()
     Column(
@@ -57,6 +60,14 @@ fun ErrorState(
             style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center,
         )
+        if (onRetry != null && retryLabel != null) {
+            Button(
+                onClick = onRetry,
+                modifier = Modifier.padding(top = 24.dp),
+            ) {
+                Text(text = retryLabel)
+            }
+        }
     }
 }
 

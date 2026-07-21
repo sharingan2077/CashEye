@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.sp
 import com.yandex.school.casheye.core.designsystem.component.ErrorState
 import com.yandex.school.casheye.core.designsystem.component.ErrorStateType
 import com.yandex.school.casheye.core.designsystem.component.MoneyListItem
+import com.yandex.school.casheye.core.designsystem.component.PullToRefreshContainer
 import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
 import com.yandex.school.casheye.core.format.formatAmount
 import com.yandex.school.casheye.core.model.Transaction
@@ -39,29 +40,40 @@ import com.yandex.school.casheye.feature.income.R
 @Composable
 fun IncomeScreen(
     state: IncomeUiState,
+    onIntent: (IncomeIntent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Box(
-        modifier =
-            modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background),
+    PullToRefreshContainer(
+        isRefreshing = state.isRefreshing,
+        onRefresh = { onIntent(IncomeIntent.Refresh) },
+        modifier = modifier.fillMaxSize(),
     ) {
-        when (state) {
-            IncomeUiState.Loading -> {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-            }
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background),
+        ) {
+            when (state) {
+                IncomeUiState.Loading -> {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                }
 
-            IncomeUiState.Empty -> {
-                EmptyIncome(modifier = Modifier.align(Alignment.Center))
-            }
+                is IncomeUiState.Empty -> {
+                    EmptyIncome(modifier = Modifier.align(Alignment.Center))
+                }
 
-            is IncomeUiState.Content -> {
-                IncomeContent(state = state)
-            }
+                is IncomeUiState.Content -> {
+                    IncomeContent(state = state)
+                }
 
-            is IncomeUiState.Error -> {
-                ErrorState(type = state.reason.toErrorStateType())
+                is IncomeUiState.Error -> {
+                    ErrorState(
+                        type = state.reason.toErrorStateType(),
+                        onRetry = { onIntent(IncomeIntent.Retry) },
+                        retryLabel = stringResource(R.string.retry),
+                    )
+                }
             }
         }
     }
@@ -188,7 +200,10 @@ private fun FinanceFailureReason.toErrorStateType(): ErrorStateType =
 private fun IncomeScreenPreview() {
     CashEyeTheme(dynamicColor = false) {
         Surface(color = MaterialTheme.colorScheme.background) {
-            IncomeScreen(state = incomeUiStateMock)
+            IncomeScreen(
+                state = incomeUiStateMock,
+                onIntent = {},
+            )
         }
     }
 }

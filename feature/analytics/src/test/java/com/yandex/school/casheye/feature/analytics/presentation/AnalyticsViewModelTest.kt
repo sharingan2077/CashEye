@@ -217,7 +217,7 @@ class AnalyticsViewModelTest {
         }
 
     @Test
-    fun `failure emits effect and retry loads again`() =
+    fun `initial failure exposes error and retry loads again`() =
         runTest {
             val repository =
                 QueueAnalyticsRepository(
@@ -225,19 +225,52 @@ class AnalyticsViewModelTest {
                     success(),
                 )
             val viewModel = AnalyticsViewModel(GetAnalyticsUseCase(repository), clock)
-            val effect = async(start = CoroutineStart.UNDISPATCHED) { viewModel.effects.first() }
 
             viewModel.onIntent(AnalyticsIntent.Initialize(AnalyticsEntryPoint.Expenses))
             advanceUntilIdle()
 
             assertTrue(viewModel.state.value is AnalyticsUiState.Error)
-            assertEquals(AnalyticsEffect.ShowError(FinanceFailureReason.Network), effect.await())
 
             viewModel.onIntent(AnalyticsIntent.Retry)
             advanceUntilIdle()
 
             assertTrue(viewModel.state.value is AnalyticsUiState.Empty)
             assertEquals(2, repository.queries.size)
+        }
+
+    @Test
+    fun `failed refresh keeps content and emits show error effect`() =
+        runTest {
+            val repository =
+                QueueAnalyticsRepository(
+                    success(transactions = listOf(transaction(id = 1, categoryId = 10, amount = "3"))),
+                    AnalyticsLoadResult.Failure(FinanceFailureReason.Network),
+                )
+            val viewModel = AnalyticsViewModel(GetAnalyticsUseCase(repository), clock)
+            viewModel.onIntent(AnalyticsIntent.Initialize(AnalyticsEntryPoint.Expenses))
+            advanceUntilIdle()
+
+            val effect = async(start = CoroutineStart.UNDISPATCHED) { viewModel.effects.first() }
+            viewModel.onIntent(AnalyticsIntent.Refresh)
+            advanceUntilIdle()
+
+            assertTrue(viewModel.state.value is AnalyticsUiState.Content)
+            assertEquals(AnalyticsEffect.ShowError(FinanceFailureReason.Network), effect.await())
+        }
+
+    @Test
+    fun `refresh reloads the current analytics filters`() =
+        runTest {
+            val repository = QueueAnalyticsRepository(success(), success())
+            val viewModel = AnalyticsViewModel(GetAnalyticsUseCase(repository), clock)
+            viewModel.onIntent(AnalyticsIntent.Initialize(AnalyticsEntryPoint.Expenses))
+            advanceUntilIdle()
+
+            viewModel.onIntent(AnalyticsIntent.Refresh)
+            advanceUntilIdle()
+
+            assertEquals(2, repository.queries.size)
+            assertEquals(repository.queries.first(), repository.queries.last())
         }
 
     @Test

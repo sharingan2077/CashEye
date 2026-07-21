@@ -1,13 +1,14 @@
 package com.yandex.school.casheye.feature.analytics.presentation
 
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.yandex.school.casheye.core.designsystem.component.DismissSnackbarOnDispose
+import com.yandex.school.casheye.core.designsystem.component.showRetrySnackbar
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import com.yandex.school.casheye.feature.analytics.R
 import dev.zacsweers.metrox.viewmodel.metroViewModel
@@ -24,6 +25,8 @@ fun AnalyticsRoute(
     val failureMessages = localizedFailureMessages()
     val retryLabel = stringResource(R.string.retry)
 
+    DismissSnackbarOnDispose(snackbarHostState)
+
     LaunchedEffect(entryPoint, viewModel) {
         viewModel.onIntent(AnalyticsIntent.Initialize(entryPoint))
     }
@@ -31,12 +34,12 @@ fun AnalyticsRoute(
         viewModel.effects.collectLatest { effect ->
             when (effect) {
                 is AnalyticsEffect.ShowError -> {
-                    val result =
-                        snackbarHostState.showSnackbar(
+                    if (
+                        snackbarHostState.showRetrySnackbar(
                             message = failureMessages.getValue(effect.reason),
-                            actionLabel = retryLabel,
+                            retryLabel = retryLabel,
                         )
-                    if (result == SnackbarResult.ActionPerformed) {
+                    ) {
                         viewModel.onIntent(AnalyticsIntent.Retry)
                     }
                 }
