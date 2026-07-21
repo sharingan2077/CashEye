@@ -146,7 +146,7 @@ private fun AnalyticsLegend(
 internal fun analyticsColorForCategory(categoryId: Int): Color {
     val normalizedId = categoryId.toLong() and UINT_MASK
     val hue = (normalizedId.rem(COLOR_SEQUENCE_LENGTH).toFloat() * GOLDEN_ANGLE).rem(FULL_HUE)
-    return Color.hsv(hue = hue, saturation = 0.78f, value = 0.82f)
+    return Color.hsv(hue = hue, saturation = 0.58f, value = 0.94f)
 }
 
 internal fun analyticsPieChartValues(categories: List<AnalyticsCategorySummary>): List<BigDecimal> {
