@@ -20,7 +20,7 @@ import java.time.LocalDate
 @Inject
 class ExpensesViewModel(
     private val getDailySummary: GetDailySummaryUseCase,
-    private val clock: Clock = Clock.systemDefaultZone(),
+    clock: Clock = Clock.systemDefaultZone(),
 ) : ViewModel() {
     private val _state = MutableStateFlow<ExpensesUiState>(ExpensesUiState.Loading)
     val state: StateFlow<ExpensesUiState> = _state.asStateFlow()
