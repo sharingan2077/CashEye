@@ -27,6 +27,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.yandex.school.casheye.core.designsystem.component.ErrorState
+import com.yandex.school.casheye.core.designsystem.component.ErrorStateType
 import com.yandex.school.casheye.core.designsystem.component.MoneyListItem
 import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
 import com.yandex.school.casheye.core.format.formatAmount
@@ -59,10 +61,7 @@ fun ExpenseScreen(
             }
 
             is ExpensesUiState.Error -> {
-                ExpensesError(
-                    message = state.reason.localizedMessage(),
-                    modifier = Modifier.align(Alignment.Center),
-                )
+                ErrorState(type = state.reason.toErrorStateType())
             }
         }
     }
@@ -136,25 +135,6 @@ private fun EmptyExpenses(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun ExpensesError(
-    message: String,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier.padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Text(
-            text = message,
-            color = MaterialTheme.colorScheme.onSurface,
-            style = MaterialTheme.typography.bodyLarge,
-            textAlign = TextAlign.Center,
-        )
-    }
-}
-
-@Composable
 private fun ExpensesHero(total: String) {
     Column(
         modifier =
@@ -178,16 +158,13 @@ private fun ExpensesHero(total: String) {
     }
 }
 
-@Composable
-private fun FinanceFailureReason.localizedMessage(): String =
-    stringResource(
-        when (this) {
-            FinanceFailureReason.Network -> R.string.error_network
-            FinanceFailureReason.Authorization -> R.string.error_authorization
-            FinanceFailureReason.Server -> R.string.error_server
-            FinanceFailureReason.Unknown -> R.string.error_load_expenses
-        },
-    )
+private fun FinanceFailureReason.toErrorStateType(): ErrorStateType =
+    when (this) {
+        FinanceFailureReason.Network -> ErrorStateType.Network
+        FinanceFailureReason.Authorization -> ErrorStateType.Authorization
+        FinanceFailureReason.Server -> ErrorStateType.Server
+        FinanceFailureReason.Unknown -> ErrorStateType.Unknown
+    }
 
 @Preview(
     name = "Light",

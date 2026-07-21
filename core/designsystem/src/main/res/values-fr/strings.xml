@@ -1,0 +1,10 @@
+<resources>
+    <string name="error_network_title">Pas de connexion Internet</string>
+    <string name="error_network_description">Vérifiez votre connexion et réessayez.</string>
+    <string name="error_server_title">Le serveur est indisponible</string>
+    <string name="error_server_description">Veuillez réessayer un peu plus tard.</string>
+    <string name="error_authorization_title">Échec de l’autorisation</string>
+    <string name="error_authorization_description">Reconnectez-vous et réessayez.</string>
+    <string name="error_unknown_title">Impossible de charger les données</string>
+    <string name="error_unknown_description">Un problème est survenu. Veuillez réessayer plus tard.</string>
+</resources>

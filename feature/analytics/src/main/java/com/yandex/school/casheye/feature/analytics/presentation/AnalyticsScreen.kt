@@ -7,10 +7,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -38,6 +36,8 @@ import androidx.compose.ui.unit.sp
 import com.patrykandpatrick.vico.compose.pie.data.PieChartModelProducer
 import com.patrykandpatrick.vico.compose.pie.data.pieSeries
 import com.yandex.school.casheye.core.designsystem.component.EmojiCircle
+import com.yandex.school.casheye.core.designsystem.component.ErrorState
+import com.yandex.school.casheye.core.designsystem.component.ErrorStateType
 import com.yandex.school.casheye.core.designsystem.component.FilterItem
 import com.yandex.school.casheye.core.designsystem.component.IconCircle
 import com.yandex.school.casheye.core.designsystem.component.ListItem
@@ -58,7 +58,7 @@ fun AnalyticsScreen(
             is AnalyticsUiState.Loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             is AnalyticsUiState.Content -> AnalyticsContent(state, onIntent)
             is AnalyticsUiState.Empty -> AnalyticsEmpty(state, onIntent)
-            is AnalyticsUiState.Error -> AnalyticsError(state.reason.localizedMessage())
+            is AnalyticsUiState.Error -> ErrorState(type = state.reason.toErrorStateType())
         }
     }
     AnalyticsBottomSheet(state = state, onIntent = onIntent)
@@ -157,21 +157,6 @@ private fun AnalyticsEmptyState() {
             style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center,
         )
-    }
-}
-
-@Composable
-private fun AnalyticsError(message: String) {
-    Column(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Text(text = message, textAlign = TextAlign.Center)
-        Spacer(modifier = Modifier.height(16.dp))
     }
 }
 
@@ -292,13 +277,10 @@ private fun AnalyticsType.title(): String =
         },
     )
 
-@Composable
-private fun FinanceFailureReason.localizedMessage(): String =
-    stringResource(
-        when (this) {
-            FinanceFailureReason.Network -> R.string.error_network
-            FinanceFailureReason.Authorization -> R.string.error_authorization
-            FinanceFailureReason.Server -> R.string.error_server
-            FinanceFailureReason.Unknown -> R.string.error_load_analytics
-        },
-    )
+private fun FinanceFailureReason.toErrorStateType(): ErrorStateType =
+    when (this) {
+        FinanceFailureReason.Network -> ErrorStateType.Network
+        FinanceFailureReason.Authorization -> ErrorStateType.Authorization
+        FinanceFailureReason.Server -> ErrorStateType.Server
+        FinanceFailureReason.Unknown -> ErrorStateType.Unknown
+    }

@@ -1,0 +1,10 @@
+<resources>
+    <string name="error_network_title">Keine Internetverbindung</string>
+    <string name="error_network_description">Überprüfen Sie Ihre Verbindung und versuchen Sie es erneut.</string>
+    <string name="error_server_title">Server nicht verfügbar</string>
+    <string name="error_server_description">Bitte versuchen Sie es etwas später erneut.</string>
+    <string name="error_authorization_title">Anmeldung fehlgeschlagen</string>
+    <string name="error_authorization_description">Melden Sie sich erneut an und versuchen Sie es noch einmal.</string>
+    <string name="error_unknown_title">Daten konnten nicht geladen werden</string>
+    <string name="error_unknown_description">Etwas ist schiefgelaufen. Bitte versuchen Sie es später erneut.</string>
+</resources>
