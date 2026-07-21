@@ -1,4 +1,6 @@
-# Архитектура
+# CashEye
+
+## Архитектура
 
 Проект использует multi-module Clean Architecture с MVVM и MVI-style presentation.
 
@@ -6,23 +8,46 @@
 app
 ├── core:model
 ├── core:designsystem
-├── core:ui
-├── feature:expenses ── domain:finance
-├── feature:income ── domain:finance
+├── core:common
+├── domain:finance
+├── data:finance
+├── feature:expenses
+├── feature:income
 ├── feature:accounts
 ├── feature:analytics
-├── feature:splash
-└── data:finance ──── domain:finance
+└── feature:splash
 ```
 
 - `:app` содержит application entry point, DI composition и root navigation.
-- `:core:*` содержит только переиспользуемые модели, UI и design system.
+- `:core:*` содержит только переиспользуемые модели, common и design system.
 - `:feature:*` содержит Route, Screen, ViewModel, UiState, Intent и Effect конкретного экрана.
 - `:domain:*` содержит бизнес-контракты и use cases без Android-зависимостей.
 - `:data:*` реализует domain-контракты, API, DTO и mappers.
 
-Зависимости направлены внутрь: `app -> feature/data`, `feature -> domain/core`, `data -> domain/core`.
-Feature не зависит от другого feature. Runtime mocks для экранов без API остаются внутри соответствующего feature.
+Ключевые зависимости:
+
+```text
+app -> feature:*, data:finance
+feature:expenses|income|accounts|analytics -> domain:finance, core:*
+feature:splash -> core:designsystem
+data:finance -> domain:finance, core:model
+```
+
+Feature не зависит от другого feature. Фикстуры состояний в feature-модулях используются только для
+Compose Preview.
+
+## Реализовано в HW-2
+
+- Сетевые экраны расходов, доходов, счетов и аналитики на Jetpack Compose.
+- Состояния `Loading`, `Content`, `Empty` и `Error` для всех экранов; бизнес-логика находится во
+  ViewModel.
+- Аналитика с периодом от начала текущего месяца, фильтрами по типу, периоду, категориям и счёту, а
+  также сортировкой операций от новых к старым.
+- Pull-to-refresh для всех основных экранов. При неуспешном обновлении видимые данные сохраняются, а
+  snackbar предлагает повторить запрос; при первичной ошибке доступна кнопка «Повторить» на экране
+  ошибки.
+- Сетевой слой на Retrofit и разделение DTO, доменных моделей, репозитория и use cases между
+  `data:finance` и `domain:finance`.
 
 ## Локальная конфигурация
 
@@ -38,7 +63,7 @@ local/api_key.txt
 
 Файл с ключом используется только для локальной разработки и не должен попадать в Git.
 
-В `.gitignore` должны быть указаны следующие правила:
+Репозиторий уже исключает локальную конфигурацию из Git:
 
 ```gitignore
 /local/
@@ -46,6 +71,13 @@ local/api_key.txt
 
 Во время сборки Gradle считывает значение из `local/api_key.txt` и передаёт его приложению через
 сгенерированный `BuildConfig`.
+
+## Запуск
+
+1. Откройте проект в Android Studio с JDK 21.
+2. Добавьте API-ключ в `local/api_key.txt`.
+3. Выберите конфигурацию `app` и запустите её на эмуляторе или устройстве с Android 8.0 (API 26) и
+   выше.
 
 ## Описание задания
 
