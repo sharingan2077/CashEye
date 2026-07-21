@@ -2,7 +2,13 @@
 
 package com.yandex.school.casheye.feature.analytics.presentation
 
+import androidx.compose.animation.animateColor
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.ScrollScope
@@ -31,22 +37,26 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -57,6 +67,7 @@ import com.yandex.school.casheye.core.designsystem.component.ListItem
 import com.yandex.school.casheye.core.format.formatAmount
 import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.Category
+import com.yandex.school.casheye.feature.analytics.R
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.format.DateTimeFormatter
@@ -476,7 +487,7 @@ private fun AccountRow(
                     subtitle?.let { Text(text = it, style = MaterialTheme.typography.bodySmall) }
                 }
             },
-            trail = { RadioButton(selected = selected, onClick = onClick) },
+            trail = { AccountSelectionIndicator(selected = selected) },
             height = 64.dp,
         )
         HorizontalDivider()
@@ -502,9 +513,73 @@ private fun SelectionRow(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(text = title, modifier = Modifier.weight(1f))
-            RadioButton(selected = selected, onClick = onClick)
+            TypeSelectionIndicator(selected = selected)
         }
         HorizontalDivider()
+    }
+}
+
+@Composable
+private fun TypeSelectionIndicator(selected: Boolean) {
+    val transition = updateTransition(targetState = selected, label = "type_selection")
+    val containerColor by
+        transition.animateColor(
+            transitionSpec = { tween(durationMillis = 200, easing = FastOutSlowInEasing) },
+            label = "container_color",
+        ) { isSelected ->
+            if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
+        }
+    val outlineColor by
+        transition.animateColor(
+            transitionSpec = { tween(durationMillis = 200, easing = FastOutSlowInEasing) },
+            label = "outline_color",
+        ) { isSelected ->
+            if (isSelected) Color.Transparent else MaterialTheme.colorScheme.outline
+        }
+    val checkAlpha by
+        transition.animateFloat(
+            transitionSpec = { tween(durationMillis = 200, easing = FastOutSlowInEasing) },
+            label = "check_alpha",
+        ) { isSelected ->
+            if (isSelected) 1f else 0f
+        }
+    val checkScale by
+        transition.animateFloat(
+            transitionSpec = { tween(durationMillis = 200, easing = FastOutSlowInEasing) },
+            label = "check_scale",
+        ) { isSelected ->
+            if (isSelected) 1f else 0.7f
+        }
+    Box(
+        modifier =
+            Modifier
+                .size(24.dp)
+                .background(containerColor, CircleShape)
+                .border(width = 2.dp, color = outlineColor, shape = CircleShape),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            painter = painterResource(R.drawable.check),
+            contentDescription = if (selected) "Выбрано" else null,
+            tint = MaterialTheme.colorScheme.onPrimary,
+            modifier = Modifier.graphicsLayer(alpha = checkAlpha, scaleX = checkScale, scaleY = checkScale),
+        )
+    }
+}
+
+@Composable
+private fun AccountSelectionIndicator(selected: Boolean) {
+    Box(
+        modifier = Modifier.size(20.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (selected) {
+            Icon(
+                painter = painterResource(R.drawable.check_purple),
+                contentDescription = "Выбрано",
+                tint = MaterialTheme.colorScheme.primary,
+            )
+        }
     }
 }
 
