@@ -231,7 +231,7 @@ class AnalyticsViewModelTest {
             advanceUntilIdle()
 
             assertTrue(viewModel.state.value is AnalyticsUiState.Error)
-            assertEquals(AnalyticsEffect.ShowError("Проверьте подключение к интернету"), effect.await())
+            assertEquals(AnalyticsEffect.ShowError(FinanceFailureReason.Network), effect.await())
 
             viewModel.onIntent(AnalyticsIntent.Retry)
             advanceUntilIdle()

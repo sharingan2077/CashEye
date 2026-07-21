@@ -25,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -38,6 +39,7 @@ import com.yandex.school.casheye.core.designsystem.component.ListItem
 import com.yandex.school.casheye.core.format.formatAmount
 import com.yandex.school.casheye.core.model.Category
 import com.yandex.school.casheye.core.model.Transaction
+import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import com.yandex.school.casheye.feature.analytics.R
 
 @Composable
@@ -51,7 +53,7 @@ fun AnalyticsScreen(
             is AnalyticsUiState.Loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             is AnalyticsUiState.Content -> AnalyticsContent(state, onIntent)
             is AnalyticsUiState.Empty -> AnalyticsEmpty(state, onIntent)
-            is AnalyticsUiState.Error -> AnalyticsError(state.message)
+            is AnalyticsUiState.Error -> AnalyticsError(state.reason.localizedMessage())
         }
     }
     AnalyticsBottomSheet(state = state, onIntent = onIntent)
@@ -118,7 +120,10 @@ private fun AnalyticsEmpty(
                     .fillMaxWidth(),
             contentAlignment = Alignment.Center,
         ) {
-            Text(text = "За выбранный период операций нет", style = MaterialTheme.typography.bodyLarge)
+            Text(
+                text = stringResource(R.string.empty_period),
+                style = MaterialTheme.typography.bodyLarge,
+            )
         }
     }
 }
@@ -141,7 +146,7 @@ private fun AnalyticsError(message: String) {
 @Composable
 private fun TransactionsHeading() {
     Text(
-        text = "Транзакции",
+        text = stringResource(R.string.transactions),
         modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 32.dp, bottom = 8.dp),
         style = MaterialTheme.typography.headlineMedium.copy(fontSize = 22.sp),
     )
@@ -185,29 +190,31 @@ private fun FilterView(
     Column(modifier = Modifier.padding(vertical = 8.dp)) {
         AnalyticsFilterItem(
             iconPainter = painterResource(R.drawable.list),
-            title = "Тип",
-            value = filters.type.title,
+            title = stringResource(R.string.filter_type),
+            value = filters.type.title(),
             onClick = { onIntent(AnalyticsIntent.OpenFilter(AnalyticsFilterKind.Type)) },
         )
         HorizontalDivider(color = MaterialTheme.colorScheme.outline)
         AnalyticsFilterItem(
             iconPainter = painterResource(R.drawable.calendar),
-            title = "Период",
+            title = stringResource(R.string.filter_period),
             value = filters.period.formatted(),
             onClick = { onIntent(AnalyticsIntent.OpenFilter(AnalyticsFilterKind.Period)) },
         )
         HorizontalDivider(color = MaterialTheme.colorScheme.outline)
         AnalyticsFilterItem(
             iconPainter = painterResource(R.drawable.tag),
-            title = "Статьи",
+            title = stringResource(R.string.filter_categories),
             value = categoriesTitle(filters.categoryIds, data.categories),
             onClick = { onIntent(AnalyticsIntent.OpenFilter(AnalyticsFilterKind.Categories)) },
         )
         HorizontalDivider(color = MaterialTheme.colorScheme.outline)
         AnalyticsFilterItem(
             iconPainter = painterResource(R.drawable.credit_card),
-            title = "Счёт",
-            value = data.accounts.firstOrNull { it.id == filters.accountId }?.name ?: "Все счета",
+            title = stringResource(R.string.filter_account),
+            value =
+                data.accounts.firstOrNull { it.id == filters.accountId }?.name
+                    ?: stringResource(R.string.all_accounts),
             onClick = { onIntent(AnalyticsIntent.OpenFilter(AnalyticsFilterKind.Account)) },
         )
     }
@@ -229,15 +236,37 @@ private fun AnalyticsFilterItem(
     )
 }
 
+@Composable
 private fun categoriesTitle(
     selectedIds: Set<Int>,
     categories: List<Category>,
 ): String {
-    if (selectedIds.isEmpty()) return "Все статьи"
+    if (selectedIds.isEmpty()) return stringResource(R.string.all_categories)
     val names = categories.filter { it.id in selectedIds }.map { it.name }
     return when {
-        names.isEmpty() -> "Выбрано: ${selectedIds.size}"
+        names.isEmpty() -> stringResource(R.string.selected_count, selectedIds.size)
         names.size <= 2 -> names.joinToString()
-        else -> "Выбрано: ${selectedIds.size}"
+        else -> stringResource(R.string.selected_count, selectedIds.size)
     }
 }
+
+@Composable
+private fun AnalyticsType.title(): String =
+    stringResource(
+        when (this) {
+            AnalyticsType.Expenses -> R.string.type_expenses
+            AnalyticsType.Income -> R.string.type_income
+            AnalyticsType.All -> R.string.type_all
+        },
+    )
+
+@Composable
+private fun FinanceFailureReason.localizedMessage(): String =
+    stringResource(
+        when (this) {
+            FinanceFailureReason.Network -> R.string.error_network
+            FinanceFailureReason.Authorization -> R.string.error_authorization
+            FinanceFailureReason.Server -> R.string.error_server
+            FinanceFailureReason.Unknown -> R.string.error_load_analytics
+        },
+    )

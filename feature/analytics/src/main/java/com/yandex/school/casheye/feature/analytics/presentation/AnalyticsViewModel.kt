@@ -253,9 +253,8 @@ class AnalyticsViewModel(
     }
 
     private suspend fun handleFailure(reason: FinanceFailureReason) {
-        val message = reason.toUserMessage()
-        _state.value = AnalyticsUiState.Error(screenData, message)
-        _effects.emit(AnalyticsEffect.ShowError(message))
+        _state.value = AnalyticsUiState.Error(screenData, reason)
+        _effects.emit(AnalyticsEffect.ShowError(reason))
     }
 }
 
@@ -283,14 +282,6 @@ private fun AnalyticsUiState.withData(data: AnalyticsScreenData): AnalyticsUiSta
         is AnalyticsUiState.Empty -> copy(data = data)
         is AnalyticsUiState.Content -> copy(data = data)
         is AnalyticsUiState.Error -> copy(data = data)
-    }
-
-private fun FinanceFailureReason.toUserMessage(): String =
-    when (this) {
-        FinanceFailureReason.Network -> "Проверьте подключение к интернету"
-        FinanceFailureReason.Authorization -> "Не удалось авторизоваться"
-        FinanceFailureReason.Server -> "Сервер временно недоступен"
-        FinanceFailureReason.Unknown -> "Не удалось загрузить аналитику"
     }
 
 private const val CURRENCY_RUB = "RUB"

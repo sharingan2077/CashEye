@@ -3,6 +3,7 @@ package com.yandex.school.casheye.feature.analytics.presentation
 import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.Category
 import com.yandex.school.casheye.core.model.Transaction
+import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -12,22 +13,18 @@ enum class AnalyticsEntryPoint {
     Accounts,
 }
 
-enum class AnalyticsType(
-    val title: String,
-) {
-    Expenses("Расходы"),
-    Income("Доходы"),
-    All("Всё"),
+enum class AnalyticsType {
+    Expenses,
+    Income,
+    All,
 }
 
-enum class AnalyticsPeriodPreset(
-    val title: String,
-) {
-    Custom("Произвольный"),
-    Week("За неделю"),
-    Month("За месяц"),
-    Quarter("За квартал"),
-    Year("За год"),
+enum class AnalyticsPeriodPreset {
+    Custom,
+    Week,
+    Month,
+    Quarter,
+    Year,
 }
 
 data class AnalyticsPeriod(
@@ -106,7 +103,7 @@ sealed interface AnalyticsUiState {
 
     data class Error(
         override val data: AnalyticsScreenData,
-        val message: String,
+        val reason: FinanceFailureReason,
     ) : AnalyticsUiState
 }
 
@@ -157,6 +154,6 @@ sealed interface AnalyticsIntent {
 
 sealed interface AnalyticsEffect {
     data class ShowError(
-        val message: String,
+        val reason: FinanceFailureReason,
     ) : AnalyticsEffect
 }

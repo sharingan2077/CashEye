@@ -21,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.patrykandpatrick.vico.compose.common.Fill
 import com.patrykandpatrick.vico.compose.pie.PieChart
@@ -29,6 +30,7 @@ import com.patrykandpatrick.vico.compose.pie.PieSize
 import com.patrykandpatrick.vico.compose.pie.data.PieChartModelProducer
 import com.patrykandpatrick.vico.compose.pie.data.pieSeries
 import com.patrykandpatrick.vico.compose.pie.rememberPieChart
+import com.yandex.school.casheye.feature.analytics.R
 import java.math.BigDecimal
 
 private val singleCategoryPlaceholderRatio = BigDecimal("0.000001")
@@ -100,7 +102,7 @@ private fun PieChartWithTotal(
         )
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
-                text = "Всего за период",
+                text = stringResource(R.string.total_for_period),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.labelLarge,
             )

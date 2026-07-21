@@ -34,14 +34,19 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalLocale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.yandex.school.casheye.feature.analytics.R
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -69,7 +74,7 @@ internal fun CustomPeriodSheet(
 
     AnalyticsModalBottomSheet(onDismissRequest = { onIntent(AnalyticsIntent.DismissSheet) }) {
         Text(
-            text = "Произвольный период",
+            text = stringResource(R.string.period_custom),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier.padding(start = 24.dp, top = 4.dp, end = 24.dp, bottom = 14.dp),
@@ -110,6 +115,7 @@ private fun CalendarMonthSelector(
     onNextMonth: () -> Unit,
     onDateClick: (LocalDate) -> Unit,
 ) {
+    val locale = LocalConfiguration.current.locales[0] ?: LocalLocale.current.platformLocale
     LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = 400.dp)) {
         item {
             CalendarMonthHeader(
@@ -136,8 +142,8 @@ private fun CalendarMonthSelector(
                     firstVisibleMonth
                         .plusMonths(1)
                         .atDay(1)
-                        .format(CALENDAR_MONTH_FORMATTER)
-                        .replaceFirstChar { it.titlecase(CALENDAR_LOCALE) },
+                        .format(DateTimeFormatter.ofPattern("LLLL yyyy", locale))
+                        .replaceFirstChar { it.titlecase(locale) },
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 textAlign = TextAlign.Center,
@@ -170,7 +176,7 @@ private fun CustomPeriodActions(
         horizontalArrangement = Arrangement.End,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        TextButton(onClick = { onIntent(AnalyticsIntent.DismissSheet) }) { Text("Отмена") }
+        TextButton(onClick = { onIntent(AnalyticsIntent.DismissSheet) }) { Text(stringResource(R.string.cancel)) }
         Spacer(modifier = Modifier.width(12.dp))
         Button(
             enabled = valid,
@@ -181,7 +187,7 @@ private fun CustomPeriodActions(
                 onIntent(AnalyticsIntent.UpdateCustomPeriod(startDate, endDate))
                 onIntent(AnalyticsIntent.ApplyCustomPeriod)
             },
-        ) { Text("Применить") }
+        ) { Text(stringResource(R.string.apply)) }
     }
 }
 
@@ -191,21 +197,23 @@ private fun DateRangeFields(
     endDate: LocalDate?,
     modifier: Modifier = Modifier,
 ) {
+    val locale = LocalConfiguration.current.locales[0] ?: LocalLocale.current.platformLocale
     Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        DateField(startDate, Modifier.weight(1f))
+        DateField(startDate, locale, Modifier.weight(1f))
         Text(
             text = "–",
             color = MaterialTheme.colorScheme.outline,
             textAlign = TextAlign.Center,
             modifier = Modifier.width(36.dp),
         )
-        DateField(endDate, Modifier.weight(1f))
+        DateField(endDate, locale, Modifier.weight(1f))
     }
 }
 
 @Composable
 private fun DateField(
     date: LocalDate?,
+    locale: Locale,
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -221,7 +229,7 @@ private fun DateField(
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            text = date?.format(CALENDAR_DATE_FORMATTER).orEmpty(),
+            text = date?.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale)).orEmpty(),
             style = MaterialTheme.typography.bodyMedium,
             maxLines = 1,
         )
@@ -235,6 +243,7 @@ private fun CalendarMonthHeader(
     onPrevious: () -> Unit,
     onNext: () -> Unit,
 ) {
+    val locale = LocalConfiguration.current.locales[0] ?: LocalLocale.current.platformLocale
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -243,8 +252,8 @@ private fun CalendarMonthHeader(
         Text(
             text =
                 month
-                    .format(CALENDAR_MONTH_FORMATTER)
-                    .replaceFirstChar { it.titlecase(CALENDAR_LOCALE) },
+                    .format(DateTimeFormatter.ofPattern("LLLL yyyy", locale))
+                    .replaceFirstChar { it.titlecase(locale) },
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold,
             textAlign = TextAlign.Center,
@@ -292,10 +301,11 @@ private fun CalendarNavigationButton(
 
 @Composable
 private fun CalendarWeekdays(modifier: Modifier = Modifier) {
+    val locale = LocalConfiguration.current.locales[0] ?: LocalLocale.current.platformLocale
     Row(modifier = modifier.fillMaxWidth()) {
-        CALENDAR_WEEKDAYS.forEach { day ->
+        DayOfWeek.entries.forEach { day ->
             Text(
-                text = day,
+                text = day.getDisplayName(java.time.format.TextStyle.SHORT, locale),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
@@ -412,12 +422,6 @@ private fun selectRangeDate(
         else -> selectedStartDate to date
     }
 
-private val CALENDAR_LOCALE: Locale = Locale.forLanguageTag("ru")
-private val CALENDAR_DATE_FORMATTER: DateTimeFormatter =
-    DateTimeFormatter.ofPattern("d MMM. yyyy", CALENDAR_LOCALE)
-private val CALENDAR_MONTH_FORMATTER: DateTimeFormatter =
-    DateTimeFormatter.ofPattern("LLLL yyyy", CALENDAR_LOCALE)
-private val CALENDAR_WEEKDAYS = listOf("Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс")
 private const val ARROW_START_X = 0.35f
 private const val ARROW_END_X = 0.65f
 private const val ARROW_TOP_Y = 0.2f

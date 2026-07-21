@@ -57,7 +57,10 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -71,6 +74,7 @@ import com.yandex.school.casheye.feature.analytics.R
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -214,17 +218,17 @@ private fun TypeSheet(
 ) {
     AnalyticsModalBottomSheet(onDismissRequest = { onIntent(AnalyticsIntent.DismissSheet) }) {
         Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-            SheetTitle(title = "Тип")
+            SheetTitle(title = stringResource(R.string.filter_type))
             AnalyticsType.entries.forEachIndexed { index, type ->
                 SelectionRow(
-                    title = type.title,
+                    title = type.title(),
                     selected = sheet.selected == type,
                     isLast = index == AnalyticsType.entries.lastIndex,
                     onClick = { onIntent(AnalyticsIntent.SelectDraftType(type)) },
                 )
             }
             SheetButton(
-                title = "Готово",
+                title = stringResource(R.string.done),
                 paddingValues = PaddingValues(top = 16.dp, bottom = 26.dp, start = 16.dp, end = 16.dp),
                 height = 52.dp,
             ) { onIntent(AnalyticsIntent.ApplyDraftType) }
@@ -239,7 +243,7 @@ private fun PeriodSheet(
     onIntent: (AnalyticsIntent) -> Unit,
 ) {
     AnalyticsModalBottomSheet(onDismissRequest = { onIntent(AnalyticsIntent.DismissSheet) }) {
-        SheetTitle("Период")
+        SheetTitle(stringResource(R.string.filter_period))
         AnalyticsPeriodPreset.entries.forEachIndexed { index, preset ->
             Row(
                 modifier =
@@ -252,7 +256,7 @@ private fun PeriodSheet(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = preset.title,
+                        text = preset.title(),
                         fontWeight = FontWeight.Medium,
                     )
                     if (preset == AnalyticsPeriodPreset.Custom && period.preset == preset) {
@@ -287,7 +291,7 @@ private fun CategoriesSheet(
     val listState = rememberLazyListState()
     val gestureCoordinator = rememberSheetListGestureCoordinator(listState)
     AnalyticsModalBottomSheet(onDismissRequest = { onIntent(AnalyticsIntent.DismissSheet) }) {
-        SheetTitle("Статьи")
+        SheetTitle(stringResource(R.string.filter_categories))
         LazyColumn(
             modifier =
                 Modifier
@@ -325,7 +329,7 @@ private fun CategoriesSheet(
             }
         }
         SheetButton(
-            title = "Применить",
+            title = stringResource(R.string.apply),
             paddingValues = PaddingValues(top = 20.dp, bottom = 40.dp, start = 20.dp, end = 20.dp),
         ) { onIntent(AnalyticsIntent.ApplyDraftCategories) }
     }
@@ -340,7 +344,7 @@ private fun AccountSheet(
     val listState = rememberLazyListState()
     val gestureCoordinator = rememberSheetListGestureCoordinator(listState)
     AnalyticsModalBottomSheet(onDismissRequest = { onIntent(AnalyticsIntent.DismissSheet) }) {
-        SheetTitle("Счёт")
+        SheetTitle(stringResource(R.string.filter_account))
         LazyColumn(
             modifier =
                 Modifier
@@ -353,7 +357,7 @@ private fun AccountSheet(
         ) {
             item {
                 AccountRow(
-                    title = "Все счета",
+                    title = stringResource(R.string.all_accounts),
                     emoji = "💳",
                     subtitle = null,
                     isLast = false,
@@ -384,7 +388,7 @@ private fun DetailsSheet(
     val gestureCoordinator = rememberSheetListGestureCoordinator(listState)
     AnalyticsModalBottomSheet(onDismissRequest = { onIntent(AnalyticsIntent.DismissSheet) }) {
         SheetTitle(
-            title = "Детализация",
+            title = stringResource(R.string.details),
             modifier = Modifier.align(Alignment.CenterHorizontally),
             paddingValues = PaddingValues(start = 24.dp, end = 24.dp, bottom = 32.dp),
         )
@@ -565,7 +569,7 @@ private fun TypeSelectionIndicator(selected: Boolean) {
     ) {
         Icon(
             painter = painterResource(R.drawable.check),
-            contentDescription = if (selected) "Выбрано" else null,
+            contentDescription = if (selected) stringResource(R.string.selected) else null,
             tint = MaterialTheme.colorScheme.onPrimary,
             modifier = Modifier.graphicsLayer(alpha = checkAlpha, scaleX = checkScale, scaleY = checkScale),
         )
@@ -581,7 +585,7 @@ private fun AccountSelectionIndicator(selected: Boolean) {
         if (selected) {
             Icon(
                 painter = painterResource(R.drawable.check_purple),
-                contentDescription = "Выбрано",
+                contentDescription = stringResource(R.string.selected),
                 tint = MaterialTheme.colorScheme.primary,
             )
         }
@@ -623,11 +627,31 @@ private fun SheetButton(
     }
 }
 
-internal fun AnalyticsPeriod.formatted(): String = "$startDateFormatted – $endDateFormatted"
+@Composable
+internal fun AnalyticsPeriod.formatted(): String {
+    val locale = LocalConfiguration.current.locales[0] ?: LocalLocale.current.platformLocale
+    val formatter = remember(locale) { DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT).withLocale(locale) }
+    return "${startDate.format(formatter)} – ${endDate.format(formatter)}"
+}
 
-private val AnalyticsPeriod.startDateFormatted: String
-    get() = startDate.format(DATE_FORMATTER)
+@Composable
+private fun AnalyticsType.title(): String =
+    stringResource(
+        when (this) {
+            AnalyticsType.Expenses -> R.string.type_expenses
+            AnalyticsType.Income -> R.string.type_income
+            AnalyticsType.All -> R.string.type_all
+        },
+    )
 
-private val AnalyticsPeriod.endDateFormatted: String
-    get() = endDate.format(DATE_FORMATTER)
-internal val DATE_FORMATTER = DateTimeFormatter.ofPattern("dd.MM.yyyy")
+@Composable
+private fun AnalyticsPeriodPreset.title(): String =
+    stringResource(
+        when (this) {
+            AnalyticsPeriodPreset.Custom -> R.string.period_custom
+            AnalyticsPeriodPreset.Week -> R.string.period_week
+            AnalyticsPeriodPreset.Month -> R.string.period_month
+            AnalyticsPeriodPreset.Quarter -> R.string.period_quarter
+            AnalyticsPeriodPreset.Year -> R.string.period_year
+        },
+    )
