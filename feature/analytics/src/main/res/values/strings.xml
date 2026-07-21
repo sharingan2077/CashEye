@@ -1,6 +1,6 @@
 <resources>
     <string name="total_for_period">Total for period</string>
-    <string name="selected">Selected</string>
+    <string name="period_selected">Selected</string>
     <string name="retry">Retry</string>
     <string name="done">Done</string>
     <string name="apply">Apply</string>

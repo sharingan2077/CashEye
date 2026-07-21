@@ -271,7 +271,7 @@ private fun PeriodSheet(
                 if (preset == period.preset) {
                     Icon(
                         painter = painterResource(R.drawable.check_purple),
-                        contentDescription = stringResource(R.string.selected),
+                        contentDescription = stringResource(R.string.period_selected),
                         tint = MaterialTheme.colorScheme.primary,
                     )
                 }
@@ -570,7 +570,7 @@ private fun TypeSelectionIndicator(selected: Boolean) {
     ) {
         Icon(
             painter = painterResource(R.drawable.check),
-            contentDescription = if (selected) stringResource(R.string.selected) else null,
+            contentDescription = if (selected) stringResource(R.string.period_selected) else null,
             tint = MaterialTheme.colorScheme.onPrimary,
             modifier = Modifier.graphicsLayer(alpha = checkAlpha, scaleX = checkScale, scaleY = checkScale),
         )
@@ -586,7 +586,7 @@ private fun AccountSelectionIndicator(selected: Boolean) {
         if (selected) {
             Icon(
                 painter = painterResource(R.drawable.check_purple),
-                contentDescription = stringResource(R.string.selected),
+                contentDescription = stringResource(R.string.period_selected),
                 tint = MaterialTheme.colorScheme.primary,
             )
         }
