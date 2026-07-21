@@ -98,7 +98,7 @@ class ExpensesViewModelTest {
             advanceUntilIdle()
 
             assertTrue(viewModel.state.value is ExpensesUiState.Error)
-            assertEquals(ExpensesEffect.ShowError("Проверьте подключение к интернету"), effect.await())
+            assertEquals(ExpensesEffect.ShowError(FinanceFailureReason.Network), effect.await())
         }
 
     @Test
