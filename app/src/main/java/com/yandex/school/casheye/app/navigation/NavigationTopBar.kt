@@ -27,7 +27,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -46,13 +49,8 @@ fun NavigationTopBar(
     onAnalyticsClick: () -> Unit = {},
     onFilterClick: () -> Unit = {},
 ) {
-    val dateFormatter =
-        remember {
-            DateTimeFormatter.ofPattern(
-                "d MMMM",
-                Locale.forLanguageTag("ru"),
-            )
-        }
+    val locale = LocalConfiguration.current.locales[0] ?: LocalLocale.current.platformLocale
+    val dateFormatter = remember(locale) { DateTimeFormatter.ofPattern("d MMMM", locale) }
     val dateInteractionSource = remember { MutableInteractionSource() }
 
     TopAppBar(
@@ -139,14 +137,14 @@ private fun NavigationTopBarActions(
         IconButton(onClick = onAnalyticsClick) {
             Icon(
                 painter = painterResource(R.drawable.analytics),
-                contentDescription = "Аналитика",
+                contentDescription = stringResource(R.string.content_description_analytics),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         IconButton(onClick = onFilterClick) {
             Icon(
                 painter = painterResource(R.drawable.sliders_horizontal),
-                contentDescription = "Фильтры",
+                contentDescription = stringResource(R.string.content_description_filters),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }

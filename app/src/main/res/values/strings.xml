@@ -1,3 +1,11 @@
 <resources>
-    <string name="app_name">CashEye</string>
+    <string name="app_name" translatable="false">CashEye</string>
+    <string name="nav_expenses">Expenses</string>
+    <string name="nav_income">Income</string>
+    <string name="nav_accounts">Accounts</string>
+    <string name="content_description_analytics">Analytics</string>
+    <string name="content_description_filters">Filters</string>
+    <string name="content_description_back">Back</string>
+    <string name="content_description_add">Add</string>
+    <string name="analytics_title">Analytics</string>
 </resources>
