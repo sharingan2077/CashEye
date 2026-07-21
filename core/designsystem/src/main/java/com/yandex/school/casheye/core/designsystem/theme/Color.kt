@@ -33,7 +33,3 @@ val ColorOnPrimaryContainer = Color(0xFF21005D)
 val NavigationSelected = Color(0xFFE8DEF8)
 val ColorOnSecondaryContainer = Color(0xFF1D192B)
 val Scrim = Color(0x80000000)
-
-val ChartPurple = Color(0xFFB69DF8)
-val ChartTeal = Color(0xFF4FD8EB)
-val ChartPink = Color(0xFFF48FB1)

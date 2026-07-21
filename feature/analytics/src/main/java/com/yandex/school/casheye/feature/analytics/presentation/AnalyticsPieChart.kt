@@ -29,12 +29,8 @@ import com.patrykandpatrick.vico.compose.pie.PieSize
 import com.patrykandpatrick.vico.compose.pie.data.PieChartModelProducer
 import com.patrykandpatrick.vico.compose.pie.data.pieSeries
 import com.patrykandpatrick.vico.compose.pie.rememberPieChart
-import com.yandex.school.casheye.core.designsystem.theme.ChartPink
-import com.yandex.school.casheye.core.designsystem.theme.ChartPurple
-import com.yandex.school.casheye.core.designsystem.theme.ChartTeal
 import java.math.BigDecimal
 
-private val chartPalette = listOf(ChartPurple, ChartTeal, ChartPink)
 private val singleCategoryPlaceholderRatio = BigDecimal("0.000001")
 
 @Composable
@@ -148,12 +144,9 @@ private fun AnalyticsLegend(
 }
 
 internal fun analyticsColorForCategory(categoryId: Int): Color {
-    val hash = categoryId * GOLDEN_RATIO_HASH
-    val bucket = (hash.toLong() and UINT_MASK).rem(COLOR_BUCKETS).toInt()
-    if (bucket < chartPalette.size) return chartPalette[bucket]
-
-    val hue = (hash.toLong() and UINT_MASK).rem(FULL_HUE).toFloat()
-    return Color.hsv(hue = hue, saturation = 0.58f, value = 0.88f)
+    val normalizedId = categoryId.toLong() and UINT_MASK
+    val hue = (normalizedId.rem(COLOR_SEQUENCE_LENGTH).toFloat() * GOLDEN_ANGLE).rem(FULL_HUE)
+    return Color.hsv(hue = hue, saturation = 0.78f, value = 0.82f)
 }
 
 internal fun analyticsPieChartValues(categories: List<AnalyticsCategorySummary>): List<BigDecimal> {
@@ -165,7 +158,7 @@ internal fun analyticsPieChartValues(categories: List<AnalyticsCategorySummary>)
     }
 }
 
-private const val GOLDEN_RATIO_HASH = -1640531527
 private const val UINT_MASK = 0xffffffffL
-private const val COLOR_BUCKETS = 12L
+private const val COLOR_SEQUENCE_LENGTH = 1_000_003L
 private const val FULL_HUE = 360L
+private const val GOLDEN_ANGLE = 137.508f
