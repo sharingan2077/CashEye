@@ -61,21 +61,12 @@ class AccountsViewModel(
                     }
 
                     is AccountsLoadResult.Failure -> {
-                        val message = result.reason.toUserMessage()
-                        _state.value = AccountsUiState.Error(message)
-                        _effects.emit(AccountsEffect.ShowError(message))
+                        _state.value = AccountsUiState.Error(result.reason)
+                        _effects.emit(AccountsEffect.ShowError(result.reason))
                     }
                 }
             }
     }
 }
-
-private fun FinanceFailureReason.toUserMessage(): String =
-    when (this) {
-        FinanceFailureReason.Network -> "Проверьте подключение к интернету"
-        FinanceFailureReason.Authorization -> "Не удалось авторизоваться"
-        FinanceFailureReason.Server -> "Сервер временно недоступен"
-        FinanceFailureReason.Unknown -> "Не удалось загрузить счета"
-    }
 
 private const val CURRENCY_RUB = "RUB"

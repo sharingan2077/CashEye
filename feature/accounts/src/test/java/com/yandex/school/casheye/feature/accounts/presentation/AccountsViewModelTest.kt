@@ -89,7 +89,7 @@ class AccountsViewModelTest {
             advanceUntilIdle()
 
             assertTrue(viewModel.state.value is AccountsUiState.Error)
-            assertEquals(AccountsEffect.ShowError("Проверьте подключение к интернету"), effect.await())
+            assertEquals(AccountsEffect.ShowError(FinanceFailureReason.Network), effect.await())
 
             viewModel.onIntent(AccountsIntent.Retry)
             advanceUntilIdle()

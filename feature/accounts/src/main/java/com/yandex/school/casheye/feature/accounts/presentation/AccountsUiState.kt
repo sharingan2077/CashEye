@@ -1,6 +1,7 @@
 package com.yandex.school.casheye.feature.accounts.presentation
 
 import com.yandex.school.casheye.core.model.Account
+import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import java.math.BigDecimal
 
 sealed interface AccountsUiState {
@@ -15,7 +16,7 @@ sealed interface AccountsUiState {
     ) : AccountsUiState
 
     data class Error(
-        val message: String,
+        val reason: FinanceFailureReason,
     ) : AccountsUiState
 }
 
@@ -25,6 +26,6 @@ sealed interface AccountsIntent {
 
 sealed interface AccountsEffect {
     data class ShowError(
-        val message: String,
+        val reason: FinanceFailureReason,
     ) : AccountsEffect
 }

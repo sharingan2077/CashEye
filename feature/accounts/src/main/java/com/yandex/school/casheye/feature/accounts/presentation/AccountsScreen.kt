@@ -18,6 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -26,6 +27,8 @@ import com.yandex.school.casheye.core.designsystem.component.MoneyListItem
 import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
 import com.yandex.school.casheye.core.format.formatAmount
 import com.yandex.school.casheye.core.model.Account
+import com.yandex.school.casheye.domain.finance.FinanceFailureReason
+import com.yandex.school.casheye.feature.accounts.R
 
 @Composable
 fun AccountsScreen(
@@ -53,7 +56,7 @@ fun AccountsScreen(
 
             is AccountsUiState.Error -> {
                 AccountsError(
-                    message = state.message,
+                    message = state.reason.localizedMessage(),
                     modifier = Modifier.align(Alignment.Center),
                 )
             }
@@ -101,7 +104,7 @@ private fun AccountsContent(
 @Composable
 private fun EmptyAccounts(modifier: Modifier = Modifier) {
     Text(
-        text = "Счетов нет",
+        text = stringResource(R.string.empty_accounts),
         modifier = modifier.padding(24.dp),
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         style = MaterialTheme.typography.bodyLarge,
@@ -139,7 +142,7 @@ private fun AccountsHero(total: String) {
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Text(
-            text = "баланс, всего",
+            text = stringResource(R.string.balance_total),
             style = MaterialTheme.typography.labelLarge.copy(lineHeight = 16.sp),
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
         )
@@ -151,6 +154,17 @@ private fun AccountsHero(total: String) {
         )
     }
 }
+
+@Composable
+private fun FinanceFailureReason.localizedMessage(): String =
+    stringResource(
+        when (this) {
+            FinanceFailureReason.Network -> R.string.error_network
+            FinanceFailureReason.Authorization -> R.string.error_authorization
+            FinanceFailureReason.Server -> R.string.error_server
+            FinanceFailureReason.Unknown -> R.string.error_load_accounts
+        },
+    )
 
 @Preview(
     name = "Light",
