@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -65,7 +66,6 @@ import androidx.compose.ui.unit.dp
 import com.yandex.school.casheye.core.designsystem.component.EmojiCircle
 import com.yandex.school.casheye.core.designsystem.component.ListItem
 import com.yandex.school.casheye.core.format.formatAmount
-import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.Category
 import com.yandex.school.casheye.feature.analytics.R
 import java.math.BigDecimal
@@ -215,10 +215,11 @@ private fun TypeSheet(
     AnalyticsModalBottomSheet(onDismissRequest = { onIntent(AnalyticsIntent.DismissSheet) }) {
         Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
             SheetTitle(title = "Тип")
-            AnalyticsType.entries.forEach { type ->
+            AnalyticsType.entries.forEachIndexed { index, type ->
                 SelectionRow(
                     title = type.title,
                     selected = sheet.selected == type,
+                    isLast = index == AnalyticsType.entries.lastIndex,
                     onClick = { onIntent(AnalyticsIntent.SelectDraftType(type)) },
                 )
             }
@@ -239,7 +240,7 @@ private fun PeriodSheet(
 ) {
     AnalyticsModalBottomSheet(onDismissRequest = { onIntent(AnalyticsIntent.DismissSheet) }) {
         SheetTitle("Период")
-        AnalyticsPeriodPreset.entries.forEach { preset ->
+        AnalyticsPeriodPreset.entries.forEachIndexed { index, preset ->
             Row(
                 modifier =
                     Modifier
@@ -270,7 +271,7 @@ private fun PeriodSheet(
                     )
                 }
             }
-            HorizontalDivider()
+            if (index != AnalyticsPeriodPreset.entries.lastIndex) HorizontalDivider()
         }
         Spacer(modifier = Modifier.height(24.dp))
     }
@@ -297,7 +298,7 @@ private fun CategoriesSheet(
             flingBehavior = gestureCoordinator,
             overscrollEffect = null,
         ) {
-            items(categories, key = Category::id) { category ->
+            itemsIndexed(items = categories, key = { _, category -> category.id }) { index, category ->
                 Row(
                     modifier =
                         Modifier
@@ -320,7 +321,7 @@ private fun CategoriesSheet(
                         onCheckedChange = { onIntent(AnalyticsIntent.ToggleDraftCategory(category.id)) },
                     )
                 }
-                HorizontalDivider()
+                if (index != categories.lastIndex) HorizontalDivider()
             }
         }
         SheetButton(
@@ -355,14 +356,16 @@ private fun AccountSheet(
                     title = "Все счета",
                     emoji = "💳",
                     subtitle = null,
+                    isLast = false,
                     selected = data.filters.accountId == null,
                 ) { onIntent(AnalyticsIntent.SelectAccount(null)) }
             }
-            items(data.accounts, key = Account::id) { account ->
+            itemsIndexed(data.accounts, key = { _, account -> account.id }) { index, account ->
                 AccountRow(
                     title = account.name,
                     emoji = account.emoji,
                     subtitle = null,
+                    isLast = index == data.accounts.lastIndex,
                     selected = data.filters.accountId == account.id,
                 ) { onIntent(AnalyticsIntent.SelectAccount(account.id)) }
             }
@@ -473,6 +476,7 @@ private fun AccountRow(
     emoji: String,
     subtitle: String?,
     selected: Boolean,
+    isLast: Boolean,
     onClick: () -> Unit,
 ) {
     Column(
@@ -490,7 +494,7 @@ private fun AccountRow(
             trail = { AccountSelectionIndicator(selected = selected) },
             height = 64.dp,
         )
-        HorizontalDivider()
+        if (!isLast) HorizontalDivider()
     }
 }
 
@@ -498,6 +502,7 @@ private fun AccountRow(
 private fun SelectionRow(
     title: String,
     selected: Boolean,
+    isLast: Boolean,
     onClick: () -> Unit,
 ) {
     Column(
@@ -515,7 +520,7 @@ private fun SelectionRow(
             Text(text = title, modifier = Modifier.weight(1f))
             TypeSelectionIndicator(selected = selected)
         }
-        HorizontalDivider()
+        if (!isLast) HorizontalDivider()
     }
 }
 
