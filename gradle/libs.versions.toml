@@ -19,7 +19,7 @@ lottieCompose = "6.7.1"
 
 coreSplashscreen = "1.2.0"
 
-ksp = "2.3.9"
+ksp = "2.3.10"
 ktlintPlugin = "14.2.0"
 ktlintEngine = "1.8.0"
 detekt = "2.0.0-alpha.5"
@@ -35,9 +35,6 @@ work = "2.11.2"
 
 retrofit = "3.0.0"
 okhttp = "5.4.0"
-appcompat = "1.6.1"
-material = "1.10.0"
-foundationLayout = "1.11.4"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -91,9 +88,6 @@ okhttp-logging-interceptor = { group = "com.squareup.okhttp3", name = "logging-i
 
 metro-viewmodel-compose = { module = "dev.zacsweers.metro:metrox-viewmodel-compose", version.ref = "metro" }
 metro-runtime = { module = "dev.zacsweers.metro:runtime", version.ref = "metro" }
-androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
-material = { group = "com.google.android.material", name = "material", version.ref = "material" }
-androidx-compose-foundation-layout = { group = "androidx.compose.foundation", name = "foundation-layout", version.ref = "foundationLayout" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
