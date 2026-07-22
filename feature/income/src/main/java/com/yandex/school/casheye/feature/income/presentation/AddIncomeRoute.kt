@@ -21,6 +21,6 @@ fun AddIncomeRoute(
     val currentOnSave by rememberUpdatedState(onSave)
 
     LaunchedEffect(transactionId, defaultDate) { viewModel.onIntent(AddIncomeIntent.Open(transactionId, defaultDate)) }
-    LaunchedEffect(viewModel) { viewModel.effects.collectLatest { currentOnSave } }
+    LaunchedEffect(viewModel) { viewModel.effects.collectLatest { currentOnSave() } }
     AddIncomeScreen(state, viewModel::onIntent, onDismiss)
 }

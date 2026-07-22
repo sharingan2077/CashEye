@@ -24,7 +24,7 @@ fun AddExpenseRoute(
         viewModel.onIntent(AddExpenseIntent.Open(transactionId, defaultDate))
     }
     LaunchedEffect(viewModel) {
-        viewModel.effects.collectLatest { currentOnSave }
+        viewModel.effects.collectLatest { currentOnSave() }
     }
     AddExpenseScreen(state, viewModel::onIntent, onDismiss)
 }
