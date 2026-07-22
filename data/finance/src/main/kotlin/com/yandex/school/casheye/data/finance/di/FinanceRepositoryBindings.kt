@@ -5,7 +5,9 @@ import com.yandex.school.casheye.data.finance.database.FinanceLocalStore
 import com.yandex.school.casheye.data.finance.database.RoomFinanceLocalStore
 import com.yandex.school.casheye.data.finance.database.RoomFinanceSyncStore
 import com.yandex.school.casheye.data.finance.repository.FinanceRepositoryImpl
+import com.yandex.school.casheye.data.finance.sync.FinanceSyncScheduler
 import com.yandex.school.casheye.data.finance.sync.FinanceSyncer
+import com.yandex.school.casheye.data.finance.sync.WorkManagerFinanceSyncScheduler
 import com.yandex.school.casheye.domain.finance.FinanceRepository
 import com.yandex.school.casheye.domain.finance.GetAccountUseCase
 import com.yandex.school.casheye.domain.finance.GetAccountsUseCase
@@ -18,17 +20,25 @@ import com.yandex.school.casheye.domain.finance.SaveAccountUseCase
 import com.yandex.school.casheye.domain.finance.SaveTransactionUseCase
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.BindingContainer
-import dev.zacsweers.metro.Binds
 import dev.zacsweers.metro.Provides
 import dev.zacsweers.metro.SingleIn
+import kotlinx.coroutines.Dispatchers
 
 @BindingContainer
-interface FinanceRepositoryBindings {
-    @Binds
-    val FinanceRepositoryImpl.bind: FinanceRepository
+object FinanceRepositoryBindings {
+    @Provides
+    fun provideLocalStore(localStore: RoomFinanceLocalStore): FinanceLocalStore = localStore
 
-    @Binds
-    val RoomFinanceLocalStore.bindLocalStore: FinanceLocalStore
+    @Provides
+    fun provideSyncScheduler(scheduler: WorkManagerFinanceSyncScheduler): FinanceSyncScheduler = scheduler
+
+    @Provides
+    @SingleIn(AppScope::class)
+    fun provideFinanceRepository(
+        api: FinanceApi,
+        localStore: FinanceLocalStore,
+        syncScheduler: FinanceSyncScheduler,
+    ): FinanceRepository = FinanceRepositoryImpl(api, localStore, Dispatchers.IO, syncScheduler)
 }
 
 @BindingContainer

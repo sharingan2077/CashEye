@@ -6,6 +6,8 @@ import com.yandex.school.casheye.data.finance.di.FinanceRepositoryBindings
 import com.yandex.school.casheye.data.finance.di.FinanceSyncBindings
 import com.yandex.school.casheye.data.finance.di.FinanceUseCaseBindings
 import com.yandex.school.casheye.data.finance.di.NetworkConfig
+import com.yandex.school.casheye.data.finance.sync.FinanceSyncScheduler
+import com.yandex.school.casheye.data.finance.sync.FinanceSyncer
 import com.yandex.school.casheye.feature.accounts.di.AccountsViewModelBindings
 import com.yandex.school.casheye.feature.analytics.di.AnalyticsViewModelBindings
 import com.yandex.school.casheye.feature.expenses.di.ExpensesViewModelBindings
@@ -30,6 +32,10 @@ import dev.zacsweers.metrox.viewmodel.ViewModelGraph
     ],
 )
 interface AppGraph : ViewModelGraph {
+    val financeSyncer: FinanceSyncer
+
+    val financeSyncScheduler: FinanceSyncScheduler
+
     @DependencyGraph.Factory
     fun interface Factory {
         fun create(

@@ -8,6 +8,7 @@ import com.yandex.school.casheye.data.finance.database.FinanceLocalStore
 import com.yandex.school.casheye.data.finance.dto.AccountDto
 import com.yandex.school.casheye.data.finance.dto.CategoryDto
 import com.yandex.school.casheye.data.finance.dto.TransactionResponseDto
+import com.yandex.school.casheye.data.finance.sync.FinanceSyncScheduler
 import com.yandex.school.casheye.domain.finance.AccountsLoadResult
 import com.yandex.school.casheye.domain.finance.AccountsSummary
 import com.yandex.school.casheye.domain.finance.AnalyticsLoadResult
@@ -22,9 +23,6 @@ import com.yandex.school.casheye.domain.finance.FinanceSummary
 import com.yandex.school.casheye.domain.finance.SaveAccountCommand
 import com.yandex.school.casheye.domain.finance.SaveTransactionCommand
 import com.yandex.school.casheye.domain.finance.TransactionKind
-import dev.zacsweers.metro.AppScope
-import dev.zacsweers.metro.Inject
-import dev.zacsweers.metro.SingleIn
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -39,12 +37,11 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 
-@Inject
-@SingleIn(AppScope::class)
 class FinanceRepositoryImpl(
     private val api: FinanceApi,
     private val localStore: FinanceLocalStore,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val syncScheduler: FinanceSyncScheduler = NoOpFinanceSyncScheduler,
 ) : FinanceRepository {
     override suspend fun getAccounts(): EditorResult<List<Account>> =
         localFirstEditorRequest(
@@ -71,6 +68,7 @@ class FinanceRepositoryImpl(
     override suspend fun saveTransaction(command: SaveTransactionCommand): EditorResult<Unit> =
         editorRequest(ioDispatcher) {
             localStore.saveTransaction(command, Instant.now())
+            scheduleSync()
         }
 
     override suspend fun getAccount(id: Int): EditorResult<Account> =
@@ -84,6 +82,7 @@ class FinanceRepositoryImpl(
     override suspend fun saveAccount(command: SaveAccountCommand): EditorResult<Unit> =
         editorRequest(ioDispatcher) {
             localStore.saveAccount(command, Instant.now())
+            scheduleSync()
         }
 
     override suspend fun getAnalytics(query: AnalyticsQuery): AnalyticsLoadResult =
@@ -222,6 +221,10 @@ class FinanceRepositoryImpl(
         )
     }
 
+    private fun scheduleSync() {
+        runCatching(syncScheduler::enqueueImmediateSync)
+    }
+
     private suspend fun <T> localFirstEditorRequest(
         refresh: suspend () -> Unit,
         read: suspend () -> T,
@@ -250,6 +253,12 @@ class FinanceRepositoryImpl(
         } catch (_: Exception) {
             EditorResult.Failure(FinanceFailureReason.Unknown)
         }
+}
+
+private data object NoOpFinanceSyncScheduler : FinanceSyncScheduler {
+    override fun registerPeriodicSync() = Unit
+
+    override fun enqueueImmediateSync() = Unit
 }
 
 private data class RemoteSnapshot(
