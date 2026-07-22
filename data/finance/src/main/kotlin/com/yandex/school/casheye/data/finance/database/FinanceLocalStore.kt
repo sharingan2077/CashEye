@@ -123,7 +123,7 @@ class RoomFinanceLocalStore(
 
     override suspend fun refreshAccounts(accounts: List<AccountDto>) {
         database.withTransaction {
-            val pendingIds = database.pendingOperationDao().getPendingEntityIds(PendingEntityType.ACCOUNT).toSet()
+            val pendingIds = pendingAccountIds()
             database.accountDao().upsertAll(
                 accounts.filterNot { it.id in pendingIds }.map { it.toNetworkDomain().toEntity() },
             )
@@ -142,7 +142,7 @@ class RoomFinanceLocalStore(
         endInclusive: Instant,
     ) {
         database.withTransaction {
-            val pendingAccounts = database.pendingOperationDao().getPendingEntityIds(PendingEntityType.ACCOUNT).toSet()
+            val pendingAccounts = pendingAccountIds()
             val pendingTransactions =
                 database.pendingOperationDao().getPendingEntityIds(PendingEntityType.TRANSACTION).toSet()
 
@@ -150,10 +150,9 @@ class RoomFinanceLocalStore(
                 accounts.filterNot { it.id in pendingAccounts }.map { it.toNetworkDomain().toEntity() },
             )
             database.categoryDao().upsertAll(categories.map { it.toNetworkDomain().toEntity() })
-            database.transactionDao().deleteSyncedForPeriod(
-                startInclusive.toEpochMilli(),
-                endInclusive.toEpochMilli(),
-            )
+            // Remote deletion is not part of the current feature contract. Merge instead of replacing the
+            // whole period so a recently remapped offline transaction cannot disappear while the period
+            // endpoint is still returning a stale snapshot.
             database.transactionDao().upsertAll(
                 transactions.filterNot { it.id in pendingTransactions }.map { it.toNetworkDomain().toEntity() },
             )
@@ -162,14 +161,14 @@ class RoomFinanceLocalStore(
 
     override suspend fun cacheAccount(account: AccountResponseDto) {
         database.withTransaction {
-            val pendingIds = database.pendingOperationDao().getPendingEntityIds(PendingEntityType.ACCOUNT)
+            val pendingIds = pendingAccountIds()
             if (account.id !in pendingIds) database.accountDao().upsert(account.toNetworkDomain().toEntity())
         }
     }
 
     override suspend fun cacheTransaction(transaction: TransactionResponseDto) {
         database.withTransaction {
-            val pendingAccounts = database.pendingOperationDao().getPendingEntityIds(PendingEntityType.ACCOUNT)
+            val pendingAccounts = pendingAccountIds()
             val pendingTransactions = database.pendingOperationDao().getPendingEntityIds(PendingEntityType.TRANSACTION)
             if (transaction.account.id !in pendingAccounts) {
                 database.accountDao().upsert(transaction.account.toNetworkDomain().toEntity())
@@ -180,6 +179,11 @@ class RoomFinanceLocalStore(
             }
         }
     }
+
+    private suspend fun pendingAccountIds(): Set<Int> =
+        database.pendingOperationDao().run {
+            getPendingEntityIds(PendingEntityType.ACCOUNT).toSet() + getPendingRelatedAccountIds().filterNotNull()
+        }
 
     override suspend fun saveAccount(command: SaveAccountCommand, now: Instant) {
         if (command.id == null) {

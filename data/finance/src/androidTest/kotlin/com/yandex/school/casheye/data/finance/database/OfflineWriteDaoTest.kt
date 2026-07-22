@@ -56,7 +56,7 @@ class OfflineWriteDaoTest {
             val operations = database.pendingOperationDao().getAll()
 
             assertEquals(-1, accountWrite.localId)
-            assertEquals("100.0010", account?.balance)
+            assertEquals("87.6610", account?.balance)
             assertEquals("12.3400", transaction?.transaction?.amount)
             assertEquals(NOW.plusSeconds(30).toEpochMilli(), transaction?.transaction?.transactionDate)
             assertEquals(accountWrite.localId, transaction?.account?.id)
@@ -92,6 +92,7 @@ class OfflineWriteDaoTest {
             val transaction = database.transactionDao().getForPeriod(null, 0, Long.MAX_VALUE).single()
 
             assertNull(database.accountDao().getById(accountWrite.localId))
+            assertEquals("87.6610", database.accountDao().getById(101)?.balance)
             assertEquals(101, transaction.account.id)
             assertEquals(101, transaction.transaction.accountId)
             assertEquals(101, remaining.relatedAccountId)
@@ -121,6 +122,56 @@ class OfflineWriteDaoTest {
             )
 
             assertEquals("Latest local", database.accountDao().getById(5)?.name)
+            assertEquals(1, database.pendingOperationDao().getAll().size)
+        }
+
+    @Test
+    fun transactionEditsReverseOldBalanceEffectAndApplyLatestValues() =
+        runTest {
+            database.accountDao().upsert(AccountEntity(5, "Main", "💳", "100.00", "RUB"))
+            database.accountDao().upsert(AccountEntity(6, "Reserve", "💳", "50.00", "RUB"))
+            database.categoryDao().upsertAll(listOf(category, incomeCategory))
+            val write =
+                database.offlineWriteDao().createTransaction(
+                    transactionCommand(accountId = 5).copy(amount = BigDecimal("10.00")),
+                    NOW,
+                )
+
+            assertEquals("90.00", database.accountDao().getById(5)?.balance)
+
+            database.offlineWriteDao().updateTransaction(
+                transactionCommand(accountId = 5).copy(
+                    id = write.localId,
+                    categoryId = category.id,
+                    amount = BigDecimal("25.00"),
+                ),
+                NOW.plusSeconds(1),
+            )
+
+            assertEquals("75.00", database.accountDao().getById(5)?.balance)
+
+            database.offlineWriteDao().updateTransaction(
+                transactionCommand(accountId = 5).copy(
+                    id = write.localId,
+                    categoryId = incomeCategory.id,
+                    amount = BigDecimal("5.00"),
+                ),
+                NOW.plusSeconds(2),
+            )
+
+            assertEquals("105.00", database.accountDao().getById(5)?.balance)
+
+            database.offlineWriteDao().updateTransaction(
+                transactionCommand(accountId = 6).copy(
+                    id = write.localId,
+                    categoryId = category.id,
+                    amount = BigDecimal("20.00"),
+                ),
+                NOW.plusSeconds(3),
+            )
+
+            assertEquals("100.00", database.accountDao().getById(5)?.balance)
+            assertEquals("30.00", database.accountDao().getById(6)?.balance)
             assertEquals(1, database.pendingOperationDao().getAll().size)
         }
 
@@ -180,5 +231,6 @@ class OfflineWriteDaoTest {
     private companion object {
         val NOW: Instant = Instant.parse("2026-07-22T10:00:00Z")
         val category = CategoryEntity(8, "Food", "🍜", false)
+        val incomeCategory = CategoryEntity(9, "Salary", "💰", true)
     }
 }

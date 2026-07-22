@@ -49,7 +49,7 @@ class FinanceSyncer internal constructor(
     private suspend fun syncLocked(): FinanceSyncResult =
         try {
             drainOutbox()
-            refreshCurrentMonth()
+            refreshAllHistory()
             FinanceSyncResult.Success
         } catch (error: CancellationException) {
             throw error
@@ -120,27 +120,30 @@ class FinanceSyncer internal constructor(
         }
     }
 
-    private suspend fun refreshCurrentMonth() {
+    private suspend fun refreshAllHistory() {
         val today = LocalDate.now(clock)
-        val startDate = today.withDayOfMonth(1)
-        val endDate = today.withDayOfMonth(today.lengthOfMonth())
         val accounts = withServerRetry { api.getAccounts() }
         val categories =
             withServerRetry { api.getCategories(true) } +
                 withServerRetry { api.getCategories(false) }
         val transactions =
             accounts.flatMap { account ->
+                val startDate = account.createdAt.atZone(clock.zone).toLocalDate().coerceAtMost(today)
                 withServerRetry {
-                    api.getTransactions(account.id, startDate.toString(), endDate.toString())
+                    api.getTransactions(account.id, startDate.toString(), today.toString())
                 }
             }
         val zone = clock.zone
+        val startDate =
+            accounts.minOfOrNull { account ->
+                account.createdAt.atZone(zone).toLocalDate().coerceAtMost(today)
+            } ?: today
         store.refreshAfterSync(
             accounts = accounts,
             categories = categories,
             transactions = transactions,
             startInclusive = startDate.atStartOfDay(zone).toInstant(),
-            endInclusive = endDate.plusDays(1).atStartOfDay(zone).toInstant().minusMillis(1),
+            endInclusive = today.plusDays(1).atStartOfDay(zone).toInstant().minusMillis(1),
         )
     }
 

@@ -8,6 +8,7 @@ import androidx.room.Transaction
 import androidx.room.Update
 import androidx.room.Upsert
 import com.yandex.school.casheye.data.finance.database.entity.AccountEntity
+import com.yandex.school.casheye.data.finance.database.entity.CategoryEntity
 import com.yandex.school.casheye.data.finance.database.entity.PendingEntityType
 import com.yandex.school.casheye.data.finance.database.entity.PendingOperationEntity
 import com.yandex.school.casheye.data.finance.database.entity.PendingOperationType
@@ -20,6 +21,7 @@ import com.yandex.school.casheye.domain.finance.SaveTransactionCommand
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import java.math.BigDecimal
 import java.time.Instant
 
 @Dao
@@ -81,6 +83,11 @@ internal abstract class OfflineWriteDao {
                 createdAt = now.toEpochMilli(),
                 updatedAt = now.toEpochMilli(),
             ),
+        )
+        adjustAccountBalance(
+            accountId = command.accountId,
+            categoryId = command.categoryId,
+            amount = command.amount,
         )
         val snapshot =
             TransactionCommandSnapshot(
@@ -160,6 +167,12 @@ internal abstract class OfflineWriteDao {
     ): LocalWriteResult {
         val localId = requireNotNull(command.id) { "Offline transaction update requires an id" }
         val existing = checkNotNull(transactionById(localId)) { "Transaction $localId was not found" }
+        adjustAccountBalance(
+            accountId = existing.accountId,
+            categoryId = existing.categoryId,
+            amount = BigDecimal(existing.amount),
+            reverse = true,
+        )
         updateTransactionRow(
             existing.copy(
                 accountId = command.accountId,
@@ -169,6 +182,11 @@ internal abstract class OfflineWriteDao {
                 comment = command.comment,
                 updatedAt = now.toEpochMilli(),
             ),
+        )
+        adjustAccountBalance(
+            accountId = command.accountId,
+            categoryId = command.categoryId,
+            amount = command.amount,
         )
         val payload =
             json.encodeToString(
@@ -257,9 +275,6 @@ internal abstract class OfflineWriteDao {
             "Temporary account $temporaryId was not found"
         }
         unchangedOperationIds.forEach { deleteOperation(it) }
-        if (countOperations(PendingEntityType.ACCOUNT, serverId) == 0) {
-            upsertAccount(serverAccount)
-        }
     }
 
     @Transaction
@@ -299,9 +314,7 @@ internal abstract class OfflineWriteDao {
         serverAccount: AccountEntity,
     ) {
         unchangedOperationIds(sentOperations).forEach { deleteOperation(it) }
-        if (countOperations(PendingEntityType.ACCOUNT, serverAccount.id) == 0) {
-            upsertAccount(serverAccount)
-        }
+        check(accountById(serverAccount.id) != null) { "Account ${serverAccount.id} was not found" }
     }
 
     @Transaction
@@ -317,6 +330,23 @@ internal abstract class OfflineWriteDao {
 
     private suspend fun unchangedOperationIds(sentOperations: List<PendingOperationEntity>): List<Long> =
         sentOperations.mapNotNull { sent -> sent.id.takeIf { operationById(sent.id) == sent } }
+
+    private suspend fun adjustAccountBalance(
+        accountId: Int,
+        categoryId: Int,
+        amount: BigDecimal,
+        reverse: Boolean = false,
+    ) {
+        val account = checkNotNull(accountById(accountId)) { "Account $accountId was not found" }
+        val category = checkNotNull(categoryById(categoryId)) { "Category $categoryId was not found" }
+        val transactionDelta = if (category.isIncome) amount else amount.negate()
+        val balanceDelta = if (reverse) transactionDelta.negate() else transactionDelta
+        updateAccountRow(
+            account.copy(
+                balance = BigDecimal(account.balance).add(balanceDelta).toPlainString(),
+            ),
+        )
+    }
 
     @Query("SELECT COALESCE(MIN(id), 0) - 1 FROM accounts WHERE id < 0")
     protected abstract suspend fun nextAccountId(): Int
@@ -339,6 +369,9 @@ internal abstract class OfflineWriteDao {
     @Query("SELECT * FROM transactions WHERE id = :id")
     protected abstract suspend fun transactionById(id: Int): TransactionEntity?
 
+    @Query("SELECT * FROM categories WHERE id = :id")
+    protected abstract suspend fun categoryById(id: Int): CategoryEntity?
+
     @Update
     protected abstract suspend fun updateAccountRow(account: AccountEntity)
 
@@ -347,9 +380,6 @@ internal abstract class OfflineWriteDao {
 
     @Update
     protected abstract suspend fun updateOperation(operation: PendingOperationEntity)
-
-    @Upsert
-    protected abstract suspend fun upsertAccount(account: AccountEntity)
 
     @Upsert
     protected abstract suspend fun upsertTransaction(transaction: TransactionEntity)

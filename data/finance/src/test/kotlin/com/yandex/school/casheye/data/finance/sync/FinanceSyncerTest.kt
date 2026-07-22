@@ -117,6 +117,31 @@ class FinanceSyncerTest {
             assertEquals(listOf(operation), store.getPendingOperations())
         }
 
+    @Test
+    fun `sync refreshes every account from creation date through today`() =
+        runBlocking {
+            val accounts =
+                listOf(
+                    serverAccount(id = 1, createdAt = Instant.parse("2025-02-03T18:00:00Z")),
+                    serverAccount(id = 2, createdAt = Instant.parse("2026-06-15T08:00:00Z")),
+                )
+            val store = FakeSyncStore()
+            val api = FakeFinanceApi(accounts = accounts)
+
+            val result = syncer(api, store).sync()
+
+            assertEquals(FinanceSyncResult.Success, result)
+            assertEquals(
+                listOf(
+                    TransactionRead(1, "2025-02-03", "2026-07-22"),
+                    TransactionRead(2, "2026-06-15", "2026-07-22"),
+                ),
+                api.transactionReads,
+            )
+            assertEquals(Instant.parse("2025-02-03T00:00:00Z"), store.refreshStart)
+            assertEquals(Instant.parse("2026-07-22T23:59:59.999Z"), store.refreshEnd)
+        }
+
     private fun syncer(
         api: FinanceApi,
         store: FinanceSyncStore,
@@ -223,6 +248,8 @@ class FinanceSyncerTest {
         private val pending = operations.toMutableList()
         val completedBatches = mutableListOf<List<PendingOperationEntity>>()
         var refreshed = false
+        var refreshStart: Instant? = null
+        var refreshEnd: Instant? = null
 
         override suspend fun getPendingOperations(): List<PendingOperationEntity> = pending.toList()
 
@@ -269,6 +296,8 @@ class FinanceSyncerTest {
             endInclusive: Instant,
         ) {
             refreshed = true
+            refreshStart = startInclusive
+            refreshEnd = endInclusive
         }
 
         private fun complete(sentOperations: List<PendingOperationEntity>) {
@@ -279,11 +308,13 @@ class FinanceSyncerTest {
 
     private class FakeFinanceApi(
         private val writeFailure: Exception? = null,
+        private val accounts: List<AccountDto> = emptyList(),
     ) : FinanceApi {
         val writeCalls = mutableListOf<String>()
+        val transactionReads = mutableListOf<TransactionRead>()
         var accountUpdateAttempts = 0
 
-        override suspend fun getAccounts(): List<AccountDto> = emptyList()
+        override suspend fun getAccounts(): List<AccountDto> = accounts
 
         override suspend fun getAccount(id: Int): AccountResponseDto = error("Not used")
 
@@ -334,7 +365,10 @@ class FinanceSyncerTest {
             accountId: Int,
             startDate: String,
             endDate: String,
-        ): List<TransactionResponseDto> = emptyList()
+        ): List<TransactionResponseDto> {
+            transactionReads += TransactionRead(accountId, startDate, endDate)
+            return emptyList()
+        }
 
         private fun account(
             id: Int,
@@ -369,5 +403,30 @@ class FinanceSyncerTest {
         private companion object {
             val NOW: Instant = Instant.parse("2026-07-22T12:00:00Z")
         }
+    }
+
+    private fun serverAccount(
+        id: Int,
+        createdAt: Instant,
+    ): AccountDto =
+        AccountDto(
+            id = id,
+            userId = 1,
+            name = "Account $id",
+            emoji = "💰",
+            balance = "100.00",
+            currency = "RUB",
+            createdAt = createdAt,
+            updatedAt = NOW,
+        )
+
+    private data class TransactionRead(
+        val accountId: Int,
+        val startDate: String,
+        val endDate: String,
+    )
+
+    private companion object {
+        val NOW: Instant = Instant.parse("2026-07-22T12:00:00Z")
     }
 }

@@ -51,12 +51,16 @@ fun NavigationRoot(
     val snackbarHostState = remember { SnackbarHostState() }
     val isOnline by networkStatus.collectAsStateWithLifecycle()
     var previousOnline by rememberSaveable { mutableStateOf<Boolean?>(null) }
+    var networkRefreshKey by rememberSaveable { mutableLongStateOf(0) }
     val offlineMessage = stringResource(R.string.network_offline_message)
     val restoredMessage = stringResource(R.string.network_restored_message)
 
     LaunchedEffect(isOnline) {
         val wasOnline = previousOnline
         previousOnline = isOnline
+        if (isOnline && wasOnline == false) {
+            networkRefreshKey++
+        }
         val message =
             when {
                 !isOnline && wasOnline != false -> offlineMessage
@@ -72,7 +76,7 @@ fun NavigationRoot(
     }
 
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
-    val selectedDate = LocalDate.ofEpochDay(selectedDateEpochDay)
+    val selectedDate = LocalDate.ofEpochDay(selectedDateEpochDay).coerceAtMost(LocalDate.now())
     val navigationState =
         rememberNavigationState(
             startRoute = Route.Expenses,
@@ -93,6 +97,7 @@ fun NavigationRoot(
         expensesRefreshKey = expensesRefreshKey,
         incomeRefreshKey = incomeRefreshKey,
         accountsRefreshKey = accountsRefreshKey,
+        networkRefreshKey = networkRefreshKey,
         onEditExpense = { editorTarget = EditorTarget.Expense(it) },
         onEditIncome = { editorTarget = EditorTarget.Income(it) },
         onEditAccount = { editorTarget = EditorTarget.Account(it) },
@@ -169,6 +174,7 @@ private fun NavigationScaffold(
     expensesRefreshKey: Long,
     incomeRefreshKey: Long,
     accountsRefreshKey: Long,
+    networkRefreshKey: Long,
     onEditExpense: (Int) -> Unit,
     onEditIncome: (Int) -> Unit,
     onEditAccount: (Int) -> Unit,
@@ -221,6 +227,7 @@ private fun NavigationScaffold(
             expensesRefreshKey = expensesRefreshKey,
             incomeRefreshKey = incomeRefreshKey,
             accountsRefreshKey = accountsRefreshKey,
+            networkRefreshKey = networkRefreshKey,
             onEditExpense = onEditExpense,
             onEditIncome = onEditIncome,
             onEditAccount = onEditAccount,
@@ -238,6 +245,7 @@ private fun NavigationContent(
     expensesRefreshKey: Long,
     incomeRefreshKey: Long,
     accountsRefreshKey: Long,
+    networkRefreshKey: Long,
     onEditExpense: (Int) -> Unit,
     onEditIncome: (Int) -> Unit,
     onEditAccount: (Int) -> Unit,
@@ -253,7 +261,7 @@ private fun NavigationContent(
                         ExpensesRoute(
                             selectedDate = selectedDate,
                             snackbarHostState = snackbarHostState,
-                            refreshKey = expensesRefreshKey,
+                            refreshKey = expensesRefreshKey + networkRefreshKey,
                             onTransactionClick = onEditExpense,
                         )
                     }
@@ -261,14 +269,14 @@ private fun NavigationContent(
                         IncomeRoute(
                             selectedDate = selectedDate,
                             snackbarHostState = snackbarHostState,
-                            refreshKey = incomeRefreshKey,
+                            refreshKey = incomeRefreshKey + networkRefreshKey,
                             onTransactionClick = onEditIncome,
                         )
                     }
                     entry<Route.Account> {
                         AccountsRoute(
                             snackbarHostState = snackbarHostState,
-                            refreshKey = accountsRefreshKey,
+                            refreshKey = accountsRefreshKey + networkRefreshKey,
                             onAccountClick = onEditAccount,
                         )
                     }
@@ -276,6 +284,7 @@ private fun NavigationContent(
                         AnalyticsRoute(
                             entryPoint = route.entryPoint.toFeatureEntryPoint(),
                             snackbarHostState = snackbarHostState,
+                            refreshKey = networkRefreshKey,
                         )
                     }
                 },

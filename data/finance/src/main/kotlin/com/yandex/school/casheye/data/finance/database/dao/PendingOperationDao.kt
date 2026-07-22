@@ -14,6 +14,9 @@ internal interface PendingOperationDao {
     @Query("SELECT local_entity_id FROM pending_operations WHERE entity_type = :entityType")
     suspend fun getPendingEntityIds(entityType: PendingEntityType): List<Int>
 
+    @Query("SELECT DISTINCT related_account_id FROM pending_operations WHERE related_account_id IS NOT NULL")
+    suspend fun getPendingRelatedAccountIds(): List<Int?>
+
     @Query("SELECT * FROM pending_operations ORDER BY created_at, id")
     fun observeAll(): Flow<List<PendingOperationEntity>>
 

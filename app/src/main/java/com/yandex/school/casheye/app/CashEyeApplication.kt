@@ -37,6 +37,7 @@ class CashEyeApplication : Application(), Configuration.Provider {
                 context = this,
             )
         appGraph.financeSyncScheduler.registerPeriodicSync()
+        appGraph.financeSyncScheduler.enqueueImmediateSync()
         observeNetworkRecovery()
     }
 
