@@ -7,4 +7,9 @@
     <string name="error_authorization">Anmeldung fehlgeschlagen</string>
     <string name="error_server">Server ist vorübergehend nicht verfügbar</string>
     <string name="error_load_income">Einnahmen konnten nicht geladen werden</string>
+    <string name="error_create_account">Erstellen Sie zuerst ein Konto</string>
+    <string name="error_positive_amount">Geben Sie einen positiven Betrag ein</string>
+    <string name="error_select_account">Wählen Sie ein Konto</string>
+    <string name="error_select_category">Wählen Sie eine Kategorie</string>
+    <string name="error_save_income">Einnahme konnte nicht gespeichert werden</string>
 </resources>

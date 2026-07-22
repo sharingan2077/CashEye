@@ -7,4 +7,9 @@
     <string name="error_authorization">Authorization failed</string>
     <string name="error_server">Server is temporarily unavailable</string>
     <string name="error_load_income">Failed to load income</string>
+    <string name="error_create_account">Create an account first</string>
+    <string name="error_positive_amount">Enter a positive amount</string>
+    <string name="error_select_account">Select an account</string>
+    <string name="error_select_category">Select a category</string>
+    <string name="error_save_income">Could not save income</string>
 </resources>

@@ -20,6 +20,8 @@ fun ExpensesRoute(
     selectedDate: LocalDate,
     snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
+    refreshKey: Long = 0,
+    onTransactionClick: (Int) -> Unit = {},
     viewModel: ExpensesViewModel = metroViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -30,6 +32,10 @@ fun ExpensesRoute(
 
     LaunchedEffect(selectedDate, viewModel) {
         viewModel.onIntent(ExpensesIntent.SelectDate(selectedDate))
+    }
+
+    LaunchedEffect(refreshKey) {
+        if (refreshKey > 0) viewModel.onIntent(ExpensesIntent.Refresh)
     }
 
     LaunchedEffect(viewModel, snackbarHostState) {
@@ -52,6 +58,7 @@ fun ExpensesRoute(
     ExpenseScreen(
         state = state,
         onIntent = viewModel::onIntent,
+        onTransactionClick = onTransactionClick,
         modifier = modifier,
     )
 }

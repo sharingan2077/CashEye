@@ -20,6 +20,8 @@ fun IncomeRoute(
     selectedDate: LocalDate,
     snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
+    refreshKey: Long = 0,
+    onTransactionClick: (Int) -> Unit = {},
     viewModel: IncomeViewModel = metroViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -30,6 +32,10 @@ fun IncomeRoute(
 
     LaunchedEffect(selectedDate, viewModel) {
         viewModel.onIntent(IncomeIntent.SelectDate(selectedDate))
+    }
+
+    LaunchedEffect(refreshKey) {
+        if (refreshKey > 0) viewModel.onIntent(IncomeIntent.Refresh)
     }
 
     LaunchedEffect(viewModel, snackbarHostState) {
@@ -51,6 +57,7 @@ fun IncomeRoute(
     IncomeScreen(
         state = state,
         onIntent = viewModel::onIntent,
+        onTransactionClick = onTransactionClick,
         modifier = modifier,
     )
 }

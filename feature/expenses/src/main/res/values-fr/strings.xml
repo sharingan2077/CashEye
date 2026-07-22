@@ -10,4 +10,10 @@
     <string name="error_authorization">Échec de l’autorisation</string>
     <string name="error_server">Le serveur est temporairement indisponible</string>
     <string name="error_load_expenses">Impossible de charger les dépenses</string>
+    <string name="error_create_account">Créez d’abord un compte</string>
+    <string name="error_positive_amount">Saisissez un montant positif</string>
+    <string name="error_select_account">Sélectionnez un compte</string>
+    <string name="error_select_category">Sélectionnez une catégorie</string>
+    <string name="error_insufficient_balance">Solde insuffisant sur le compte</string>
+    <string name="error_save_expense">Impossible d’enregistrer la dépense</string>
 </resources>

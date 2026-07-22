@@ -3,6 +3,7 @@ package com.yandex.school.casheye.feature.expenses.presentation
 import android.content.res.Configuration
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,6 +42,7 @@ import com.yandex.school.casheye.feature.expenses.R
 fun ExpenseScreen(
     state: ExpensesUiState,
     onIntent: (ExpensesIntent) -> Unit,
+    onTransactionClick: (Int) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     PullToRefreshContainer(
@@ -64,7 +66,7 @@ fun ExpenseScreen(
                 }
 
                 is ExpensesUiState.Content -> {
-                    ExpensesContent(state = state)
+                    ExpensesContent(state = state, onTransactionClick = onTransactionClick)
                 }
 
                 is ExpensesUiState.Error -> {
@@ -82,6 +84,7 @@ fun ExpenseScreen(
 @Composable
 private fun ExpensesContent(
     state: ExpensesUiState.Content,
+    onTransactionClick: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxSize()) {
@@ -110,6 +113,7 @@ private fun ExpensesContent(
                             amount = transaction.amount,
                             currencyCode = transaction.account.currency,
                         ),
+                    modifier = Modifier.clickable { onTransactionClick(transaction.id) },
                 )
             }
         }
