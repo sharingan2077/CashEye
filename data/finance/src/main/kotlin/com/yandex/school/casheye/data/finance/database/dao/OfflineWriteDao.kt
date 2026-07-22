@@ -1,0 +1,242 @@
+package com.yandex.school.casheye.data.finance.database.dao
+
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import androidx.room.Transaction
+import androidx.room.Update
+import com.yandex.school.casheye.data.finance.database.entity.AccountEntity
+import com.yandex.school.casheye.data.finance.database.entity.PendingEntityType
+import com.yandex.school.casheye.data.finance.database.entity.PendingOperationEntity
+import com.yandex.school.casheye.data.finance.database.entity.PendingOperationType
+import com.yandex.school.casheye.data.finance.database.entity.TransactionEntity
+import com.yandex.school.casheye.data.finance.database.model.AccountCommandSnapshot
+import com.yandex.school.casheye.data.finance.database.model.LocalWriteResult
+import com.yandex.school.casheye.data.finance.database.model.TransactionCommandSnapshot
+import com.yandex.school.casheye.domain.finance.SaveAccountCommand
+import com.yandex.school.casheye.domain.finance.SaveTransactionCommand
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import java.time.Instant
+
+@Dao
+internal abstract class OfflineWriteDao {
+    @Transaction
+    open suspend fun createAccount(
+        command: SaveAccountCommand,
+        now: Instant,
+    ): LocalWriteResult {
+        require(command.id == null) { "Offline account creation requires a command without an id" }
+        val localId = nextAccountId()
+        insertAccount(
+            AccountEntity(
+                id = localId,
+                name = command.name,
+                emoji = command.emoji,
+                balance = command.balance.toPlainString(),
+                currency = command.currency,
+            ),
+        )
+        val snapshot =
+            AccountCommandSnapshot(
+                id = localId,
+                name = command.name,
+                emoji = command.emoji,
+                balance = command.balance.toPlainString(),
+                currency = command.currency,
+            )
+        val operationId =
+            insertOperation(
+                PendingOperationEntity(
+                    entityType = PendingEntityType.ACCOUNT,
+                    operationType = PendingOperationType.CREATE,
+                    localEntityId = localId,
+                    relatedAccountId = localId,
+                    dependsOnOperationId = null,
+                    createdAt = now.toEpochMilli(),
+                    payload = json.encodeToString(snapshot),
+                ),
+            )
+        return LocalWriteResult(localId = localId, operationId = operationId)
+    }
+
+    @Transaction
+    open suspend fun createTransaction(
+        command: SaveTransactionCommand,
+        now: Instant,
+    ): LocalWriteResult {
+        require(command.id == null) { "Offline transaction creation requires a command without an id" }
+        val localId = nextTransactionId()
+        insertTransaction(
+            TransactionEntity(
+                id = localId,
+                accountId = command.accountId,
+                categoryId = command.categoryId,
+                amount = command.amount.toPlainString(),
+                transactionDate = command.transactionDate.toEpochMilli(),
+                comment = command.comment,
+                createdAt = now.toEpochMilli(),
+                updatedAt = now.toEpochMilli(),
+            ),
+        )
+        val snapshot =
+            TransactionCommandSnapshot(
+                id = localId,
+                accountId = command.accountId,
+                categoryId = command.categoryId,
+                amount = command.amount.toPlainString(),
+                transactionDate = command.transactionDate.toEpochMilli(),
+                comment = command.comment,
+            )
+        val operationId =
+            insertOperation(
+                PendingOperationEntity(
+                    entityType = PendingEntityType.TRANSACTION,
+                    operationType = PendingOperationType.CREATE,
+                    localEntityId = localId,
+                    relatedAccountId = command.accountId,
+                    dependsOnOperationId = findAccountCreateOperation(command.accountId),
+                    createdAt = now.toEpochMilli(),
+                    payload = json.encodeToString(snapshot),
+                ),
+            )
+        return LocalWriteResult(localId = localId, operationId = operationId)
+    }
+
+    @Transaction
+    open suspend fun replaceTemporaryAccountId(
+        temporaryId: Int,
+        serverId: Int,
+        completedOperationId: Long,
+    ) {
+        require(temporaryId < 0) { "Temporary ids must be negative" }
+        require(serverId > 0) { "Server ids must be positive" }
+
+        operationsReferencingAccount(temporaryId).forEach { operation ->
+            val updatedPayload =
+                when (operation.entityType) {
+                    PendingEntityType.ACCOUNT -> {
+                        val snapshot = json.decodeFromString<AccountCommandSnapshot>(operation.payload)
+                        json.encodeToString(snapshot.copy(id = serverId))
+                    }
+
+                    PendingEntityType.TRANSACTION -> {
+                        val snapshot = json.decodeFromString<TransactionCommandSnapshot>(operation.payload)
+                        json.encodeToString(snapshot.copy(accountId = serverId))
+                    }
+                }
+            updateOperation(
+                operation.copy(
+                    localEntityId =
+                        if (operation.entityType == PendingEntityType.ACCOUNT) serverId else operation.localEntityId,
+                    relatedAccountId = serverId,
+                    payload = updatedPayload,
+                ),
+            )
+        }
+
+        check(replaceAccountId(temporaryId = temporaryId, serverId = serverId) == 1) {
+            "Temporary account $temporaryId was not found"
+        }
+        check(deleteOperation(completedOperationId) == 1) {
+            "Completed operation $completedOperationId was not found"
+        }
+    }
+
+    @Transaction
+    open suspend fun replaceTemporaryTransactionId(
+        temporaryId: Int,
+        serverId: Int,
+        completedOperationId: Long,
+    ) {
+        require(temporaryId < 0) { "Temporary ids must be negative" }
+        require(serverId > 0) { "Server ids must be positive" }
+
+        operationsForEntity(PendingEntityType.TRANSACTION, temporaryId).forEach { operation ->
+            val snapshot = json.decodeFromString<TransactionCommandSnapshot>(operation.payload)
+            updateOperation(
+                operation.copy(
+                    localEntityId = serverId,
+                    payload = json.encodeToString(snapshot.copy(id = serverId)),
+                ),
+            )
+        }
+
+        check(replaceTransactionId(temporaryId = temporaryId, serverId = serverId) == 1) {
+            "Temporary transaction $temporaryId was not found"
+        }
+        check(deleteOperation(completedOperationId) == 1) {
+            "Completed operation $completedOperationId was not found"
+        }
+    }
+
+    @Query("SELECT COALESCE(MIN(id), 0) - 1 FROM accounts WHERE id < 0")
+    protected abstract suspend fun nextAccountId(): Int
+
+    @Query("SELECT COALESCE(MIN(id), 0) - 1 FROM transactions WHERE id < 0")
+    protected abstract suspend fun nextTransactionId(): Int
+
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    protected abstract suspend fun insertAccount(account: AccountEntity)
+
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    protected abstract suspend fun insertTransaction(transaction: TransactionEntity)
+
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    protected abstract suspend fun insertOperation(operation: PendingOperationEntity): Long
+
+    @Update
+    protected abstract suspend fun updateOperation(operation: PendingOperationEntity)
+
+    @Query(
+        """
+        SELECT id FROM pending_operations
+        WHERE entity_type = 'ACCOUNT'
+          AND operation_type = 'CREATE'
+          AND local_entity_id = :accountId
+        LIMIT 1
+        """,
+    )
+    protected abstract suspend fun findAccountCreateOperation(accountId: Int): Long?
+
+    @Query(
+        """
+        SELECT * FROM pending_operations
+        WHERE (entity_type = 'ACCOUNT' AND local_entity_id = :accountId)
+           OR related_account_id = :accountId
+        """,
+    )
+    protected abstract suspend fun operationsReferencingAccount(accountId: Int): List<PendingOperationEntity>
+
+    @Query(
+        """
+        SELECT * FROM pending_operations
+        WHERE entity_type = :entityType AND local_entity_id = :localId
+        """,
+    )
+    protected abstract suspend fun operationsForEntity(
+        entityType: PendingEntityType,
+        localId: Int,
+    ): List<PendingOperationEntity>
+
+    @Query("UPDATE accounts SET id = :serverId WHERE id = :temporaryId")
+    protected abstract suspend fun replaceAccountId(
+        temporaryId: Int,
+        serverId: Int,
+    ): Int
+
+    @Query("UPDATE transactions SET id = :serverId WHERE id = :temporaryId")
+    protected abstract suspend fun replaceTransactionId(
+        temporaryId: Int,
+        serverId: Int,
+    ): Int
+
+    @Query("DELETE FROM pending_operations WHERE id = :operationId")
+    protected abstract suspend fun deleteOperation(operationId: Long): Int
+
+    private companion object {
+        val json = Json
+    }
+}
