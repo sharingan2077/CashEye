@@ -2,6 +2,7 @@ package com.yandex.school.casheye.data.finance.network
 
 import com.yandex.school.casheye.data.finance.dto.AccountBriefDto
 import com.yandex.school.casheye.data.finance.dto.AccountDto
+import com.yandex.school.casheye.data.finance.dto.AccountResponseDto
 import com.yandex.school.casheye.data.finance.dto.CategoryDto
 import com.yandex.school.casheye.data.finance.dto.TransactionResponseDto
 import com.yandex.school.casheye.data.finance.mapper.toDomain
@@ -13,6 +14,15 @@ import java.math.BigDecimal
 import java.time.Instant
 
 class ExpensesMappersTest {
+    @Test
+    fun `account response maps editor account`() {
+        val account = AccountResponseDto(3, "Резерв", "💳", "99.50", "USD").toDomain()
+
+        assertEquals(3, account.id)
+        assertEquals(BigDecimal("99.50"), account.balance)
+        assertEquals("USD", account.currency)
+    }
+
     @Test
     fun `account dto maps string balance to domain amount`() {
         val account =

@@ -5,6 +5,7 @@ import com.yandex.school.casheye.core.model.Category
 import com.yandex.school.casheye.core.model.Transaction
 import com.yandex.school.casheye.data.finance.dto.AccountBriefDto
 import com.yandex.school.casheye.data.finance.dto.AccountDto
+import com.yandex.school.casheye.data.finance.dto.AccountResponseDto
 import com.yandex.school.casheye.data.finance.dto.CategoryDto
 import com.yandex.school.casheye.data.finance.dto.TransactionResponseDto
 import java.math.BigDecimal
@@ -26,6 +27,9 @@ internal fun AccountBriefDto.toDomain(): Account =
         balance = BigDecimal(balance),
         currency = currency,
     )
+
+internal fun AccountResponseDto.toDomain(): Account =
+    Account(id = id, name = name, emoji = emoji, balance = BigDecimal(balance), currency = currency)
 
 internal fun CategoryDto.toDomain(): Category =
     Category(

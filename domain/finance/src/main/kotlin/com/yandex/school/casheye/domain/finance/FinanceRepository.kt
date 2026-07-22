@@ -16,6 +16,21 @@ interface FinanceRepository {
     suspend fun getAccountsSummary(currencyCode: String): AccountsLoadResult
 
     suspend fun getAnalytics(query: AnalyticsQuery): AnalyticsLoadResult
+
+    suspend fun getAccounts(): EditorResult<List<Account>> = EditorResult.Failure(FinanceFailureReason.Unknown)
+
+    suspend fun getCategories(isIncome: Boolean): EditorResult<List<Category>> =
+        EditorResult.Failure(FinanceFailureReason.Unknown)
+
+    suspend fun getTransaction(id: Int): EditorResult<Transaction> = EditorResult.Failure(FinanceFailureReason.Unknown)
+
+    suspend fun saveTransaction(command: SaveTransactionCommand): EditorResult<Unit> =
+        EditorResult.Failure(FinanceFailureReason.Unknown)
+
+    suspend fun getAccount(id: Int): EditorResult<Account> = EditorResult.Failure(FinanceFailureReason.Unknown)
+
+    suspend fun saveAccount(command: SaveAccountCommand): EditorResult<Unit> =
+        EditorResult.Failure(FinanceFailureReason.Unknown)
 }
 
 data class AnalyticsQuery(

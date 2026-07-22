@@ -1,6 +1,8 @@
 package com.yandex.school.casheye.data.finance.repository
 
 import com.yandex.school.casheye.data.finance.api.FinanceApi
+import com.yandex.school.casheye.data.finance.dto.AccountRequestDto
+import com.yandex.school.casheye.data.finance.dto.TransactionRequestDto
 import com.yandex.school.casheye.data.finance.mapper.toDomain
 import com.yandex.school.casheye.domain.finance.AccountsLoadResult
 import com.yandex.school.casheye.domain.finance.AccountsSummary
@@ -8,10 +10,13 @@ import com.yandex.school.casheye.domain.finance.AnalyticsLoadResult
 import com.yandex.school.casheye.domain.finance.AnalyticsQuery
 import com.yandex.school.casheye.domain.finance.AnalyticsSummary
 import com.yandex.school.casheye.domain.finance.AnalyticsTransactionKind
+import com.yandex.school.casheye.domain.finance.EditorResult
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import com.yandex.school.casheye.domain.finance.FinanceLoadResult
 import com.yandex.school.casheye.domain.finance.FinanceRepository
 import com.yandex.school.casheye.domain.finance.FinanceSummary
+import com.yandex.school.casheye.domain.finance.SaveAccountCommand
+import com.yandex.school.casheye.domain.finance.SaveTransactionCommand
 import com.yandex.school.casheye.domain.finance.TransactionKind
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
@@ -34,6 +39,42 @@ class FinanceRepositoryImpl(
     private val api: FinanceApi,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : FinanceRepository {
+    override suspend fun getAccounts() = editorRequest(ioDispatcher) { api.getAccounts().map { it.toDomain() } }
+
+    override suspend fun getCategories(isIncome: Boolean) =
+        editorRequest(ioDispatcher) { api.getCategories(isIncome).map { it.toDomain() } }
+
+    override suspend fun getTransaction(id: Int) = editorRequest(ioDispatcher) { api.getTransaction(id).toDomain() }
+
+    override suspend fun saveTransaction(command: SaveTransactionCommand): EditorResult<Unit> =
+        editorRequest(ioDispatcher) {
+            val request =
+                TransactionRequestDto(
+                    accountId = command.accountId,
+                    categoryId = command.categoryId,
+                    amount = command.amount.toPlainString(),
+                    transactionDate = command.transactionDate,
+                    comment = command.comment,
+                )
+            command.id?.let { api.updateTransaction(it, request) } ?: api.createTransaction(request)
+            Unit
+        }
+
+    override suspend fun getAccount(id: Int) = editorRequest(ioDispatcher) { api.getAccount(id).toDomain() }
+
+    override suspend fun saveAccount(command: SaveAccountCommand): EditorResult<Unit> =
+        editorRequest(ioDispatcher) {
+            val request =
+                AccountRequestDto(
+                    name = command.name,
+                    emoji = command.emoji,
+                    balance = command.balance.toPlainString(),
+                    currency = command.currency,
+                )
+            command.id?.let { api.updateAccount(it, request) } ?: api.createAccount(request)
+            Unit
+        }
+
     override suspend fun getAnalytics(query: AnalyticsQuery): AnalyticsLoadResult =
         try {
             withContext(ioDispatcher) {
@@ -174,6 +215,22 @@ class FinanceRepositoryImpl(
             AccountsLoadResult.Failure(FinanceFailureReason.Unknown)
         }
 }
+
+private suspend inline fun <T> editorRequest(
+    dispatcher: CoroutineDispatcher,
+    crossinline block: suspend () -> T,
+): EditorResult<T> =
+    try {
+        EditorResult.Success(withContext(dispatcher) { block() })
+    } catch (error: CancellationException) {
+        throw error
+    } catch (_: IOException) {
+        EditorResult.Failure(FinanceFailureReason.Network)
+    } catch (error: HttpException) {
+        EditorResult.Failure(error.toFailureReason())
+    } catch (_: Exception) {
+        EditorResult.Failure(FinanceFailureReason.Unknown)
+    }
 
 private fun HttpException.toFailureReason(): FinanceFailureReason =
     when (code()) {

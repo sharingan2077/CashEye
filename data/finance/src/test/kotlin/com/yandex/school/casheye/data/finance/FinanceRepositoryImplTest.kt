@@ -4,13 +4,17 @@ import com.yandex.school.casheye.data.finance.api.FinanceApi
 import com.yandex.school.casheye.data.finance.dto.AccountBriefDto
 import com.yandex.school.casheye.data.finance.dto.AccountDto
 import com.yandex.school.casheye.data.finance.dto.CategoryDto
+import com.yandex.school.casheye.data.finance.dto.TransactionRequestDto
 import com.yandex.school.casheye.data.finance.dto.TransactionResponseDto
 import com.yandex.school.casheye.data.finance.repository.FinanceRepositoryImpl
+import com.yandex.school.casheye.domain.finance.EditorResult
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import com.yandex.school.casheye.domain.finance.FinanceLoadResult
+import com.yandex.school.casheye.domain.finance.SaveTransactionCommand
 import com.yandex.school.casheye.domain.finance.TransactionKind
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.JsonPrimitive
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -24,6 +28,40 @@ import java.time.LocalDate
 import java.util.Collections
 
 class FinanceRepositoryImplTest {
+    @Test
+    fun `editor maps io exception to network failure`() =
+        runBlocking {
+            val result =
+                FinanceRepositoryImpl(
+                    ThrowingFinanceApi(IOException("offline")),
+                    Dispatchers.Unconfined,
+                ).getAccounts()
+
+            assertEquals(EditorResult.Failure(FinanceFailureReason.Network), result)
+        }
+
+    @Test
+    fun `create transaction maps domain command to request`() =
+        runBlocking {
+            val api = FakeFinanceApi(accounts = emptyList(), transactionsByAccount = emptyMap())
+            val command =
+                SaveTransactionCommand(
+                    id = null,
+                    accountId = 4,
+                    categoryId = 8,
+                    amount = BigDecimal("12.30"),
+                    transactionDate = Instant.parse("2026-07-22T10:15:00Z"),
+                    comment = "Обед",
+                )
+
+            val result = FinanceRepositoryImpl(api, Dispatchers.Unconfined).saveTransaction(command)
+
+            assertTrue(result is EditorResult.Success)
+            assertEquals("12.30", api.savedTransaction?.amount)
+            assertEquals(4, api.savedTransaction?.accountId)
+            assertEquals(8, api.savedTransaction?.categoryId)
+        }
+
     @Test
     fun `requests every account with same current-day boundaries`() =
         runBlocking {
@@ -232,8 +270,33 @@ private class FakeFinanceApi(
     private val failingAccountId: Int? = null,
 ) : FinanceApi {
     val requests: MutableList<PeriodRequest> = Collections.synchronizedList(mutableListOf())
+    var savedTransaction: TransactionRequestDto? = null
 
     override suspend fun getAccounts(): List<AccountDto> = accounts
+
+    override suspend fun getAccount(id: Int) = error("Unexpected account request")
+
+    override suspend fun createAccount(request: com.yandex.school.casheye.data.finance.dto.AccountRequestDto) =
+        error("Unexpected account request")
+
+    override suspend fun updateAccount(
+        id: Int,
+        request: com.yandex.school.casheye.data.finance.dto.AccountRequestDto,
+    ) = error("Unexpected account request")
+
+    override suspend fun getCategories(isIncome: Boolean) = error("Unexpected category request")
+
+    override suspend fun getTransaction(id: Int) = error("Unexpected transaction request")
+
+    override suspend fun createTransaction(request: TransactionRequestDto) =
+        JsonPrimitive(true).also {
+            savedTransaction = request
+        }
+
+    override suspend fun updateTransaction(
+        id: Int,
+        request: com.yandex.school.casheye.data.finance.dto.TransactionRequestDto,
+    ) = error("Unexpected transaction request")
 
     override suspend fun getTransactions(
         accountId: Int,
@@ -252,6 +315,28 @@ private class ThrowingFinanceApi(
     private val error: Exception,
 ) : FinanceApi {
     override suspend fun getAccounts(): List<AccountDto> = throw error
+
+    override suspend fun getAccount(id: Int) = throw error
+
+    override suspend fun createAccount(request: com.yandex.school.casheye.data.finance.dto.AccountRequestDto) =
+        throw error
+
+    override suspend fun updateAccount(
+        id: Int,
+        request: com.yandex.school.casheye.data.finance.dto.AccountRequestDto,
+    ) = throw error
+
+    override suspend fun getCategories(isIncome: Boolean) = throw error
+
+    override suspend fun getTransaction(id: Int) = throw error
+
+    override suspend fun createTransaction(request: com.yandex.school.casheye.data.finance.dto.TransactionRequestDto) =
+        throw error
+
+    override suspend fun updateTransaction(
+        id: Int,
+        request: com.yandex.school.casheye.data.finance.dto.TransactionRequestDto,
+    ) = throw error
 
     override suspend fun getTransactions(
         accountId: Int,
