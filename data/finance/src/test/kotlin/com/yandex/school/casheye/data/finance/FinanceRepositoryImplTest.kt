@@ -1,21 +1,23 @@
 package com.yandex.school.casheye.data.finance
 
+import com.yandex.school.casheye.core.model.Account
+import com.yandex.school.casheye.core.model.Category
+import com.yandex.school.casheye.core.model.Transaction
 import com.yandex.school.casheye.data.finance.api.FinanceApi
 import com.yandex.school.casheye.data.finance.database.FinanceLocalStore
 import com.yandex.school.casheye.data.finance.dto.AccountBriefDto
 import com.yandex.school.casheye.data.finance.dto.AccountDto
 import com.yandex.school.casheye.data.finance.dto.CategoryDto
-import com.yandex.school.casheye.data.finance.dto.TransactionRequestDto
 import com.yandex.school.casheye.data.finance.dto.TransactionDto
+import com.yandex.school.casheye.data.finance.dto.TransactionRequestDto
 import com.yandex.school.casheye.data.finance.dto.TransactionResponseDto
 import com.yandex.school.casheye.data.finance.mapper.toDomain
 import com.yandex.school.casheye.data.finance.repository.FinanceRepositoryImpl
-import com.yandex.school.casheye.core.model.Account
-import com.yandex.school.casheye.core.model.Category
-import com.yandex.school.casheye.core.model.Transaction
+import com.yandex.school.casheye.data.finance.sync.FinanceSyncScheduler
 import com.yandex.school.casheye.domain.finance.EditorResult
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import com.yandex.school.casheye.domain.finance.FinanceLoadResult
+import com.yandex.school.casheye.domain.finance.SaveAccountCommand
 import com.yandex.school.casheye.domain.finance.SaveTransactionCommand
 import com.yandex.school.casheye.domain.finance.TransactionKind
 import kotlinx.coroutines.Dispatchers
@@ -33,6 +35,43 @@ import java.time.LocalDate
 import java.util.Collections
 
 class FinanceRepositoryImplTest {
+    @Test
+    fun `cached accounts are returned when refresh is offline`() =
+        runBlocking {
+            val cached = Account(7, "Cached", "💳", BigDecimal("25.00"), "RUB")
+            val localStore = FakeFinanceLocalStore(initialAccounts = listOf(cached))
+
+            val result =
+                FinanceRepositoryImpl(
+                    ThrowingFinanceApi(IOException("offline")),
+                    localStore,
+                    Dispatchers.Unconfined,
+                ).getAccounts()
+
+            assertEquals(EditorResult.Success(listOf(cached)), result)
+        }
+
+    @Test
+    fun `local account commit enqueues synchronization`() =
+        runBlocking {
+            val localStore = FakeFinanceLocalStore()
+            val scheduler = RecordingSyncScheduler()
+            val command = SaveAccountCommand(null, "Offline", "💳", BigDecimal("10.00"), "RUB")
+            val repository =
+                FinanceRepositoryImpl(
+                    FakeFinanceApi(emptyList(), emptyMap()),
+                    localStore,
+                    Dispatchers.Unconfined,
+                    scheduler,
+                )
+
+            val result = repository.saveAccount(command)
+
+            assertEquals(EditorResult.Success(Unit), result)
+            assertEquals(command, localStore.savedAccount)
+            assertEquals(1, scheduler.immediateRequests)
+        }
+
     @Test
     fun `editor maps io exception to network failure`() =
         runBlocking {
@@ -270,11 +309,14 @@ private fun repository(
     localStore: FinanceLocalStore = FakeFinanceLocalStore(),
 ): FinanceRepositoryImpl = FinanceRepositoryImpl(api, localStore, Dispatchers.Unconfined)
 
-private class FakeFinanceLocalStore : FinanceLocalStore {
-    private var accounts: List<Account> = emptyList()
+private class FakeFinanceLocalStore(
+    initialAccounts: List<Account> = emptyList(),
+) : FinanceLocalStore {
+    private var accounts: List<Account> = initialAccounts
     private var categories: List<Category> = emptyList()
     private var transactions: List<Transaction> = emptyList()
     var savedTransaction: SaveTransactionCommand? = null
+    var savedAccount: SaveAccountCommand? = null
 
     override suspend fun getAccounts(): List<Account> = accounts
 
@@ -325,12 +367,24 @@ private class FakeFinanceLocalStore : FinanceLocalStore {
     }
 
     override suspend fun saveAccount(
-        command: com.yandex.school.casheye.domain.finance.SaveAccountCommand,
+        command: SaveAccountCommand,
         now: Instant,
-    ) = Unit
+    ) {
+        savedAccount = command
+    }
 
     override suspend fun saveTransaction(command: SaveTransactionCommand, now: Instant) {
         savedTransaction = command
+    }
+}
+
+private class RecordingSyncScheduler : FinanceSyncScheduler {
+    var immediateRequests = 0
+
+    override fun registerPeriodicSync() = Unit
+
+    override fun enqueueImmediateSync() {
+        immediateRequests += 1
     }
 }
 

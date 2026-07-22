@@ -16,6 +16,7 @@ import com.yandex.school.casheye.data.finance.dto.TransactionDto
 import com.yandex.school.casheye.data.finance.dto.TransactionRequestDto
 import com.yandex.school.casheye.data.finance.dto.TransactionResponseDto
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import okhttp3.ResponseBody.Companion.toResponseBody
@@ -24,11 +25,34 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import retrofit2.HttpException
 import retrofit2.Response
+import java.io.IOException
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
 
 class FinanceSyncerTest {
+    @Test
+    fun `dependent transaction is sent after temporary account id is replaced`() =
+        runBlocking {
+            val account = accountCreate(localId = -1, operationId = 1, createdAt = 1)
+            val transaction =
+                transactionCreate(
+                    localId = -1,
+                    accountId = -1,
+                    operationId = 2,
+                    dependencyId = account.id,
+                    createdAt = 2,
+                )
+            val store = FakeSyncStore(account, transaction)
+            val api = FakeFinanceApi()
+
+            val result = syncer(api, store).sync()
+
+            assertEquals(FinanceSyncResult.Success, result)
+            assertEquals(listOf("account:create", "transaction:create:101"), api.writeCalls)
+            assertTrue(store.getPendingOperations().isEmpty())
+        }
+
     @Test
     fun `sync collapses updates and sends accounts before transactions`() =
         runBlocking {
@@ -75,6 +99,20 @@ class FinanceSyncerTest {
             val result = syncer(api, store).sync()
 
             assertTrue(result is FinanceSyncResult.PermanentFailure)
+            assertEquals(1, api.accountUpdateAttempts)
+            assertEquals(listOf(operation), store.getPendingOperations())
+        }
+
+    @Test
+    fun `network failure is temporary and keeps the operation for worker retry`() =
+        runBlocking {
+            val operation = accountUpdate(id = 1, operationId = 1, balance = "10.00", createdAt = 1)
+            val store = FakeSyncStore(operation)
+            val api = FakeFinanceApi(writeFailure = IOException("offline"))
+
+            val result = syncer(api, store).sync()
+
+            assertTrue(result is FinanceSyncResult.TemporaryFailure)
             assertEquals(1, api.accountUpdateAttempts)
             assertEquals(listOf(operation), store.getPendingOperations())
         }
@@ -143,6 +181,39 @@ class FinanceSyncerTest {
                 ),
         )
 
+    private fun accountCreate(
+        localId: Int,
+        operationId: Long,
+        createdAt: Long,
+    ): PendingOperationEntity =
+        accountUpdate(localId, operationId, "10.00", createdAt).copy(
+            operationType = PendingOperationType.CREATE,
+        )
+
+    private fun transactionCreate(
+        localId: Int,
+        accountId: Int,
+        operationId: Long,
+        dependencyId: Long,
+        createdAt: Long,
+    ): PendingOperationEntity =
+        transactionUpdate(localId, operationId, createdAt).copy(
+            operationType = PendingOperationType.CREATE,
+            relatedAccountId = accountId,
+            dependsOnOperationId = dependencyId,
+            payload =
+                Json.encodeToString(
+                    TransactionCommandSnapshot(
+                        id = localId,
+                        accountId = accountId,
+                        categoryId = 1,
+                        amount = "5.00",
+                        transactionDate = Instant.parse("2026-07-22T10:00:00Z").toEpochMilli(),
+                        comment = null,
+                    ),
+                ),
+        )
+
     private fun httpError(code: Int): HttpException =
         HttpException(Response.error<Unit>(code, "error".toResponseBody()))
 
@@ -158,7 +229,22 @@ class FinanceSyncerTest {
         override suspend fun completeAccountCreate(
             sentOperations: List<PendingOperationEntity>,
             response: AccountDto,
-        ) = complete(sentOperations)
+        ) {
+            complete(sentOperations)
+            val completedIds = sentOperations.map { it.id }.toSet()
+            pending.replaceAll { operation ->
+                if (operation.dependsOnOperationId in completedIds) {
+                    val snapshot = Json.decodeFromString<TransactionCommandSnapshot>(operation.payload)
+                    operation.copy(
+                        relatedAccountId = response.id,
+                        dependsOnOperationId = null,
+                        payload = Json.encodeToString(snapshot.copy(accountId = response.id)),
+                    )
+                } else {
+                    operation
+                }
+            }
+        }
 
         override suspend fun completeAccountUpdate(
             sentOperations: List<PendingOperationEntity>,
@@ -201,7 +287,11 @@ class FinanceSyncerTest {
 
         override suspend fun getAccount(id: Int): AccountResponseDto = error("Not used")
 
-        override suspend fun createAccount(request: AccountRequestDto): AccountDto = error("Not used")
+        override suspend fun createAccount(request: AccountRequestDto): AccountDto {
+            writeFailure?.let { throw it }
+            writeCalls += "account:create"
+            return account(101, request)
+        }
 
         override suspend fun updateAccount(
             id: Int,
@@ -217,7 +307,20 @@ class FinanceSyncerTest {
 
         override suspend fun getTransaction(id: Int): TransactionResponseDto = error("Not used")
 
-        override suspend fun createTransaction(request: TransactionRequestDto): TransactionDto = error("Not used")
+        override suspend fun createTransaction(request: TransactionRequestDto): TransactionDto {
+            writeFailure?.let { throw it }
+            writeCalls += "transaction:create:${request.accountId}"
+            return TransactionDto(
+                id = 201,
+                accountId = request.accountId,
+                categoryId = request.categoryId,
+                amount = request.amount,
+                transactionDate = request.transactionDate,
+                comment = request.comment,
+                createdAt = NOW,
+                updatedAt = NOW,
+            )
+        }
 
         override suspend fun updateTransaction(
             id: Int,

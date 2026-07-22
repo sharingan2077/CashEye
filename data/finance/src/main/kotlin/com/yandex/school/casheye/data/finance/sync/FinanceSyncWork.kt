@@ -6,6 +6,7 @@ import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.ExistingWorkPolicy
+import androidx.work.ListenableWorker
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
@@ -76,13 +77,15 @@ class FinanceSyncWorker(
     workerParameters: WorkerParameters,
     private val financeSyncer: FinanceSyncer,
 ) : CoroutineWorker(appContext, workerParameters) {
-    override suspend fun doWork(): Result =
-        when (financeSyncer.sync()) {
-            FinanceSyncResult.Success -> Result.success()
-            is FinanceSyncResult.TemporaryFailure -> Result.retry()
-            is FinanceSyncResult.PermanentFailure -> Result.failure()
-        }
+    override suspend fun doWork(): Result = financeSyncer.sync().toWorkerResult()
 }
+
+internal fun FinanceSyncResult.toWorkerResult(): ListenableWorker.Result =
+    when (this) {
+        FinanceSyncResult.Success -> ListenableWorker.Result.success()
+        is FinanceSyncResult.TemporaryFailure -> ListenableWorker.Result.retry()
+        is FinanceSyncResult.PermanentFailure -> ListenableWorker.Result.failure()
+    }
 
 class FinanceSyncWorkerFactory(
     private val financeSyncerProvider: () -> FinanceSyncer,
