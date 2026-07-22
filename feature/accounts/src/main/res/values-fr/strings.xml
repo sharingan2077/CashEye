@@ -7,4 +7,8 @@
     <string name="error_authorization">Échec de l’autorisation</string>
     <string name="error_server">Le serveur est temporairement indisponible</string>
     <string name="error_load_accounts">Impossible de charger les comptes</string>
+    <string name="error_account_name_required">Saisissez le nom du compte</string>
+    <string name="error_invalid_balance">Saisissez un solde valide</string>
+    <string name="error_select_currency">Sélectionnez une devise</string>
+    <string name="error_save_account">Impossible d’enregistrer le compte</string>
 </resources>

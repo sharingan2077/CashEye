@@ -7,4 +7,8 @@
     <string name="error_authorization">Anmeldung fehlgeschlagen</string>
     <string name="error_server">Server ist vorübergehend nicht verfügbar</string>
     <string name="error_load_accounts">Konten konnten nicht geladen werden</string>
+    <string name="error_account_name_required">Geben Sie einen Kontonamen ein</string>
+    <string name="error_invalid_balance">Geben Sie einen gültigen Kontostand ein</string>
+    <string name="error_select_currency">Wählen Sie eine Währung</string>
+    <string name="error_save_account">Konto konnte nicht gespeichert werden</string>
 </resources>

@@ -7,4 +7,8 @@
     <string name="error_authorization">Не удалось авторизоваться</string>
     <string name="error_server">Сервер временно недоступен</string>
     <string name="error_load_accounts">Не удалось загрузить счета</string>
+    <string name="error_account_name_required">Введите название счёта</string>
+    <string name="error_invalid_balance">Введите корректный баланс</string>
+    <string name="error_select_currency">Выберите валюту</string>
+    <string name="error_save_account">Не удалось сохранить счёт</string>
 </resources>

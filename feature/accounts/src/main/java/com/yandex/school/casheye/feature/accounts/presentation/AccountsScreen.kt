@@ -3,6 +3,7 @@ package com.yandex.school.casheye.feature.accounts.presentation
 import android.content.res.Configuration
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,6 +42,7 @@ import com.yandex.school.casheye.feature.accounts.R
 fun AccountsScreen(
     state: AccountsUiState,
     onIntent: (AccountsIntent) -> Unit,
+    onAccountClick: (Int) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     PullToRefreshContainer(
@@ -64,7 +66,7 @@ fun AccountsScreen(
                 }
 
                 is AccountsUiState.Content -> {
-                    AccountsContent(state = state)
+                    AccountsContent(state = state, onAccountClick = onAccountClick)
                 }
 
                 is AccountsUiState.Error -> {
@@ -82,6 +84,7 @@ fun AccountsScreen(
 @Composable
 private fun AccountsContent(
     state: AccountsUiState.Content,
+    onAccountClick: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxSize()) {
@@ -110,6 +113,7 @@ private fun AccountsContent(
                             amount = accountItem.balance,
                             currencyCode = accountItem.currency,
                         ),
+                    modifier = Modifier.clickable { onAccountClick(accountItem.id) },
                 )
             }
         }

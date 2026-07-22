@@ -1,6 +1,7 @@
 package com.yandex.school.casheye.feature.accounts.di
 
 import androidx.lifecycle.ViewModel
+import com.yandex.school.casheye.feature.accounts.presentation.AccountEditorViewModel
 import com.yandex.school.casheye.feature.accounts.presentation.AccountsViewModel
 import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.Binds
@@ -13,4 +14,9 @@ interface AccountsViewModelBindings {
     @IntoMap
     @ViewModelKey(AccountsViewModel::class)
     val AccountsViewModel.bindAccountsViewModel: ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(AccountEditorViewModel::class)
+    val AccountEditorViewModel.bindAccountEditorViewModel: ViewModel
 }

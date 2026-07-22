@@ -7,4 +7,8 @@
     <string name="error_authorization">Authorization failed</string>
     <string name="error_server">Server is temporarily unavailable</string>
     <string name="error_load_accounts">Failed to load accounts</string>
+    <string name="error_account_name_required">Enter an account name</string>
+    <string name="error_invalid_balance">Enter a valid balance</string>
+    <string name="error_select_currency">Select a currency</string>
+    <string name="error_save_account">Could not save account</string>
 </resources>
