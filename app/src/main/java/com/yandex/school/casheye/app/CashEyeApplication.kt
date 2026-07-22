@@ -19,6 +19,7 @@ class CashEyeApplication : Application() {
                         apiKey = BuildConfig.API_KEY,
                         isLoggingEnabled = BuildConfig.DEBUG,
                     ),
+                context = this,
             )
     }
 }

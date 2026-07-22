@@ -5,11 +5,15 @@ import androidx.room.Delete
 import androidx.room.Query
 import androidx.room.Update
 import androidx.room.Upsert
+import com.yandex.school.casheye.data.finance.database.entity.PendingEntityType
 import com.yandex.school.casheye.data.finance.database.entity.PendingOperationEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 internal interface PendingOperationDao {
+    @Query("SELECT local_entity_id FROM pending_operations WHERE entity_type = :entityType")
+    suspend fun getPendingEntityIds(entityType: PendingEntityType): List<Int>
+
     @Query("SELECT * FROM pending_operations ORDER BY created_at, id")
     fun observeAll(): Flow<List<PendingOperationEntity>>
 

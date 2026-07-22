@@ -51,6 +51,21 @@ data class TransactionResponseDto(
 )
 
 @Serializable
+data class TransactionDto(
+    val id: Int,
+    val accountId: Int,
+    val categoryId: Int,
+    val amount: String,
+    @Serializable(with = InstantIso8601Serializer::class)
+    val transactionDate: Instant,
+    val comment: String?,
+    @Serializable(with = InstantIso8601Serializer::class)
+    val createdAt: Instant,
+    @Serializable(with = InstantIso8601Serializer::class)
+    val updatedAt: Instant,
+)
+
+@Serializable
 data class TransactionRequestDto(
     val accountId: Int,
     val categoryId: Int,

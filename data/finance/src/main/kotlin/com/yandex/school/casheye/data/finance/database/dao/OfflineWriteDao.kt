@@ -106,6 +106,109 @@ internal abstract class OfflineWriteDao {
     }
 
     @Transaction
+    open suspend fun updateAccount(
+        command: SaveAccountCommand,
+        now: Instant,
+    ): LocalWriteResult {
+        val localId = requireNotNull(command.id) { "Offline account update requires an id" }
+        check(accountById(localId) != null) { "Account $localId was not found" }
+        updateAccountRow(
+            AccountEntity(
+                id = localId,
+                name = command.name,
+                emoji = command.emoji,
+                balance = command.balance.toPlainString(),
+                currency = command.currency,
+            ),
+        )
+        val payload =
+            json.encodeToString(
+                AccountCommandSnapshot(
+                    id = localId,
+                    name = command.name,
+                    emoji = command.emoji,
+                    balance = command.balance.toPlainString(),
+                    currency = command.currency,
+                ),
+            )
+        val createOperation = findCreateOperation(PendingEntityType.ACCOUNT, localId)
+        val operationId =
+            if (createOperation != null) {
+                updateOperation(createOperation.copy(payload = payload, relatedAccountId = localId))
+                createOperation.id
+            } else {
+                insertOperation(
+                    PendingOperationEntity(
+                        entityType = PendingEntityType.ACCOUNT,
+                        operationType = PendingOperationType.UPDATE,
+                        localEntityId = localId,
+                        relatedAccountId = localId,
+                        dependsOnOperationId = null,
+                        createdAt = now.toEpochMilli(),
+                        payload = payload,
+                    ),
+                )
+            }
+        return LocalWriteResult(localId = localId, operationId = operationId)
+    }
+
+    @Transaction
+    open suspend fun updateTransaction(
+        command: SaveTransactionCommand,
+        now: Instant,
+    ): LocalWriteResult {
+        val localId = requireNotNull(command.id) { "Offline transaction update requires an id" }
+        val existing = checkNotNull(transactionById(localId)) { "Transaction $localId was not found" }
+        updateTransactionRow(
+            existing.copy(
+                accountId = command.accountId,
+                categoryId = command.categoryId,
+                amount = command.amount.toPlainString(),
+                transactionDate = command.transactionDate.toEpochMilli(),
+                comment = command.comment,
+                updatedAt = now.toEpochMilli(),
+            ),
+        )
+        val payload =
+            json.encodeToString(
+                TransactionCommandSnapshot(
+                    id = localId,
+                    accountId = command.accountId,
+                    categoryId = command.categoryId,
+                    amount = command.amount.toPlainString(),
+                    transactionDate = command.transactionDate.toEpochMilli(),
+                    comment = command.comment,
+                ),
+            )
+        val accountDependency = findAccountCreateOperation(command.accountId)
+        val createOperation = findCreateOperation(PendingEntityType.TRANSACTION, localId)
+        val operationId =
+            if (createOperation != null) {
+                updateOperation(
+                    createOperation.copy(
+                        relatedAccountId = command.accountId,
+                        dependsOnOperationId = accountDependency,
+                        payload = payload,
+                    ),
+                )
+                createOperation.id
+            } else {
+                insertOperation(
+                    PendingOperationEntity(
+                        entityType = PendingEntityType.TRANSACTION,
+                        operationType = PendingOperationType.UPDATE,
+                        localEntityId = localId,
+                        relatedAccountId = command.accountId,
+                        dependsOnOperationId = accountDependency,
+                        createdAt = now.toEpochMilli(),
+                        payload = payload,
+                    ),
+                )
+            }
+        return LocalWriteResult(localId = localId, operationId = operationId)
+    }
+
+    @Transaction
     open suspend fun replaceTemporaryAccountId(
         temporaryId: Int,
         serverId: Int,
@@ -187,6 +290,18 @@ internal abstract class OfflineWriteDao {
     @Insert(onConflict = OnConflictStrategy.ABORT)
     protected abstract suspend fun insertOperation(operation: PendingOperationEntity): Long
 
+    @Query("SELECT * FROM accounts WHERE id = :id")
+    protected abstract suspend fun accountById(id: Int): AccountEntity?
+
+    @Query("SELECT * FROM transactions WHERE id = :id")
+    protected abstract suspend fun transactionById(id: Int): TransactionEntity?
+
+    @Update
+    protected abstract suspend fun updateAccountRow(account: AccountEntity)
+
+    @Update
+    protected abstract suspend fun updateTransactionRow(transaction: TransactionEntity)
+
     @Update
     protected abstract suspend fun updateOperation(operation: PendingOperationEntity)
 
@@ -200,6 +315,20 @@ internal abstract class OfflineWriteDao {
         """,
     )
     protected abstract suspend fun findAccountCreateOperation(accountId: Int): Long?
+
+    @Query(
+        """
+        SELECT * FROM pending_operations
+        WHERE entity_type = :entityType
+          AND operation_type = 'CREATE'
+          AND local_entity_id = :localId
+        LIMIT 1
+        """,
+    )
+    protected abstract suspend fun findCreateOperation(
+        entityType: PendingEntityType,
+        localId: Int,
+    ): PendingOperationEntity?
 
     @Query(
         """

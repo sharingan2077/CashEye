@@ -5,8 +5,8 @@ import com.yandex.school.casheye.data.finance.dto.AccountRequestDto
 import com.yandex.school.casheye.data.finance.dto.AccountResponseDto
 import com.yandex.school.casheye.data.finance.dto.CategoryDto
 import com.yandex.school.casheye.data.finance.dto.TransactionRequestDto
+import com.yandex.school.casheye.data.finance.dto.TransactionDto
 import com.yandex.school.casheye.data.finance.dto.TransactionResponseDto
-import kotlinx.serialization.json.JsonElement
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -26,13 +26,13 @@ interface FinanceApi {
     @POST("accounts")
     suspend fun createAccount(
         @Body request: AccountRequestDto,
-    ): JsonElement
+    ): AccountDto
 
     @PUT("accounts/{id}")
     suspend fun updateAccount(
         @Path("id") id: Int,
         @Body request: AccountRequestDto,
-    ): JsonElement
+    ): AccountDto
 
     @GET("categories/type/{isIncome}")
     suspend fun getCategories(
@@ -47,13 +47,13 @@ interface FinanceApi {
     @POST("transactions")
     suspend fun createTransaction(
         @Body request: TransactionRequestDto,
-    ): JsonElement
+    ): TransactionDto
 
     @PUT("transactions/{id}")
     suspend fun updateTransaction(
         @Path("id") id: Int,
         @Body request: TransactionRequestDto,
-    ): JsonElement
+    ): TransactionResponseDto
 
     @GET("transactions/account/{accountId}/period")
     suspend fun getTransactions(

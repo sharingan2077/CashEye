@@ -23,6 +23,21 @@ internal interface TransactionDao {
         ORDER BY transaction_date DESC
         """,
     )
+    suspend fun getForPeriod(
+        accountId: Int?,
+        startInclusive: Long,
+        endInclusive: Long,
+    ): List<TransactionWithRelations>
+
+    @Transaction
+    @Query(
+        """
+        SELECT * FROM transactions
+        WHERE (:accountId IS NULL OR account_id = :accountId)
+          AND transaction_date BETWEEN :startInclusive AND :endInclusive
+        ORDER BY transaction_date DESC
+        """,
+    )
     fun observeForPeriod(
         accountId: Int?,
         startInclusive: Long,
@@ -34,4 +49,20 @@ internal interface TransactionDao {
 
     @Upsert
     suspend fun upsertAll(transactions: List<TransactionEntity>)
+
+    @Query(
+        """
+        DELETE FROM transactions
+        WHERE id > 0
+          AND transaction_date BETWEEN :startInclusive AND :endInclusive
+          AND id NOT IN (
+              SELECT local_entity_id FROM pending_operations
+              WHERE entity_type = 'TRANSACTION'
+          )
+        """,
+    )
+    suspend fun deleteSyncedForPeriod(
+        startInclusive: Long,
+        endInclusive: Long,
+    )
 }

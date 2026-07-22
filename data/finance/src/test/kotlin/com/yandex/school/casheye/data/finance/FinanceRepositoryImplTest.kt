@@ -1,12 +1,18 @@
 package com.yandex.school.casheye.data.finance
 
 import com.yandex.school.casheye.data.finance.api.FinanceApi
+import com.yandex.school.casheye.data.finance.database.FinanceLocalStore
 import com.yandex.school.casheye.data.finance.dto.AccountBriefDto
 import com.yandex.school.casheye.data.finance.dto.AccountDto
 import com.yandex.school.casheye.data.finance.dto.CategoryDto
 import com.yandex.school.casheye.data.finance.dto.TransactionRequestDto
+import com.yandex.school.casheye.data.finance.dto.TransactionDto
 import com.yandex.school.casheye.data.finance.dto.TransactionResponseDto
+import com.yandex.school.casheye.data.finance.mapper.toDomain
 import com.yandex.school.casheye.data.finance.repository.FinanceRepositoryImpl
+import com.yandex.school.casheye.core.model.Account
+import com.yandex.school.casheye.core.model.Category
+import com.yandex.school.casheye.core.model.Transaction
 import com.yandex.school.casheye.domain.finance.EditorResult
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import com.yandex.school.casheye.domain.finance.FinanceLoadResult
@@ -14,7 +20,6 @@ import com.yandex.school.casheye.domain.finance.SaveTransactionCommand
 import com.yandex.school.casheye.domain.finance.TransactionKind
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.json.JsonPrimitive
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -34,6 +39,7 @@ class FinanceRepositoryImplTest {
             val result =
                 FinanceRepositoryImpl(
                     ThrowingFinanceApi(IOException("offline")),
+                    FakeFinanceLocalStore(),
                     Dispatchers.Unconfined,
                 ).getAccounts()
 
@@ -54,12 +60,13 @@ class FinanceRepositoryImplTest {
                     comment = "Обед",
                 )
 
-            val result = FinanceRepositoryImpl(api, Dispatchers.Unconfined).saveTransaction(command)
+            val localStore = FakeFinanceLocalStore()
+            val result = FinanceRepositoryImpl(api, localStore, Dispatchers.Unconfined).saveTransaction(command)
 
             assertTrue(result is EditorResult.Success)
-            assertEquals("12.30", api.savedTransaction?.amount)
-            assertEquals(4, api.savedTransaction?.accountId)
-            assertEquals(8, api.savedTransaction?.categoryId)
+            assertEquals("12.30", localStore.savedTransaction?.amount?.toPlainString())
+            assertEquals(4, localStore.savedTransaction?.accountId)
+            assertEquals(8, localStore.savedTransaction?.categoryId)
         }
 
     @Test
@@ -72,7 +79,7 @@ class FinanceRepositoryImplTest {
                 )
             val date = LocalDate.of(2026, 7, 17)
 
-            FinanceRepositoryImpl(api, Dispatchers.Unconfined).getDailySummary(date, "RUB", TransactionKind.Expense)
+            repository(api).getDailySummary(date, "RUB", TransactionKind.Expense)
 
             assertEquals(setOf(1, 2, 3), api.requests.map { it.accountId }.toSet())
             assertTrue(api.requests.all { it.startDate == "2026-07-17" })
@@ -105,7 +112,7 @@ class FinanceRepositoryImplTest {
                 )
 
             val result =
-                FinanceRepositoryImpl(api, Dispatchers.Unconfined).getDailySummary(
+                repository(api).getDailySummary(
                     date = LocalDate.of(2026, 7, 17),
                     currencyCode = "RUB",
                     transactionKind = TransactionKind.Expense,
@@ -122,7 +129,7 @@ class FinanceRepositoryImplTest {
             val api = FakeFinanceApi(accounts = emptyList(), transactionsByAccount = emptyMap())
 
             val result =
-                FinanceRepositoryImpl(api, Dispatchers.Unconfined).getDailySummary(
+                repository(api).getDailySummary(
                     LocalDate.of(2026, 7, 17),
                     "RUB",
                     TransactionKind.Expense,
@@ -154,7 +161,7 @@ class FinanceRepositoryImplTest {
                 )
 
             val result =
-                FinanceRepositoryImpl(api, Dispatchers.Unconfined).getDailySummary(
+                repository(api).getDailySummary(
                     LocalDate.of(2026, 7, 17),
                     "RUB",
                     TransactionKind.Expense,
@@ -181,7 +188,7 @@ class FinanceRepositoryImplTest {
                 )
 
             val result =
-                FinanceRepositoryImpl(api, Dispatchers.Unconfined).getDailySummary(
+                repository(api).getDailySummary(
                     LocalDate.of(2026, 7, 17),
                     "RUB",
                     TransactionKind.Income,
@@ -197,7 +204,7 @@ class FinanceRepositoryImplTest {
             val api = ThrowingFinanceApi(IOException("offline"))
 
             val result =
-                FinanceRepositoryImpl(api, Dispatchers.Unconfined).getDailySummary(
+                repository(api).getDailySummary(
                     LocalDate.of(2026, 7, 17),
                     "RUB",
                     TransactionKind.Expense,
@@ -216,7 +223,7 @@ class FinanceRepositoryImplTest {
             val api = ThrowingFinanceApi(HttpException(response))
 
             val result =
-                FinanceRepositoryImpl(api, Dispatchers.Unconfined).getDailySummary(
+                repository(api).getDailySummary(
                     LocalDate.of(2026, 7, 17),
                     "RUB",
                     TransactionKind.Expense,
@@ -245,7 +252,7 @@ class FinanceRepositoryImplTest {
                 )
 
             val result =
-                FinanceRepositoryImpl(api, Dispatchers.Unconfined).getDailySummary(
+                repository(api).getDailySummary(
                     LocalDate.of(2026, 7, 17),
                     "RUB",
                     TransactionKind.Expense,
@@ -256,6 +263,75 @@ class FinanceRepositoryImplTest {
                 result,
             )
         }
+}
+
+private fun repository(
+    api: FinanceApi,
+    localStore: FinanceLocalStore = FakeFinanceLocalStore(),
+): FinanceRepositoryImpl = FinanceRepositoryImpl(api, localStore, Dispatchers.Unconfined)
+
+private class FakeFinanceLocalStore : FinanceLocalStore {
+    private var accounts: List<Account> = emptyList()
+    private var categories: List<Category> = emptyList()
+    private var transactions: List<Transaction> = emptyList()
+    var savedTransaction: SaveTransactionCommand? = null
+
+    override suspend fun getAccounts(): List<Account> = accounts
+
+    override suspend fun getAccount(id: Int): Account? = accounts.firstOrNull { it.id == id }
+
+    override suspend fun getCategories(isIncome: Boolean): List<Category> =
+        categories.filter { it.isIncome == isIncome }
+
+    override suspend fun getTransaction(id: Int): Transaction? = transactions.firstOrNull { it.id == id }
+
+    override suspend fun getTransactions(
+        accountId: Int?,
+        startInclusive: Instant,
+        endInclusive: Instant,
+    ): List<Transaction> =
+        transactions.filter {
+            (accountId == null || it.account.id == accountId) &&
+                it.transactionDate >= startInclusive &&
+                it.transactionDate <= endInclusive
+        }
+
+    override suspend fun refreshAccounts(accounts: List<AccountDto>) {
+        this.accounts = accounts.map { it.toDomain() }
+    }
+
+    override suspend fun refreshCategories(categories: List<CategoryDto>) {
+        this.categories = categories.map { it.toDomain() }
+    }
+
+    override suspend fun refreshPeriod(
+        accounts: List<AccountDto>,
+        categories: List<CategoryDto>,
+        transactions: List<TransactionResponseDto>,
+        startInclusive: Instant,
+        endInclusive: Instant,
+    ) {
+        this.accounts = accounts.map { it.toDomain() }
+        this.categories = categories.map { it.toDomain() }
+        this.transactions = transactions.map { it.toDomain() }
+    }
+
+    override suspend fun cacheAccount(account: com.yandex.school.casheye.data.finance.dto.AccountResponseDto) {
+        accounts = accounts.filterNot { it.id == account.id } + account.toDomain()
+    }
+
+    override suspend fun cacheTransaction(transaction: TransactionResponseDto) {
+        transactions = transactions.filterNot { it.id == transaction.id } + transaction.toDomain()
+    }
+
+    override suspend fun saveAccount(
+        command: com.yandex.school.casheye.domain.finance.SaveAccountCommand,
+        now: Instant,
+    ) = Unit
+
+    override suspend fun saveTransaction(command: SaveTransactionCommand, now: Instant) {
+        savedTransaction = command
+    }
 }
 
 private data class PeriodRequest(
@@ -270,33 +346,38 @@ private class FakeFinanceApi(
     private val failingAccountId: Int? = null,
 ) : FinanceApi {
     val requests: MutableList<PeriodRequest> = Collections.synchronizedList(mutableListOf())
-    var savedTransaction: TransactionRequestDto? = null
-
     override suspend fun getAccounts(): List<AccountDto> = accounts
 
     override suspend fun getAccount(id: Int) = error("Unexpected account request")
 
     override suspend fun createAccount(request: com.yandex.school.casheye.data.finance.dto.AccountRequestDto) =
-        error("Unexpected account request")
+        accountDto(1)
 
     override suspend fun updateAccount(
         id: Int,
         request: com.yandex.school.casheye.data.finance.dto.AccountRequestDto,
-    ) = error("Unexpected account request")
+    ) = accountDto(id)
 
-    override suspend fun getCategories(isIncome: Boolean) = error("Unexpected category request")
+    override suspend fun getCategories(isIncome: Boolean): List<CategoryDto> = emptyList()
 
     override suspend fun getTransaction(id: Int) = error("Unexpected transaction request")
 
     override suspend fun createTransaction(request: TransactionRequestDto) =
-        JsonPrimitive(true).also {
-            savedTransaction = request
-        }
+        TransactionDto(
+            id = 1,
+            accountId = request.accountId,
+            categoryId = request.categoryId,
+            amount = request.amount,
+            transactionDate = request.transactionDate,
+            comment = request.comment,
+            createdAt = request.transactionDate,
+            updatedAt = request.transactionDate,
+        )
 
     override suspend fun updateTransaction(
         id: Int,
         request: com.yandex.school.casheye.data.finance.dto.TransactionRequestDto,
-    ) = error("Unexpected transaction request")
+    ) = transactionDto(id, request.amount, request.transactionDate)
 
     override suspend fun getTransactions(
         accountId: Int,

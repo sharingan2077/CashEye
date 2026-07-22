@@ -1,5 +1,6 @@
 package com.yandex.school.casheye.app.di
 
+import android.content.Context
 import com.yandex.school.casheye.data.finance.di.FinanceNetworkBindings
 import com.yandex.school.casheye.data.finance.di.FinanceRepositoryBindings
 import com.yandex.school.casheye.data.finance.di.FinanceUseCaseBindings
@@ -31,6 +32,7 @@ interface AppGraph : ViewModelGraph {
     fun interface Factory {
         fun create(
             @Provides networkConfig: NetworkConfig,
+            @Provides context: Context,
         ): AppGraph
     }
 }

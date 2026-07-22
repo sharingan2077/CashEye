@@ -1,5 +1,7 @@
 package com.yandex.school.casheye.data.finance.di
 
+import com.yandex.school.casheye.data.finance.database.FinanceLocalStore
+import com.yandex.school.casheye.data.finance.database.RoomFinanceLocalStore
 import com.yandex.school.casheye.data.finance.repository.FinanceRepositoryImpl
 import com.yandex.school.casheye.domain.finance.FinanceRepository
 import com.yandex.school.casheye.domain.finance.GetAccountUseCase
@@ -19,6 +21,9 @@ import dev.zacsweers.metro.Provides
 interface FinanceRepositoryBindings {
     @Binds
     val FinanceRepositoryImpl.bind: FinanceRepository
+
+    @Binds
+    val RoomFinanceLocalStore.bindLocalStore: FinanceLocalStore
 }
 
 @BindingContainer
