@@ -1,8 +1,11 @@
 package com.yandex.school.casheye.data.finance.di
 
+import com.yandex.school.casheye.data.finance.api.FinanceApi
 import com.yandex.school.casheye.data.finance.database.FinanceLocalStore
 import com.yandex.school.casheye.data.finance.database.RoomFinanceLocalStore
+import com.yandex.school.casheye.data.finance.database.RoomFinanceSyncStore
 import com.yandex.school.casheye.data.finance.repository.FinanceRepositoryImpl
+import com.yandex.school.casheye.data.finance.sync.FinanceSyncer
 import com.yandex.school.casheye.domain.finance.FinanceRepository
 import com.yandex.school.casheye.domain.finance.GetAccountUseCase
 import com.yandex.school.casheye.domain.finance.GetAccountsUseCase
@@ -13,9 +16,11 @@ import com.yandex.school.casheye.domain.finance.GetEditorCategoriesUseCase
 import com.yandex.school.casheye.domain.finance.GetTransactionUseCase
 import com.yandex.school.casheye.domain.finance.SaveAccountUseCase
 import com.yandex.school.casheye.domain.finance.SaveTransactionUseCase
+import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.Binds
 import dev.zacsweers.metro.Provides
+import dev.zacsweers.metro.SingleIn
 
 @BindingContainer
 interface FinanceRepositoryBindings {
@@ -24,6 +29,16 @@ interface FinanceRepositoryBindings {
 
     @Binds
     val RoomFinanceLocalStore.bindLocalStore: FinanceLocalStore
+}
+
+@BindingContainer
+object FinanceSyncBindings {
+    @Provides
+    @SingleIn(AppScope::class)
+    fun provideFinanceSyncer(
+        api: FinanceApi,
+        localStore: RoomFinanceLocalStore,
+    ): FinanceSyncer = FinanceSyncer(api, RoomFinanceSyncStore(localStore))
 }
 
 @BindingContainer

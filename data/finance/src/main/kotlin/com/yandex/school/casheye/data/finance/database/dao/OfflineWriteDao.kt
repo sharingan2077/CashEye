@@ -6,6 +6,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
+import androidx.room.Upsert
 import com.yandex.school.casheye.data.finance.database.entity.AccountEntity
 import com.yandex.school.casheye.data.finance.database.entity.PendingEntityType
 import com.yandex.school.casheye.data.finance.database.entity.PendingOperationEntity
@@ -209,13 +210,15 @@ internal abstract class OfflineWriteDao {
     }
 
     @Transaction
-    open suspend fun replaceTemporaryAccountId(
-        temporaryId: Int,
-        serverId: Int,
-        completedOperationId: Long,
+    open suspend fun completeAccountCreate(
+        sentOperations: List<PendingOperationEntity>,
+        serverAccount: AccountEntity,
     ) {
+        val temporaryId = sentOperations.first().localEntityId
+        val serverId = serverAccount.id
         require(temporaryId < 0) { "Temporary ids must be negative" }
         require(serverId > 0) { "Server ids must be positive" }
+        val unchangedOperationIds = unchangedOperationIds(sentOperations)
 
         operationsReferencingAccount(temporaryId).forEach { operation ->
             val updatedPayload =
@@ -232,8 +235,18 @@ internal abstract class OfflineWriteDao {
                 }
             updateOperation(
                 operation.copy(
+                    operationType =
+                        if (operation.entityType == PendingEntityType.ACCOUNT) {
+                            PendingOperationType.UPDATE
+                        } else {
+                            operation.operationType
+                        },
                     localEntityId =
-                        if (operation.entityType == PendingEntityType.ACCOUNT) serverId else operation.localEntityId,
+                        if (operation.entityType == PendingEntityType.ACCOUNT) {
+                            serverId
+                        } else {
+                            operation.localEntityId
+                        },
                     relatedAccountId = serverId,
                     payload = updatedPayload,
                 ),
@@ -243,24 +256,28 @@ internal abstract class OfflineWriteDao {
         check(replaceAccountId(temporaryId = temporaryId, serverId = serverId) == 1) {
             "Temporary account $temporaryId was not found"
         }
-        check(deleteOperation(completedOperationId) == 1) {
-            "Completed operation $completedOperationId was not found"
+        unchangedOperationIds.forEach { deleteOperation(it) }
+        if (countOperations(PendingEntityType.ACCOUNT, serverId) == 0) {
+            upsertAccount(serverAccount)
         }
     }
 
     @Transaction
-    open suspend fun replaceTemporaryTransactionId(
-        temporaryId: Int,
-        serverId: Int,
-        completedOperationId: Long,
+    open suspend fun completeTransactionCreate(
+        sentOperations: List<PendingOperationEntity>,
+        serverTransaction: TransactionEntity,
     ) {
+        val temporaryId = sentOperations.first().localEntityId
+        val serverId = serverTransaction.id
         require(temporaryId < 0) { "Temporary ids must be negative" }
         require(serverId > 0) { "Server ids must be positive" }
+        val unchangedOperationIds = unchangedOperationIds(sentOperations)
 
         operationsForEntity(PendingEntityType.TRANSACTION, temporaryId).forEach { operation ->
             val snapshot = json.decodeFromString<TransactionCommandSnapshot>(operation.payload)
             updateOperation(
                 operation.copy(
+                    operationType = PendingOperationType.UPDATE,
                     localEntityId = serverId,
                     payload = json.encodeToString(snapshot.copy(id = serverId)),
                 ),
@@ -270,10 +287,36 @@ internal abstract class OfflineWriteDao {
         check(replaceTransactionId(temporaryId = temporaryId, serverId = serverId) == 1) {
             "Temporary transaction $temporaryId was not found"
         }
-        check(deleteOperation(completedOperationId) == 1) {
-            "Completed operation $completedOperationId was not found"
+        unchangedOperationIds.forEach { deleteOperation(it) }
+        if (countOperations(PendingEntityType.TRANSACTION, serverId) == 0) {
+            upsertTransaction(serverTransaction)
         }
     }
+
+    @Transaction
+    open suspend fun completeAccountUpdate(
+        sentOperations: List<PendingOperationEntity>,
+        serverAccount: AccountEntity,
+    ) {
+        unchangedOperationIds(sentOperations).forEach { deleteOperation(it) }
+        if (countOperations(PendingEntityType.ACCOUNT, serverAccount.id) == 0) {
+            upsertAccount(serverAccount)
+        }
+    }
+
+    @Transaction
+    open suspend fun completeTransactionUpdate(
+        sentOperations: List<PendingOperationEntity>,
+        serverTransaction: TransactionEntity,
+    ) {
+        unchangedOperationIds(sentOperations).forEach { deleteOperation(it) }
+        if (countOperations(PendingEntityType.TRANSACTION, serverTransaction.id) == 0) {
+            upsertTransaction(serverTransaction)
+        }
+    }
+
+    private suspend fun unchangedOperationIds(sentOperations: List<PendingOperationEntity>): List<Long> =
+        sentOperations.mapNotNull { sent -> sent.id.takeIf { operationById(sent.id) == sent } }
 
     @Query("SELECT COALESCE(MIN(id), 0) - 1 FROM accounts WHERE id < 0")
     protected abstract suspend fun nextAccountId(): Int
@@ -304,6 +347,23 @@ internal abstract class OfflineWriteDao {
 
     @Update
     protected abstract suspend fun updateOperation(operation: PendingOperationEntity)
+
+    @Upsert
+    protected abstract suspend fun upsertAccount(account: AccountEntity)
+
+    @Upsert
+    protected abstract suspend fun upsertTransaction(transaction: TransactionEntity)
+
+    @Query("SELECT * FROM pending_operations WHERE id = :operationId")
+    protected abstract suspend fun operationById(operationId: Long): PendingOperationEntity?
+
+    @Query(
+        "SELECT COUNT(*) FROM pending_operations WHERE entity_type = :entityType AND local_entity_id = :localId",
+    )
+    protected abstract suspend fun countOperations(
+        entityType: PendingEntityType,
+        localId: Int,
+    ): Int
 
     @Query(
         """

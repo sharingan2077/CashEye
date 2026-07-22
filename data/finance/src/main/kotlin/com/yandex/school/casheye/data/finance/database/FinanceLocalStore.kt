@@ -7,11 +7,13 @@ import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.Category
 import com.yandex.school.casheye.core.model.Transaction
 import com.yandex.school.casheye.data.finance.database.entity.PendingEntityType
+import com.yandex.school.casheye.data.finance.database.entity.PendingOperationEntity
 import com.yandex.school.casheye.data.finance.database.mapper.toDomain
 import com.yandex.school.casheye.data.finance.database.mapper.toEntity
 import com.yandex.school.casheye.data.finance.dto.AccountDto
 import com.yandex.school.casheye.data.finance.dto.AccountResponseDto
 import com.yandex.school.casheye.data.finance.dto.CategoryDto
+import com.yandex.school.casheye.data.finance.dto.TransactionDto
 import com.yandex.school.casheye.data.finance.dto.TransactionResponseDto
 import com.yandex.school.casheye.data.finance.mapper.toDomain as toNetworkDomain
 import com.yandex.school.casheye.domain.finance.SaveAccountCommand
@@ -55,6 +57,38 @@ interface FinanceLocalStore {
     suspend fun saveAccount(command: SaveAccountCommand, now: Instant)
 
     suspend fun saveTransaction(command: SaveTransactionCommand, now: Instant)
+}
+
+internal interface FinanceSyncStore {
+    suspend fun getPendingOperations(): List<PendingOperationEntity>
+
+    suspend fun completeAccountCreate(
+        sentOperations: List<PendingOperationEntity>,
+        response: AccountDto,
+    )
+
+    suspend fun completeAccountUpdate(
+        sentOperations: List<PendingOperationEntity>,
+        response: AccountDto,
+    )
+
+    suspend fun completeTransactionCreate(
+        sentOperations: List<PendingOperationEntity>,
+        response: TransactionDto,
+    )
+
+    suspend fun completeTransactionUpdate(
+        sentOperations: List<PendingOperationEntity>,
+        response: TransactionResponseDto,
+    )
+
+    suspend fun refreshAfterSync(
+        accounts: List<AccountDto>,
+        categories: List<CategoryDto>,
+        transactions: List<TransactionResponseDto>,
+        startInclusive: Instant,
+        endInclusive: Instant,
+    )
 }
 
 @Inject
@@ -163,7 +197,98 @@ class RoomFinanceLocalStore(
         }
     }
 
+    internal suspend fun getPendingOperations(): List<PendingOperationEntity> =
+        database.pendingOperationDao().getAll()
+
+    internal suspend fun completeAccountCreate(
+        sentOperations: List<PendingOperationEntity>,
+        response: AccountDto,
+    ) {
+        database.offlineWriteDao().completeAccountCreate(sentOperations, response.toNetworkDomain().toEntity())
+    }
+
+    internal suspend fun completeAccountUpdate(
+        sentOperations: List<PendingOperationEntity>,
+        response: AccountDto,
+    ) {
+        database.offlineWriteDao().completeAccountUpdate(sentOperations, response.toNetworkDomain().toEntity())
+    }
+
+    internal suspend fun completeTransactionCreate(
+        sentOperations: List<PendingOperationEntity>,
+        response: TransactionDto,
+    ) {
+        database.offlineWriteDao().completeTransactionCreate(
+            sentOperations,
+            com.yandex.school.casheye.data.finance.database.entity.TransactionEntity(
+                id = response.id,
+                accountId = response.accountId,
+                categoryId = response.categoryId,
+                amount = response.amount,
+                transactionDate = response.transactionDate.toEpochMilli(),
+                comment = response.comment,
+                createdAt = response.createdAt.toEpochMilli(),
+                updatedAt = response.updatedAt.toEpochMilli(),
+            ),
+        )
+    }
+
+    internal suspend fun completeTransactionUpdate(
+        sentOperations: List<PendingOperationEntity>,
+        response: TransactionResponseDto,
+    ) {
+        database.offlineWriteDao().completeTransactionUpdate(
+            sentOperations,
+            response.toNetworkDomain().toEntity(),
+        )
+    }
+
     private companion object {
         const val DATABASE_NAME = "finance.db"
+    }
+}
+
+internal class RoomFinanceSyncStore(
+    private val localStore: RoomFinanceLocalStore,
+) : FinanceSyncStore {
+    override suspend fun getPendingOperations(): List<PendingOperationEntity> =
+        localStore.getPendingOperations()
+
+    override suspend fun completeAccountCreate(
+        sentOperations: List<PendingOperationEntity>,
+        response: AccountDto,
+    ) {
+        localStore.completeAccountCreate(sentOperations, response)
+    }
+
+    override suspend fun completeAccountUpdate(
+        sentOperations: List<PendingOperationEntity>,
+        response: AccountDto,
+    ) {
+        localStore.completeAccountUpdate(sentOperations, response)
+    }
+
+    override suspend fun completeTransactionCreate(
+        sentOperations: List<PendingOperationEntity>,
+        response: TransactionDto,
+    ) {
+        localStore.completeTransactionCreate(sentOperations, response)
+    }
+
+    override suspend fun completeTransactionUpdate(
+        sentOperations: List<PendingOperationEntity>,
+        response: TransactionResponseDto,
+    ) {
+        localStore.completeTransactionUpdate(sentOperations, response)
+    }
+
+    override suspend fun refreshAfterSync(
+        accounts: List<AccountDto>,
+        categories: List<CategoryDto>,
+        transactions: List<TransactionResponseDto>,
+        startInclusive: Instant,
+        endInclusive: Instant,
+    ) {
+        localStore.refreshPeriod(accounts, categories, transactions, startInclusive, endInclusive)
     }
 }

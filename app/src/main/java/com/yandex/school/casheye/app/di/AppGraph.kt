@@ -3,6 +3,7 @@ package com.yandex.school.casheye.app.di
 import android.content.Context
 import com.yandex.school.casheye.data.finance.di.FinanceNetworkBindings
 import com.yandex.school.casheye.data.finance.di.FinanceRepositoryBindings
+import com.yandex.school.casheye.data.finance.di.FinanceSyncBindings
 import com.yandex.school.casheye.data.finance.di.FinanceUseCaseBindings
 import com.yandex.school.casheye.data.finance.di.NetworkConfig
 import com.yandex.school.casheye.feature.accounts.di.AccountsViewModelBindings
@@ -19,6 +20,7 @@ import dev.zacsweers.metrox.viewmodel.ViewModelGraph
     bindingContainers = [
         FinanceNetworkBindings::class,
         FinanceRepositoryBindings::class,
+        FinanceSyncBindings::class,
         FinanceUseCaseBindings::class,
         ExpensesViewModelBindings::class,
         IncomeViewModelBindings::class,

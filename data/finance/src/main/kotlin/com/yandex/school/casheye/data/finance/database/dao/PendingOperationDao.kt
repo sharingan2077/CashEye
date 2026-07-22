@@ -17,6 +17,9 @@ internal interface PendingOperationDao {
     @Query("SELECT * FROM pending_operations ORDER BY created_at, id")
     fun observeAll(): Flow<List<PendingOperationEntity>>
 
+    @Query("SELECT * FROM pending_operations ORDER BY created_at, id")
+    suspend fun getAll(): List<PendingOperationEntity>
+
     @Query(
         """
         SELECT * FROM pending_operations
