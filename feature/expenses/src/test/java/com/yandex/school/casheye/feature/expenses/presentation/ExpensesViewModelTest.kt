@@ -145,6 +145,22 @@ class ExpensesViewModelTest {
         }
 
     @Test
+    fun `selecting a future date keeps the current day`() =
+        runTest {
+            val repository =
+                FakeFinanceRepository(
+                    FinanceLoadResult.Success(FinanceSummary(BigDecimal.ZERO, "RUB", emptyList())),
+                )
+            val viewModel = ExpensesViewModel(GetDailySummaryUseCase(repository), clock)
+
+            advanceUntilIdle()
+            viewModel.onIntent(ExpensesIntent.SelectDate(LocalDate.of(2026, 7, 18)))
+            advanceUntilIdle()
+
+            assertEquals(listOf(LocalDate.of(2026, 7, 17)), repository.requestedDates)
+        }
+
+    @Test
     fun `refresh reloads the current date`() =
         runTest {
             val repository =

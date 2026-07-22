@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import java.time.Clock
+import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 
@@ -55,7 +56,7 @@ class AddIncomeViewModel(
             }
 
             is AddIncomeIntent.DateChanged -> {
-                _state.value = _state.value.copy(date = intent.value)
+                _state.value = _state.value.copy(date = intent.value.coerceAtMost(LocalDate.now(clock)))
             }
 
             is AddIncomeIntent.TimeChanged -> {
@@ -74,10 +75,11 @@ class AddIncomeViewModel(
 
     private fun load(intent: AddIncomeIntent.Open) {
         viewModelScope.launch {
+            val today = LocalDate.now(clock)
             _state.value =
                 AddIncomeUiState(
                     editingId = intent.transactionId,
-                    date = intent.defaultDate,
+                    date = intent.defaultDate.coerceAtMost(today),
                     time = LocalTime.now(clock).withSecond(0).withNano(0),
                 )
             val accountResult = getAccounts()
@@ -117,7 +119,7 @@ class AddIncomeViewModel(
                     selectedAccountId = transaction?.account?.id ?: accounts.first().id,
                     selectedCategoryId = transaction?.category?.id,
                     amount = transaction?.amount?.toPlainString().orEmpty(),
-                    date = local?.toLocalDate() ?: intent.defaultDate,
+                    date = (local?.toLocalDate() ?: intent.defaultDate).coerceAtMost(today),
                     time = local?.toLocalTime()?.withSecond(0)?.withNano(0) ?: _state.value.time,
                     comment = transaction?.comment.orEmpty(),
                 )

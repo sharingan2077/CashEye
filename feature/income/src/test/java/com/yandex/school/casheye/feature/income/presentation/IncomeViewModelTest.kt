@@ -155,6 +155,22 @@ class IncomeViewModelTest {
         }
 
     @Test
+    fun `selecting a future date keeps the current income day`() =
+        runTest {
+            val repository =
+                FakeIncomeFinanceRepository(
+                    FinanceLoadResult.Success(FinanceSummary(BigDecimal.ZERO, "RUB", emptyList())),
+                )
+            val viewModel = IncomeViewModel(GetDailySummaryUseCase(repository), clock)
+
+            advanceUntilIdle()
+            viewModel.onIntent(IncomeIntent.SelectDate(LocalDate.of(2026, 7, 18)))
+            advanceUntilIdle()
+
+            assertEquals(listOf(LocalDate.of(2026, 7, 17)), repository.requestedDates)
+        }
+
+    @Test
     fun `refresh reloads the current date as income`() =
         runTest {
             val repository =

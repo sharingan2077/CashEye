@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.yandex.school.casheye.core.designsystem.component.rememberPastOrPresentSelectableDates
 import com.yandex.school.casheye.feature.expenses.R
 import java.time.Instant
 import java.time.LocalDate
@@ -26,6 +27,7 @@ fun ExpensesDatePickerDialog(
     val datePickerState =
         rememberDatePickerState(
             initialSelectedDateMillis = selectedDate.toUtcMillis(),
+            selectableDates = rememberPastOrPresentSelectableDates(),
         )
 
     DatePickerDialog(

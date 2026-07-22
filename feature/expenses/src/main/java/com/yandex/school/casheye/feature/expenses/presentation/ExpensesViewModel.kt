@@ -20,7 +20,7 @@ import java.time.LocalDate
 @Inject
 class ExpensesViewModel(
     private val getDailySummary: GetDailySummaryUseCase,
-    clock: Clock = Clock.systemDefaultZone(),
+    private val clock: Clock = Clock.systemDefaultZone(),
 ) : ViewModel() {
     private val _state = MutableStateFlow<ExpensesUiState>(ExpensesUiState.Loading)
     val state: StateFlow<ExpensesUiState> = _state.asStateFlow()
@@ -44,10 +44,11 @@ class ExpensesViewModel(
     }
 
     private fun selectDate(date: LocalDate) {
-        if (date == selectedDate) return
+        val selectableDate = date.coerceAtMost(LocalDate.now(clock))
+        if (selectableDate == selectedDate) return
 
-        selectedDate = date
-        loadExpenses(date, cancelPrevious = true)
+        selectedDate = selectableDate
+        loadExpenses(selectableDate, cancelPrevious = true)
     }
 
     private fun loadExpenses(

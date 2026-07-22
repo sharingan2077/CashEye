@@ -594,6 +594,7 @@ private fun EditorDateSheet(
     val pickerState =
         rememberDatePickerState(
             initialSelectedDateMillis = date.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli(),
+            selectableDates = rememberPastOrPresentSelectableDates(),
         )
     DatePickerDialog(
         onDismissRequest = onDismiss,

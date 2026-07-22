@@ -32,6 +32,7 @@ import java.time.ZoneOffset
 @OptIn(ExperimentalCoroutinesApi::class)
 class AddIncomeViewModelTest {
     private val dispatcher = StandardTestDispatcher()
+    private val clock = Clock.fixed(Instant.parse("2026-07-22T10:00:00Z"), ZoneOffset.UTC)
 
     @Before fun setUp() = Dispatchers.setMain(dispatcher)
 
@@ -47,7 +48,7 @@ class AddIncomeViewModelTest {
                     GetEditorCategoriesUseCase(repository),
                     GetTransactionUseCase(repository),
                     SaveTransactionUseCase(repository),
-                    Clock.fixed(Instant.parse("2026-07-22T10:00:00Z"), ZoneOffset.UTC),
+                    clock,
                 )
             viewModel.onIntent(AddIncomeIntent.Open(null, LocalDate.of(2026, 7, 22)))
             advanceUntilIdle()
@@ -58,6 +59,27 @@ class AddIncomeViewModelTest {
 
             assertTrue(repository.requestedIncome)
             assertEquals(BigDecimal("500"), repository.saved?.amount)
+        }
+
+    @Test
+    fun `income editor clamps future dates to today`() =
+        runTest {
+            val repository = IncomeEditorRepository()
+            val viewModel =
+                AddIncomeViewModel(
+                    GetEditorAccountsUseCase(repository),
+                    GetEditorCategoriesUseCase(repository),
+                    GetTransactionUseCase(repository),
+                    SaveTransactionUseCase(repository),
+                    clock,
+                )
+
+            viewModel.onIntent(AddIncomeIntent.Open(null, LocalDate.of(2026, 7, 25)))
+            advanceUntilIdle()
+            assertEquals(LocalDate.of(2026, 7, 22), viewModel.state.value.date)
+
+            viewModel.onIntent(AddIncomeIntent.DateChanged(LocalDate.of(2026, 8, 1)))
+            assertEquals(LocalDate.of(2026, 7, 22), viewModel.state.value.date)
         }
 }
 

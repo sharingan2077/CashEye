@@ -74,6 +74,20 @@ class AddExpenseViewModelTest {
             assertEquals(AddExpenseEffect.Saved, effect.await())
         }
 
+    @Test
+    fun `editor clamps default and changed dates to today`() =
+        runTest {
+            val repository = EditorRepository(accounts = listOf(account(balance = "50")))
+            val viewModel = viewModel(repository)
+
+            viewModel.onIntent(AddExpenseIntent.Open(null, LocalDate.of(2026, 7, 25)))
+            advanceUntilIdle()
+            assertEquals(LocalDate.of(2026, 7, 22), viewModel.state.value.date)
+
+            viewModel.onIntent(AddExpenseIntent.DateChanged(LocalDate.of(2026, 8, 1)))
+            assertEquals(LocalDate.of(2026, 7, 22), viewModel.state.value.date)
+        }
+
     private fun viewModel(repository: FinanceRepository) =
         AddExpenseViewModel(
             GetEditorAccountsUseCase(repository),
