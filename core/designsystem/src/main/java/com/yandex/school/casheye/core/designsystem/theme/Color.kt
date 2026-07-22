@@ -32,3 +32,5 @@ val FabContainer = Color(0xFFEADDFF)
 val ColorOnPrimaryContainer = Color(0xFF21005D)
 val NavigationSelected = Color(0xFFE8DEF8)
 val ColorOnSecondaryContainer = Color(0xFF1D192B)
+
+val BlackFab = Color(0xFF1C1B1F)

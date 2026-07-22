@@ -16,6 +16,8 @@ fun ListItem(
     lead: @Composable () -> Unit,
     trail: @Composable () -> Unit,
     modifier: Modifier = Modifier,
+    rowHorizontalPadding: Dp = 16.dp,
+    contentHorizontalPadding: Dp = 16.dp,
     height: Dp = 72.dp,
     content: @Composable () -> Unit,
 ) {
@@ -24,7 +26,7 @@ fun ListItem(
             modifier
                 .fillMaxWidth()
                 .height(height)
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = rowHorizontalPadding),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         lead()
@@ -32,7 +34,7 @@ fun ListItem(
             modifier =
                 Modifier
                     .weight(1f)
-                    .padding(horizontal = 16.dp),
+                    .padding(horizontal = contentHorizontalPadding),
         ) {
             content()
         }
