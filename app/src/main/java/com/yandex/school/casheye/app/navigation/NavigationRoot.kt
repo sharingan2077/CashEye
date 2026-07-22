@@ -7,9 +7,11 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -21,6 +23,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import com.yandex.school.casheye.R
@@ -35,13 +38,38 @@ import com.yandex.school.casheye.feature.expenses.presentation.ExpensesRoute
 import com.yandex.school.casheye.feature.income.presentation.AddIncomeRoute
 import com.yandex.school.casheye.feature.income.presentation.IncomeRoute
 import java.time.LocalDate
+import kotlinx.coroutines.flow.StateFlow
 
 @Composable
-fun NavigationRoot(modifier: Modifier = Modifier) {
+fun NavigationRoot(
+    networkStatus: StateFlow<Boolean>,
+    modifier: Modifier = Modifier,
+) {
     var selectedDateEpochDay by rememberSaveable {
         mutableLongStateOf(LocalDate.now().toEpochDay())
     }
     val snackbarHostState = remember { SnackbarHostState() }
+    val isOnline by networkStatus.collectAsStateWithLifecycle()
+    var previousOnline by rememberSaveable { mutableStateOf<Boolean?>(null) }
+    val offlineMessage = stringResource(R.string.network_offline_message)
+    val restoredMessage = stringResource(R.string.network_restored_message)
+
+    LaunchedEffect(isOnline) {
+        val wasOnline = previousOnline
+        previousOnline = isOnline
+        val message =
+            when {
+                !isOnline && wasOnline != false -> offlineMessage
+                isOnline && wasOnline == false -> restoredMessage
+                else -> null
+            }
+        if (message != null) {
+            snackbarHostState.showSnackbar(
+                message = message,
+                duration = SnackbarDuration.Long,
+            )
+        }
+    }
 
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
     val selectedDate = LocalDate.ofEpochDay(selectedDateEpochDay)

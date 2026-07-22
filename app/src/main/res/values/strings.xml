@@ -8,4 +8,6 @@
     <string name="content_description_back">Back</string>
     <string name="content_description_add">Add</string>
     <string name="analytics_title">Analytics</string>
+    <string name="network_offline_message">You’re offline. Cached data remains available; changes will sync later.</string>
+    <string name="network_restored_message">Back online. Syncing changes.</string>
 </resources>

@@ -37,7 +37,7 @@ class MainActivity : ComponentActivity() {
                             },
                         )
                     } else {
-                        NavigationRoot()
+                        NavigationRoot(networkStatus = appGraph.networkMonitor.isOnline)
                     }
                 }
             }

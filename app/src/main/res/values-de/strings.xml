@@ -7,4 +7,6 @@
     <string name="content_description_back">Zurück</string>
     <string name="content_description_add">Hinzufügen</string>
     <string name="analytics_title">Analysen</string>
+    <string name="network_offline_message">Du bist offline. Zwischengespeicherte Daten bleiben verfügbar; Änderungen werden später synchronisiert.</string>
+    <string name="network_restored_message">Wieder online. Änderungen werden synchronisiert.</string>
 </resources>

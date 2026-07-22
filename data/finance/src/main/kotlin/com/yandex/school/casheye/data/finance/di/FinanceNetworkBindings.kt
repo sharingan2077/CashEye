@@ -1,6 +1,8 @@
 package com.yandex.school.casheye.data.finance.di
 
 import com.yandex.school.casheye.data.finance.api.FinanceApi
+import com.yandex.school.casheye.data.finance.network.ConnectivityManagerNetworkMonitor
+import com.yandex.school.casheye.data.finance.network.NetworkMonitor
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.Provides
@@ -14,6 +16,9 @@ import retrofit2.converter.kotlinx.serialization.asConverterFactory
 
 @BindingContainer
 object FinanceNetworkBindings {
+    @Provides
+    fun provideNetworkMonitor(monitor: ConnectivityManagerNetworkMonitor): NetworkMonitor = monitor
+
     @Provides
     @SingleIn(AppScope::class)
     fun provideJson(): Json = Json { ignoreUnknownKeys = true }

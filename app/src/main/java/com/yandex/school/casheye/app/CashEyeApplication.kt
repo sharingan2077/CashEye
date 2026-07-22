@@ -1,14 +1,17 @@
 package com.yandex.school.casheye.app
 
 import android.app.Application
-import android.net.ConnectivityManager
-import android.net.Network
 import androidx.work.Configuration
 import com.yandex.school.casheye.BuildConfig
 import com.yandex.school.casheye.app.di.AppGraph
 import com.yandex.school.casheye.data.finance.di.NetworkConfig
 import com.yandex.school.casheye.data.finance.sync.FinanceSyncWorkerFactory
 import dev.zacsweers.metro.createGraphFactory
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 
 class CashEyeApplication : Application(), Configuration.Provider {
     lateinit var appGraph: AppGraph
@@ -20,12 +23,7 @@ class CashEyeApplication : Application(), Configuration.Provider {
             .build()
     }
 
-    private val networkCallback =
-        object : ConnectivityManager.NetworkCallback() {
-            override fun onAvailable(network: Network) {
-                appGraph.financeSyncScheduler.enqueueImmediateSync()
-            }
-        }
+    private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     override fun onCreate() {
         super.onCreate()
@@ -39,6 +37,27 @@ class CashEyeApplication : Application(), Configuration.Provider {
                 context = this,
             )
         appGraph.financeSyncScheduler.registerPeriodicSync()
-        getSystemService(ConnectivityManager::class.java).registerDefaultNetworkCallback(networkCallback)
+        observeNetworkRecovery()
+    }
+
+    private fun observeNetworkRecovery() {
+        val initialOnline = appGraph.networkMonitor.isOnline.value
+        applicationScope.launch {
+            var wasOnline = initialOnline
+            appGraph.networkMonitor.isOnline.collect { isOnline ->
+                if (wasOnline == false && isOnline) {
+                    appGraph.financeSyncScheduler.enqueueImmediateSync()
+                }
+                wasOnline = isOnline
+            }
+        }
+    }
+
+    override fun onTerminate() {
+        applicationScope.cancel()
+        if (::appGraph.isInitialized) {
+            appGraph.networkMonitor.close()
+        }
+        super.onTerminate()
     }
 }
