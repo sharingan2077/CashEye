@@ -1,25 +1,27 @@
 package com.yandex.school.casheye.feature.accounts.presentation
 
 import com.yandex.school.casheye.core.model.Account
-import com.yandex.school.casheye.core.model.Transaction
 import com.yandex.school.casheye.domain.finance.AccountsLoadResult
 import com.yandex.school.casheye.domain.finance.AccountsSummary
 import com.yandex.school.casheye.domain.finance.DeleteAccountUseCase
 import com.yandex.school.casheye.domain.finance.EditorResult
-import com.yandex.school.casheye.domain.finance.FinanceDataLoadResult
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
+import com.yandex.school.casheye.domain.finance.FinanceRefreshResult
 import com.yandex.school.casheye.domain.finance.FinanceRepository
 import com.yandex.school.casheye.domain.finance.GetAccountTransactionCountUseCase
 import com.yandex.school.casheye.domain.finance.GetAccountsUseCase
-import com.yandex.school.casheye.domain.finance.TransactionsQuery
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
@@ -138,6 +140,29 @@ class AccountsViewModelTest {
         }
 
     @Test
+    fun `cached accounts stay visible while initial refresh is running`() =
+        runTest {
+            val refresh = CompletableDeferred<FinanceRefreshResult>()
+            val repository =
+                object : FinanceRepository {
+                    override fun observeAccounts(): Flow<List<Account>> = MutableStateFlow(listOf(account()))
+
+                    override suspend fun refreshAccounts(): FinanceRefreshResult = refresh.await()
+                }
+            val viewModel = accountsViewModel(repository)
+
+            runCurrent()
+
+            val state = viewModel.state.value as AccountsUiState.Content
+            assertTrue(state.isRefreshing)
+            assertEquals(listOf(1), state.accounts.map { it.id })
+
+            refresh.complete(FinanceRefreshResult.Success)
+            advanceUntilIdle()
+            assertEquals(false, (viewModel.state.value as AccountsUiState.Content).isRefreshing)
+        }
+
+    @Test
     fun `account with transactions requires confirmation before cascade delete`() =
         runTest {
             val summary = AccountsSummary(BigDecimal("125000.00"), "RUB", listOf(account()))
@@ -176,26 +201,34 @@ private class FakeAccountsRepository(
     vararg results: AccountsLoadResult,
 ) : FinanceRepository {
     private val results = ArrayDeque(results.toList())
+    private val accounts =
+        MutableStateFlow(
+            (results.firstOrNull() as? AccountsLoadResult.Success)?.summary?.accounts.orEmpty(),
+        )
     val requestedCurrencies = mutableListOf<String>()
     val deletedAccountIds = mutableListOf<Int>()
     var transactionCount: Int = 0
 
-    override suspend fun getAccounts(): FinanceDataLoadResult<List<Account>> {
+    override fun observeAccounts(): Flow<List<Account>> = accounts
+
+    override suspend fun refreshAccounts(): FinanceRefreshResult {
         requestedCurrencies += "RUB"
         return when (val result = results.removeFirst()) {
-            is AccountsLoadResult.Success -> FinanceDataLoadResult.Success(result.summary.accounts)
-            is AccountsLoadResult.Failure -> FinanceDataLoadResult.Failure(result.reason)
+            is AccountsLoadResult.Success -> {
+                accounts.value = result.summary.accounts
+                FinanceRefreshResult.Success
+            }
+
+            is AccountsLoadResult.Failure -> FinanceRefreshResult.Failure(result.reason)
         }
     }
-
-    override suspend fun getTransactions(query: TransactionsQuery): FinanceDataLoadResult<List<Transaction>> =
-        error("Transactions are not requested by AccountsViewModel")
 
     override suspend fun getAccountTransactionCount(id: Int): EditorResult<Int> =
         EditorResult.Success(transactionCount)
 
     override suspend fun deleteAccount(id: Int): EditorResult<Int> {
         deletedAccountIds += id
+        accounts.value = accounts.value.filterNot { it.id == id }
         return EditorResult.Success(transactionCount)
     }
 }

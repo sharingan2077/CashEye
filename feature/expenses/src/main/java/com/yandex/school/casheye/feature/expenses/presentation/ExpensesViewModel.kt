@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.yandex.school.casheye.domain.finance.DeleteTransactionUseCase
 import com.yandex.school.casheye.domain.finance.EditorResult
 import com.yandex.school.casheye.domain.finance.FinanceLoadResult
+import com.yandex.school.casheye.domain.finance.FinanceRefreshResult
+import com.yandex.school.casheye.domain.finance.FinanceSummary
 import com.yandex.school.casheye.domain.finance.GetDailySummaryUseCase
 import com.yandex.school.casheye.domain.finance.TransactionKind
 import dev.zacsweers.metro.Inject
@@ -15,6 +17,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.time.Clock
 import java.time.LocalDate
@@ -31,17 +34,21 @@ class ExpensesViewModel(
     private val _effects = MutableSharedFlow<ExpensesEffect>()
     val effects: SharedFlow<ExpensesEffect> = _effects.asSharedFlow()
 
-    private var loadJob: Job? = null
+    private var observeJob: Job? = null
+    private var refreshJob: Job? = null
+    private var latestSummary: FinanceSummary? = null
+    private var initialRefreshCompleted = false
     private var selectedDate = LocalDate.now(clock)
 
     init {
-        loadExpenses(selectedDate)
+        observeExpenses(selectedDate)
+        refreshExpenses(selectedDate)
     }
 
     fun onIntent(intent: ExpensesIntent) {
         when (intent) {
-            ExpensesIntent.Retry -> loadExpenses(selectedDate, preserveContent = _state.value.isRefreshable())
-            ExpensesIntent.Refresh -> loadExpenses(selectedDate, preserveContent = true)
+            ExpensesIntent.Retry -> refreshExpenses(selectedDate)
+            ExpensesIntent.Refresh -> refreshExpenses(selectedDate)
             is ExpensesIntent.SelectDate -> selectDate(intent.date)
             is ExpensesIntent.DeleteTransaction -> deleteTransaction(intent.id)
         }
@@ -81,62 +88,79 @@ class ExpensesViewModel(
         if (selectableDate == selectedDate) return
 
         selectedDate = selectableDate
-        loadExpenses(selectableDate, cancelPrevious = true)
+        latestSummary = null
+        initialRefreshCompleted = false
+        _state.value = ExpensesUiState.Loading
+        observeExpenses(selectableDate)
+        refreshExpenses(selectableDate)
     }
 
-    private fun loadExpenses(
-        date: LocalDate,
-        preserveContent: Boolean = false,
-        cancelPrevious: Boolean = false,
-    ) {
-        if (cancelPrevious) {
-            loadJob?.cancel()
-        } else if (loadJob?.isActive == true) {
-            return
-        }
-        val keepsVisibleContent = preserveContent && _state.value.isRefreshable()
-        loadJob =
+    private fun observeExpenses(date: LocalDate) {
+        observeJob?.cancel()
+        observeJob =
             viewModelScope.launch {
-                _state.value =
-                    if (keepsVisibleContent) {
-                        _state.value.withRefreshing(true)
-                    } else {
-                        ExpensesUiState.Loading
-                    }
-                when (
-                    val result =
-                        getDailySummary(
-                            date = date,
-                            currencyCode = CURRENCY_RUB,
-                            transactionKind = TransactionKind.Expense,
-                        )
-                ) {
-                    is FinanceLoadResult.Success -> {
-                        val summary = result.summary
-                        _state.value =
-                            if (summary.transactions.isEmpty()) {
-                                ExpensesUiState.Empty()
-                            } else {
-                                ExpensesUiState.Content(
-                                    total = summary.total,
-                                    currencyCode = summary.currencyCode,
-                                    transactions = summary.transactions,
-                                )
-                            }
-                    }
+                getDailySummary(
+                    date = date,
+                    currencyCode = CURRENCY_RUB,
+                    transactionKind = TransactionKind.Expense,
+                ).collectLatest { result ->
+                    when (result) {
+                        is FinanceLoadResult.Success -> {
+                            latestSummary = result.summary
+                            renderSummary()
+                        }
 
-                    is FinanceLoadResult.Failure -> {
-                        _state.value =
-                            if (keepsVisibleContent) {
-                                _state.value.withRefreshing(false)
-                            } else {
-                                ExpensesUiState.Error(result.reason)
+                        is FinanceLoadResult.Failure -> {
+                            if (!_state.value.isRefreshable()) {
+                                _state.value = ExpensesUiState.Error(result.reason)
                             }
-                        if (keepsVisibleContent) {
-                            _effects.emit(ExpensesEffect.ShowError(result.reason))
                         }
                     }
                 }
+            }
+    }
+
+    private fun refreshExpenses(date: LocalDate) {
+        refreshJob?.cancel()
+        if (_state.value.isRefreshable()) {
+            _state.value = _state.value.withRefreshing(true)
+        }
+        refreshJob =
+            viewModelScope.launch {
+                when (val result = getDailySummary.refresh(date)) {
+                    FinanceRefreshResult.Success -> {
+                        initialRefreshCompleted = true
+                        renderSummary(isRefreshing = false)
+                    }
+
+                    is FinanceRefreshResult.Failure -> {
+                        initialRefreshCompleted = true
+                        val hasVisibleCache =
+                            _state.value.isRefreshable() || latestSummary?.transactions?.isNotEmpty() == true
+                        if (hasVisibleCache) {
+                            renderSummary(isRefreshing = false)
+                            _effects.emit(ExpensesEffect.ShowError(result.reason))
+                        } else {
+                            _state.value = ExpensesUiState.Error(result.reason)
+                        }
+                    }
+                }
+            }
+    }
+
+    private fun renderSummary(isRefreshing: Boolean = refreshJob?.isActive == true) {
+        val summary = latestSummary ?: return
+        if (summary.transactions.isEmpty() && !initialRefreshCompleted) return
+        _state.value =
+            if (summary.transactions.isEmpty()) {
+                ExpensesUiState.Empty(isRefreshing)
+            } else {
+                ExpensesUiState.Content(
+                    total = summary.total,
+                    currencyCode = summary.currencyCode,
+                    transactions = summary.transactions,
+                    isRefreshing = isRefreshing,
+                )
             }
     }
 }

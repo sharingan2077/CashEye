@@ -5,21 +5,25 @@ import com.yandex.school.casheye.core.model.Category
 import com.yandex.school.casheye.core.model.Transaction
 import com.yandex.school.casheye.domain.finance.DeleteTransactionUseCase
 import com.yandex.school.casheye.domain.finance.EditorResult
-import com.yandex.school.casheye.domain.finance.FinanceDataLoadResult
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import com.yandex.school.casheye.domain.finance.FinanceLoadResult
+import com.yandex.school.casheye.domain.finance.FinanceRefreshResult
 import com.yandex.school.casheye.domain.finance.FinanceRepository
 import com.yandex.school.casheye.domain.finance.FinanceSummary
 import com.yandex.school.casheye.domain.finance.GetDailySummaryUseCase
 import com.yandex.school.casheye.domain.finance.TransactionsQuery
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
@@ -171,6 +175,36 @@ class ExpensesViewModelTest {
         }
 
     @Test
+    fun `cached expenses stay visible while initial refresh is running`() =
+        runTest {
+            val cached = transaction()
+            val refresh = CompletableDeferred<FinanceRefreshResult>()
+            val repository =
+                object : FinanceRepository {
+                    override fun observeAccounts(): Flow<List<Account>> = MutableStateFlow(listOf(cached.account))
+
+                    override fun observeTransactions(query: TransactionsQuery): Flow<List<Transaction>> =
+                        MutableStateFlow(listOf(cached))
+
+                    override suspend fun refreshPeriod(
+                        startDate: LocalDate,
+                        endDate: LocalDate,
+                    ): FinanceRefreshResult = refresh.await()
+                }
+            val viewModel = expensesViewModel(repository, clock)
+
+            runCurrent()
+
+            val state = viewModel.state.value as ExpensesUiState.Content
+            assertTrue(state.isRefreshing)
+            assertEquals(listOf(1), state.transactions.map { it.id })
+
+            refresh.complete(FinanceRefreshResult.Success)
+            advanceUntilIdle()
+            assertEquals(false, (viewModel.state.value as ExpensesUiState.Content).isRefreshing)
+        }
+
+    @Test
     fun `deleting expense removes it and emits success effect`() =
         runTest {
             val summary = FinanceSummary(BigDecimal("25.00"), "RUB", listOf(transaction()))
@@ -202,34 +236,38 @@ private class FakeFinanceRepository(
     vararg results: FinanceLoadResult,
 ) : FinanceRepository {
     private val results = ArrayDeque(results.toList())
+    private val firstSummary = (results.firstOrNull() as? FinanceLoadResult.Success)?.summary
+    private val accounts =
+        MutableStateFlow(
+            firstSummary?.transactions.orEmpty().map { it.account }.distinctBy { it.id },
+        )
+    private val transactions = MutableStateFlow(firstSummary?.transactions.orEmpty())
     val requestedDates = mutableListOf<LocalDate>()
     val deletedTransactionIds = mutableListOf<Int>()
 
-    override suspend fun getAccounts(): FinanceDataLoadResult<List<Account>> =
-        when (val result = results.first()) {
-            is FinanceLoadResult.Success -> {
-                FinanceDataLoadResult.Success(
-                    result.summary.transactions
-                        .map { it.account }
-                        .distinctBy { it.id },
-                )
-            }
+    override fun observeAccounts(): Flow<List<Account>> = accounts
 
-            is FinanceLoadResult.Failure -> {
-                FinanceDataLoadResult.Failure(result.reason)
-            }
-        }
+    override fun observeTransactions(query: TransactionsQuery): Flow<List<Transaction>> = transactions
 
-    override suspend fun getTransactions(query: TransactionsQuery): FinanceDataLoadResult<List<Transaction>> {
-        requestedDates += query.startDate
+    override suspend fun refreshPeriod(
+        startDate: LocalDate,
+        endDate: LocalDate,
+    ): FinanceRefreshResult {
+        requestedDates += startDate
         return when (val result = results.removeFirst()) {
-            is FinanceLoadResult.Success -> FinanceDataLoadResult.Success(result.summary.transactions)
-            is FinanceLoadResult.Failure -> FinanceDataLoadResult.Failure(result.reason)
+            is FinanceLoadResult.Success -> {
+                accounts.value = result.summary.transactions.map { it.account }.distinctBy { it.id }
+                transactions.value = result.summary.transactions
+                FinanceRefreshResult.Success
+            }
+
+            is FinanceLoadResult.Failure -> FinanceRefreshResult.Failure(result.reason)
         }
     }
 
     override suspend fun deleteTransaction(id: Int): EditorResult<Unit> {
         deletedTransactionIds += id
+        transactions.value = transactions.value.filterNot { it.id == id }
         return EditorResult.Success(Unit)
     }
 }

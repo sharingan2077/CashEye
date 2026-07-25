@@ -3,8 +3,10 @@ package com.yandex.school.casheye.feature.accounts.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.yandex.school.casheye.domain.finance.AccountsLoadResult
+import com.yandex.school.casheye.domain.finance.AccountsSummary
 import com.yandex.school.casheye.domain.finance.DeleteAccountUseCase
 import com.yandex.school.casheye.domain.finance.EditorResult
+import com.yandex.school.casheye.domain.finance.FinanceRefreshResult
 import com.yandex.school.casheye.domain.finance.GetAccountTransactionCountUseCase
 import com.yandex.school.casheye.domain.finance.GetAccountsUseCase
 import dev.zacsweers.metro.Inject
@@ -15,6 +17,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 @Inject
@@ -29,16 +32,20 @@ class AccountsViewModel(
     private val _effects = MutableSharedFlow<AccountsEffect>()
     val effects: SharedFlow<AccountsEffect> = _effects.asSharedFlow()
 
-    private var loadJob: Job? = null
+    private var observeJob: Job? = null
+    private var refreshJob: Job? = null
+    private var latestSummary: AccountsSummary? = null
+    private var initialRefreshCompleted = false
 
     init {
-        loadAccounts()
+        observeAccounts()
+        refreshAccounts()
     }
 
     fun onIntent(intent: AccountsIntent) {
         when (intent) {
-            AccountsIntent.Retry -> loadAccounts(preserveContent = _state.value.isRefreshable())
-            AccountsIntent.Refresh -> loadAccounts(preserveContent = true)
+            AccountsIntent.Retry -> refreshAccounts()
+            AccountsIntent.Refresh -> refreshAccounts()
             is AccountsIntent.RequestAccountDelete -> requestAccountDelete(intent.id)
             AccountsIntent.ConfirmAccountDelete -> confirmAccountDelete()
             AccountsIntent.CancelAccountDelete -> updateDeleteConfirmation(null)
@@ -102,47 +109,73 @@ class AccountsViewModel(
             }
     }
 
-    private fun loadAccounts(preserveContent: Boolean = false) {
-        if (loadJob?.isActive == true) return
-        val keepsVisibleContent = preserveContent && _state.value.isRefreshable()
-        loadJob =
+    private fun observeAccounts() {
+        observeJob?.cancel()
+        observeJob =
             viewModelScope.launch {
-                _state.value =
-                    if (keepsVisibleContent) {
-                        _state.value.withRefreshing(true)
-                    } else {
-                        AccountsUiState.Loading
-                    }
-                when (
-                    val result =
-                        getAccounts(currencyCode = CURRENCY_RUB)
-                ) {
-                    is AccountsLoadResult.Success -> {
-                        val summary = result.summary
-                        _state.value =
-                            if (summary.accounts.isEmpty()) {
-                                AccountsUiState.Empty()
-                            } else {
-                                AccountsUiState.Content(
-                                    total = summary.total,
-                                    currencyCode = summary.currencyCode,
-                                    accounts = summary.accounts,
-                                )
-                            }
-                    }
+                getAccounts(currencyCode = CURRENCY_RUB).collectLatest { result ->
+                    when (result) {
+                        is AccountsLoadResult.Success -> {
+                            latestSummary = result.summary
+                            renderSummary()
+                        }
 
-                    is AccountsLoadResult.Failure -> {
-                        _state.value =
-                            if (keepsVisibleContent) {
-                                _state.value.withRefreshing(false)
-                            } else {
-                                AccountsUiState.Error(result.reason)
+                        is AccountsLoadResult.Failure -> {
+                            if (!_state.value.isRefreshable()) {
+                                _state.value = AccountsUiState.Error(result.reason)
                             }
-                        if (keepsVisibleContent) {
-                            _effects.emit(AccountsEffect.ShowError(result.reason))
                         }
                     }
                 }
+            }
+    }
+
+    private fun refreshAccounts() {
+        refreshJob?.cancel()
+        if (_state.value.isRefreshable()) {
+            _state.value = _state.value.withRefreshing(true)
+        }
+        refreshJob =
+            viewModelScope.launch {
+                when (val result = getAccounts.refresh()) {
+                    FinanceRefreshResult.Success -> {
+                        initialRefreshCompleted = true
+                        renderSummary(isRefreshing = false)
+                    }
+
+                    is FinanceRefreshResult.Failure -> {
+                        initialRefreshCompleted = true
+                        val hasVisibleCache =
+                            _state.value.isRefreshable() || latestSummary?.accounts?.isNotEmpty() == true
+                        if (hasVisibleCache) {
+                            renderSummary(isRefreshing = false)
+                            _effects.emit(AccountsEffect.ShowError(result.reason))
+                        } else {
+                            _state.value = AccountsUiState.Error(result.reason)
+                        }
+                    }
+                }
+            }
+    }
+
+    private fun renderSummary(isRefreshing: Boolean = refreshJob?.isActive == true) {
+        val summary = latestSummary ?: return
+        if (summary.accounts.isEmpty() && !initialRefreshCompleted) return
+        val deleteConfirmation =
+            (_state.value as? AccountsUiState.Content)
+                ?.deleteConfirmation
+                ?.takeIf { confirmation -> summary.accounts.any { it.id == confirmation.accountId } }
+        _state.value =
+            if (summary.accounts.isEmpty()) {
+                AccountsUiState.Empty(isRefreshing)
+            } else {
+                AccountsUiState.Content(
+                    total = summary.total,
+                    currencyCode = summary.currencyCode,
+                    accounts = summary.accounts,
+                    deleteConfirmation = deleteConfirmation,
+                    isRefreshing = isRefreshing,
+                )
             }
     }
 }

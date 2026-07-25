@@ -5,8 +5,8 @@ import com.yandex.school.casheye.core.model.Category
 import com.yandex.school.casheye.core.model.Transaction
 import com.yandex.school.casheye.domain.finance.AnalyticsLoadResult
 import com.yandex.school.casheye.domain.finance.AnalyticsSummary
-import com.yandex.school.casheye.domain.finance.FinanceDataLoadResult
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
+import com.yandex.school.casheye.domain.finance.FinanceRefreshResult
 import com.yandex.school.casheye.domain.finance.FinanceRepository
 import com.yandex.school.casheye.domain.finance.GetAnalyticsUseCase
 import com.yandex.school.casheye.domain.finance.TransactionsQuery
@@ -15,6 +15,8 @@ import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -222,7 +224,7 @@ class AnalyticsViewModelTest {
 
             assertTrue(viewModel.state.value is AnalyticsUiState.Empty)
             assertEquals(2, repository.accountRequests)
-            assertEquals(1, repository.queries.size)
+            assertEquals(2, repository.queries.size)
         }
 
     @Test
@@ -261,6 +263,53 @@ class AnalyticsViewModelTest {
         }
 
     @Test
+    fun `cached analytics stays visible while initial refresh is running`() =
+        runTest {
+            val cached = transaction(id = 1, categoryId = 10, amount = "3")
+            val refresh = CompletableDeferred<FinanceRefreshResult>()
+            val repository =
+                object : FinanceRepository {
+                    override fun observeAccounts(): Flow<List<Account>> = MutableStateFlow(listOf(cached.account))
+
+                    override fun observeTransactions(query: TransactionsQuery): Flow<List<Transaction>> =
+                        MutableStateFlow(listOf(cached))
+
+                    override suspend fun refreshPeriod(
+                        startDate: LocalDate,
+                        endDate: LocalDate,
+                    ): FinanceRefreshResult = refresh.await()
+                }
+            val viewModel = AnalyticsViewModel(GetAnalyticsUseCase(repository), clock)
+
+            viewModel.onIntent(AnalyticsIntent.Initialize(AnalyticsEntryPoint.Expenses))
+            runCurrent()
+
+            val state = viewModel.state.value as AnalyticsUiState.Content
+            assertTrue(state.isRefreshing)
+            assertEquals(listOf(1), state.transactions.map { it.id })
+
+            refresh.complete(FinanceRefreshResult.Success)
+            advanceUntilIdle()
+            assertEquals(false, (viewModel.state.value as AnalyticsUiState.Content).isRefreshing)
+        }
+
+    @Test
+    fun `room emission keeps the active analytics sheet open`() =
+        runTest {
+            val repository = QueueAnalyticsRepository(successWithOptions())
+            val viewModel = AnalyticsViewModel(GetAnalyticsUseCase(repository), clock)
+            viewModel.onIntent(AnalyticsIntent.Initialize(AnalyticsEntryPoint.Expenses))
+            advanceUntilIdle()
+
+            viewModel.onIntent(AnalyticsIntent.OpenDetails)
+            repository.emit(success(transactions = listOf(transaction(id = 2, categoryId = 20, amount = "9"))))
+            runCurrent()
+
+            assertEquals(AnalyticsSheet.Details, viewModel.state.value.data.activeSheet)
+            assertEquals(listOf(2), (viewModel.state.value as AnalyticsUiState.Content).transactions.map { it.id })
+        }
+
+    @Test
     fun `new filter cancels stale request before it can replace current state`() =
         runTest {
             val firstStarted = CompletableDeferred<Unit>()
@@ -294,29 +343,40 @@ private class QueueAnalyticsRepository(
     vararg results: AnalyticsLoadResult,
 ) : FinanceRepository {
     private val results = ArrayDeque(results.toList())
+    private val firstSummary = (results.firstOrNull() as? AnalyticsLoadResult.Success)?.summary
+    private val accounts = MutableStateFlow(firstSummary?.accounts.orEmpty())
+    private val transactions = MutableStateFlow(firstSummary?.transactions.orEmpty())
+    private var observedQuery = TransactionsQuery(emptySet(), LocalDate.MIN, LocalDate.MIN)
     val queries = mutableListOf<TransactionsQuery>()
     var accountRequests = 0
 
-    override suspend fun getAccounts(): FinanceDataLoadResult<List<Account>> {
+    override fun observeAccounts(): Flow<List<Account>> = accounts
+
+    override fun observeTransactions(query: TransactionsQuery): Flow<List<Transaction>> {
+        observedQuery = query
+        return transactions
+    }
+
+    override suspend fun refreshPeriod(
+        startDate: LocalDate,
+        endDate: LocalDate,
+    ): FinanceRefreshResult {
         accountRequests += 1
-        return when (val result = results.first()) {
+        queries += observedQuery
+        return when (val result = results.removeFirst()) {
             is AnalyticsLoadResult.Success -> {
-                FinanceDataLoadResult.Success(result.summary.accounts)
+                accounts.value = result.summary.accounts
+                transactions.value = result.summary.transactions
+                FinanceRefreshResult.Success
             }
 
-            is AnalyticsLoadResult.Failure -> {
-                results.removeFirst()
-                FinanceDataLoadResult.Failure(result.reason)
-            }
+            is AnalyticsLoadResult.Failure -> FinanceRefreshResult.Failure(result.reason)
         }
     }
 
-    override suspend fun getTransactions(query: TransactionsQuery): FinanceDataLoadResult<List<Transaction>> {
-        queries += query
-        return when (val result = results.removeFirst()) {
-            is AnalyticsLoadResult.Success -> FinanceDataLoadResult.Success(result.summary.transactions)
-            is AnalyticsLoadResult.Failure -> FinanceDataLoadResult.Failure(result.reason)
-        }
+    fun emit(result: AnalyticsLoadResult.Success) {
+        accounts.value = result.summary.accounts
+        transactions.value = result.summary.transactions
     }
 }
 
@@ -324,16 +384,31 @@ private class LambdaAnalyticsRepository(
     private val block: suspend (TransactionsQuery, Int) -> AnalyticsLoadResult,
 ) : FinanceRepository {
     val queries = mutableListOf<TransactionsQuery>()
+    private val accounts = MutableStateFlow(listOf(account(1), account(2)))
+    private val transactions = MutableStateFlow<List<Transaction>>(emptyList())
+    private var observedQuery = TransactionsQuery(emptySet(), LocalDate.MIN, LocalDate.MIN)
 
-    override suspend fun getAccounts(): FinanceDataLoadResult<List<Account>> =
-        FinanceDataLoadResult.Success(listOf(account(1), account(2)))
+    override fun observeAccounts(): Flow<List<Account>> = accounts
 
-    override suspend fun getTransactions(query: TransactionsQuery): FinanceDataLoadResult<List<Transaction>> {
+    override fun observeTransactions(query: TransactionsQuery): Flow<List<Transaction>> {
+        observedQuery = query
+        return transactions
+    }
+
+    override suspend fun refreshPeriod(
+        startDate: LocalDate,
+        endDate: LocalDate,
+    ): FinanceRefreshResult {
         val index = queries.size
-        queries += query
-        return when (val result = block(query, index)) {
-            is AnalyticsLoadResult.Success -> FinanceDataLoadResult.Success(result.summary.transactions)
-            is AnalyticsLoadResult.Failure -> FinanceDataLoadResult.Failure(result.reason)
+        queries += observedQuery
+        return when (val result = block(observedQuery, index)) {
+            is AnalyticsLoadResult.Success -> {
+                accounts.value = result.summary.accounts
+                transactions.value = result.summary.transactions
+                FinanceRefreshResult.Success
+            }
+
+            is AnalyticsLoadResult.Failure -> FinanceRefreshResult.Failure(result.reason)
         }
     }
 }

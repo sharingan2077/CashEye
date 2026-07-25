@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.yandex.school.casheye.domain.finance.DeleteTransactionUseCase
 import com.yandex.school.casheye.domain.finance.EditorResult
 import com.yandex.school.casheye.domain.finance.FinanceLoadResult
+import com.yandex.school.casheye.domain.finance.FinanceRefreshResult
+import com.yandex.school.casheye.domain.finance.FinanceSummary
 import com.yandex.school.casheye.domain.finance.GetDailySummaryUseCase
 import com.yandex.school.casheye.domain.finance.TransactionKind
 import dev.zacsweers.metro.Inject
@@ -15,6 +17,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.time.Clock
 import java.time.LocalDate
@@ -32,18 +35,22 @@ class IncomeViewModel(
 
     val effects: SharedFlow<IncomeEffect> = _effects.asSharedFlow()
 
-    private var loadJob: Job? = null
+    private var observeJob: Job? = null
+    private var refreshJob: Job? = null
+    private var latestSummary: FinanceSummary? = null
+    private var initialRefreshCompleted = false
 
     private var selectedDate = LocalDate.now(clock)
 
     init {
-        loadData(selectedDate)
+        observeIncome(selectedDate)
+        refreshIncome(selectedDate)
     }
 
     fun onIntent(intent: IncomeIntent) {
         when (intent) {
-            IncomeIntent.Retry -> loadData(selectedDate, preserveContent = _state.value.isRefreshable())
-            IncomeIntent.Refresh -> loadData(selectedDate, preserveContent = true)
+            IncomeIntent.Retry -> refreshIncome(selectedDate)
+            IncomeIntent.Refresh -> refreshIncome(selectedDate)
             is IncomeIntent.SelectDate -> selectDate(intent.date)
             is IncomeIntent.DeleteTransaction -> deleteTransaction(intent.id)
         }
@@ -83,63 +90,79 @@ class IncomeViewModel(
         if (selectableDate == selectedDate) return
 
         selectedDate = selectableDate
-        loadData(selectedDate, cancelPrevious = true)
+        latestSummary = null
+        initialRefreshCompleted = false
+        _state.value = IncomeUiState.Loading
+        observeIncome(selectedDate)
+        refreshIncome(selectedDate)
     }
 
-    private fun loadData(
-        localDate: LocalDate,
-        preserveContent: Boolean = false,
-        cancelPrevious: Boolean = false,
-    ) {
-        if (cancelPrevious) {
-            loadJob?.cancel()
-        } else if (loadJob?.isActive == true) {
-            return
-        }
-        val keepsVisibleContent = preserveContent && _state.value.isRefreshable()
-        loadJob =
+    private fun observeIncome(date: LocalDate) {
+        observeJob?.cancel()
+        observeJob =
             viewModelScope.launch {
-                _state.value =
-                    if (keepsVisibleContent) {
-                        _state.value.withRefreshing(true)
-                    } else {
-                        IncomeUiState.Loading
-                    }
+                getIncome(
+                    date = date,
+                    currencyCode = CURRENCY_CODE,
+                    transactionKind = TransactionKind.Income,
+                ).collectLatest { result ->
+                    when (result) {
+                        is FinanceLoadResult.Success -> {
+                            latestSummary = result.summary
+                            renderSummary()
+                        }
 
-                when (
-                    val result =
-                        getIncome(
-                            date = localDate,
-                            currencyCode = CURRENCY_CODE,
-                            transactionKind = TransactionKind.Income,
-                        )
-                ) {
-                    is FinanceLoadResult.Success -> {
-                        val summary = result.summary
-                        _state.value =
-                            if (summary.transactions.isEmpty()) {
-                                IncomeUiState.Empty()
-                            } else {
-                                IncomeUiState.Content(
-                                    total = summary.total,
-                                    currencyCode = summary.currencyCode,
-                                    transactions = summary.transactions,
-                                )
+                        is FinanceLoadResult.Failure -> {
+                            if (!_state.value.isRefreshable()) {
+                                _state.value = IncomeUiState.Error(result.reason)
                             }
-                    }
-
-                    is FinanceLoadResult.Failure -> {
-                        _state.value =
-                            if (keepsVisibleContent) {
-                                _state.value.withRefreshing(false)
-                            } else {
-                                IncomeUiState.Error(result.reason)
-                            }
-                        if (keepsVisibleContent) {
-                            _effects.emit(IncomeEffect.ShowError(result.reason))
                         }
                     }
                 }
+            }
+    }
+
+    private fun refreshIncome(date: LocalDate) {
+        refreshJob?.cancel()
+        if (_state.value.isRefreshable()) {
+            _state.value = _state.value.withRefreshing(true)
+        }
+        refreshJob =
+            viewModelScope.launch {
+                when (val result = getIncome.refresh(date)) {
+                    FinanceRefreshResult.Success -> {
+                        initialRefreshCompleted = true
+                        renderSummary(isRefreshing = false)
+                    }
+
+                    is FinanceRefreshResult.Failure -> {
+                        initialRefreshCompleted = true
+                        val hasVisibleCache =
+                            _state.value.isRefreshable() || latestSummary?.transactions?.isNotEmpty() == true
+                        if (hasVisibleCache) {
+                            renderSummary(isRefreshing = false)
+                            _effects.emit(IncomeEffect.ShowError(result.reason))
+                        } else {
+                            _state.value = IncomeUiState.Error(result.reason)
+                        }
+                    }
+                }
+            }
+    }
+
+    private fun renderSummary(isRefreshing: Boolean = refreshJob?.isActive == true) {
+        val summary = latestSummary ?: return
+        if (summary.transactions.isEmpty() && !initialRefreshCompleted) return
+        _state.value =
+            if (summary.transactions.isEmpty()) {
+                IncomeUiState.Empty(isRefreshing)
+            } else {
+                IncomeUiState.Content(
+                    total = summary.total,
+                    currencyCode = summary.currencyCode,
+                    transactions = summary.transactions,
+                    isRefreshing = isRefreshing,
+                )
             }
     }
 }
