@@ -17,6 +17,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -234,7 +235,7 @@ class AnalyticsViewModelTest {
             val repository =
                 QueueAnalyticsRepository(
                     success(transactions = listOf(transaction(id = 1, categoryId = 10, amount = "3"))),
-                    AnalyticsLoadResult.Failure(FinanceFailureReason.Network),
+                    AnalyticsLoadResult.Failure(FinanceFailureReason.Server),
                 )
             val viewModel = AnalyticsViewModel(GetAnalyticsUseCase(repository), clock)
             viewModel.onIntent(AnalyticsIntent.Initialize(AnalyticsEntryPoint.Expenses))
@@ -245,7 +246,7 @@ class AnalyticsViewModelTest {
             advanceUntilIdle()
 
             assertTrue(viewModel.state.value is AnalyticsUiState.Content)
-            assertEquals(AnalyticsEffect.ShowError(FinanceFailureReason.Network), effect.await())
+            assertEquals(AnalyticsEffect.ShowError(FinanceFailureReason.Server), effect.await())
         }
 
     @Test
@@ -295,7 +296,7 @@ class AnalyticsViewModelTest {
         }
 
     @Test
-    fun `network failure waits for cached analytics before deciding error`() =
+    fun `network failure waits for cached analytics without emitting error`() =
         runTest {
             val cached = transaction(id = 1, categoryId = 10, amount = "3")
             val cacheReady = CompletableDeferred<Unit>()
@@ -316,7 +317,11 @@ class AnalyticsViewModelTest {
                     override suspend fun refreshPeriod(
                         startDate: LocalDate,
                         endDate: LocalDate,
-                    ): FinanceRefreshResult = FinanceRefreshResult.Failure(FinanceFailureReason.Network)
+                    ): FinanceRefreshResult =
+                        FinanceRefreshResult.Failure(
+                            FinanceFailureReason.Network,
+                            hasUsableCache = true,
+                        )
                 }
             val viewModel = AnalyticsViewModel(GetAnalyticsUseCase(repository), clock)
             viewModel.onIntent(AnalyticsIntent.Initialize(AnalyticsEntryPoint.Expenses))
@@ -324,12 +329,51 @@ class AnalyticsViewModelTest {
             runCurrent()
             assertTrue(viewModel.state.value is AnalyticsUiState.Loading)
 
-            val effect = async(start = CoroutineStart.UNDISPATCHED) { viewModel.effects.first() }
+            val effects = mutableListOf<AnalyticsEffect>()
+            val collector =
+                backgroundScope.async(start = CoroutineStart.UNDISPATCHED) {
+                    viewModel.effects.collect { effects += it }
+                }
             cacheReady.complete(Unit)
             advanceUntilIdle()
 
             assertTrue(viewModel.state.value is AnalyticsUiState.Content)
-            assertEquals(AnalyticsEffect.ShowError(FinanceFailureReason.Network), effect.await())
+            assertTrue(effects.isEmpty())
+            collector.cancel()
+        }
+
+    @Test
+    fun `offline refresh exposes empty analytics when cache is initialized`() =
+        runTest {
+            val repository =
+                object : FinanceRepository {
+                    override fun observeAccounts(): Flow<List<Account>> = MutableStateFlow(emptyList())
+
+                    override fun observeTransactions(query: TransactionsQuery): Flow<List<Transaction>> =
+                        MutableStateFlow(emptyList())
+
+                    override suspend fun refreshPeriod(
+                        startDate: LocalDate,
+                        endDate: LocalDate,
+                    ): FinanceRefreshResult =
+                        FinanceRefreshResult.Failure(
+                            FinanceFailureReason.Network,
+                            hasUsableCache = true,
+                        )
+                }
+            val viewModel = AnalyticsViewModel(GetAnalyticsUseCase(repository), clock)
+            val effects = mutableListOf<AnalyticsEffect>()
+            val collector =
+                backgroundScope.async(start = CoroutineStart.UNDISPATCHED) {
+                    viewModel.effects.collect { effects += it }
+                }
+
+            viewModel.onIntent(AnalyticsIntent.Initialize(AnalyticsEntryPoint.Expenses))
+            advanceUntilIdle()
+
+            assertTrue(viewModel.state.value is AnalyticsUiState.Empty)
+            assertTrue(effects.isEmpty())
+            collector.cancel()
         }
 
     @Test
@@ -409,7 +453,8 @@ private class QueueAnalyticsRepository(
                 FinanceRefreshResult.Success
             }
 
-            is AnalyticsLoadResult.Failure -> FinanceRefreshResult.Failure(result.reason)
+            is AnalyticsLoadResult.Failure ->
+                FinanceRefreshResult.Failure(result.reason, hasUsableCache = false)
         }
     }
 
@@ -447,7 +492,8 @@ private class LambdaAnalyticsRepository(
                 FinanceRefreshResult.Success
             }
 
-            is AnalyticsLoadResult.Failure -> FinanceRefreshResult.Failure(result.reason)
+            is AnalyticsLoadResult.Failure ->
+                FinanceRefreshResult.Failure(result.reason, hasUsableCache = false)
         }
     }
 }

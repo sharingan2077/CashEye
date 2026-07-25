@@ -19,6 +19,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -107,7 +108,7 @@ class IncomeViewModelTest {
                 incomeViewModel(
                     FakeIncomeFinanceRepository(
                         FinanceLoadResult.Success(summary),
-                        FinanceLoadResult.Failure(FinanceFailureReason.Network),
+                        FinanceLoadResult.Failure(FinanceFailureReason.Server),
                     ),
                     clock,
                 )
@@ -121,7 +122,7 @@ class IncomeViewModelTest {
                 IncomeUiState.Content(summary.total, summary.currencyCode, summary.transactions),
                 viewModel.state.value,
             )
-            assertEquals(IncomeEffect.ShowError(FinanceFailureReason.Network), effect.await())
+            assertEquals(IncomeEffect.ShowError(FinanceFailureReason.Server), effect.await())
         }
 
     @Test
@@ -212,7 +213,7 @@ class IncomeViewModelTest {
         }
 
     @Test
-    fun `network failure waits for cached income before deciding error`() =
+    fun `network failure waits for cached income without emitting error`() =
         runTest {
             val cached = incomeTransaction()
             val cacheReady = CompletableDeferred<Unit>()
@@ -233,19 +234,61 @@ class IncomeViewModelTest {
                     override suspend fun refreshPeriod(
                         startDate: LocalDate,
                         endDate: LocalDate,
-                    ): FinanceRefreshResult = FinanceRefreshResult.Failure(FinanceFailureReason.Network)
+                    ): FinanceRefreshResult =
+                        FinanceRefreshResult.Failure(
+                            FinanceFailureReason.Network,
+                            hasUsableCache = true,
+                        )
                 }
             val viewModel = incomeViewModel(repository, clock)
 
             runCurrent()
             assertEquals(IncomeUiState.Loading, viewModel.state.value)
 
-            val effect = async(start = CoroutineStart.UNDISPATCHED) { viewModel.effects.first() }
+            val effects = mutableListOf<IncomeEffect>()
+            val collector =
+                backgroundScope.async(start = CoroutineStart.UNDISPATCHED) {
+                    viewModel.effects.collect { effects += it }
+                }
             cacheReady.complete(Unit)
             advanceUntilIdle()
 
             assertTrue(viewModel.state.value is IncomeUiState.Content)
-            assertEquals(IncomeEffect.ShowError(FinanceFailureReason.Network), effect.await())
+            assertTrue(effects.isEmpty())
+            collector.cancel()
+        }
+
+    @Test
+    fun `offline refresh exposes empty income when cache is initialized`() =
+        runTest {
+            val repository =
+                object : FinanceRepository {
+                    override fun observeAccounts(): Flow<List<Account>> = MutableStateFlow(emptyList())
+
+                    override fun observeTransactions(query: TransactionsQuery): Flow<List<Transaction>> =
+                        MutableStateFlow(emptyList())
+
+                    override suspend fun refreshPeriod(
+                        startDate: LocalDate,
+                        endDate: LocalDate,
+                    ): FinanceRefreshResult =
+                        FinanceRefreshResult.Failure(
+                            FinanceFailureReason.Network,
+                            hasUsableCache = true,
+                        )
+                }
+
+            val viewModel = incomeViewModel(repository, clock)
+            val effects = mutableListOf<IncomeEffect>()
+            val collector =
+                backgroundScope.async(start = CoroutineStart.UNDISPATCHED) {
+                    viewModel.effects.collect { effects += it }
+                }
+            advanceUntilIdle()
+
+            assertEquals(IncomeUiState.Empty(), viewModel.state.value)
+            assertTrue(effects.isEmpty())
+            collector.cancel()
         }
 
     @Test
@@ -305,7 +348,8 @@ private class FakeIncomeFinanceRepository(
                 FinanceRefreshResult.Success
             }
 
-            is FinanceLoadResult.Failure -> FinanceRefreshResult.Failure(result.reason)
+            is FinanceLoadResult.Failure ->
+                FinanceRefreshResult.Failure(result.reason, hasUsableCache = false)
         }
     }
 

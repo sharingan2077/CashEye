@@ -17,6 +17,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -107,7 +108,7 @@ class AccountsViewModelTest {
                 accountsViewModel(
                     FakeAccountsRepository(
                         AccountsLoadResult.Success(summary),
-                        AccountsLoadResult.Failure(FinanceFailureReason.Network),
+                        AccountsLoadResult.Failure(FinanceFailureReason.Server),
                     ),
                 )
 
@@ -120,7 +121,7 @@ class AccountsViewModelTest {
                 AccountsUiState.Content(summary.total, summary.currencyCode, summary.accounts),
                 viewModel.state.value,
             )
-            assertEquals(AccountsEffect.ShowError(FinanceFailureReason.Network), effect.await())
+            assertEquals(AccountsEffect.ShowError(FinanceFailureReason.Server), effect.await())
         }
 
     @Test
@@ -164,7 +165,7 @@ class AccountsViewModelTest {
         }
 
     @Test
-    fun `network failure waits for cached accounts before deciding error`() =
+    fun `network failure waits for cached accounts without emitting error`() =
         runTest {
             val cacheReady = CompletableDeferred<Unit>()
             val repository =
@@ -176,19 +177,54 @@ class AccountsViewModelTest {
                         }
 
                     override suspend fun refreshAccounts(): FinanceRefreshResult =
-                        FinanceRefreshResult.Failure(FinanceFailureReason.Network)
+                        FinanceRefreshResult.Failure(
+                            FinanceFailureReason.Network,
+                            hasUsableCache = true,
+                        )
                 }
             val viewModel = accountsViewModel(repository)
 
             runCurrent()
             assertEquals(AccountsUiState.Loading, viewModel.state.value)
 
-            val effect = async(start = CoroutineStart.UNDISPATCHED) { viewModel.effects.first() }
+            val effects = mutableListOf<AccountsEffect>()
+            val collector =
+                backgroundScope.async(start = CoroutineStart.UNDISPATCHED) {
+                    viewModel.effects.collect { effects += it }
+                }
             cacheReady.complete(Unit)
             advanceUntilIdle()
 
             assertTrue(viewModel.state.value is AccountsUiState.Content)
-            assertEquals(AccountsEffect.ShowError(FinanceFailureReason.Network), effect.await())
+            assertTrue(effects.isEmpty())
+            collector.cancel()
+        }
+
+    @Test
+    fun `offline refresh exposes empty accounts when cache is initialized`() =
+        runTest {
+            val repository =
+                object : FinanceRepository {
+                    override fun observeAccounts(): Flow<List<Account>> = MutableStateFlow(emptyList())
+
+                    override suspend fun refreshAccounts(): FinanceRefreshResult =
+                        FinanceRefreshResult.Failure(
+                            FinanceFailureReason.Network,
+                            hasUsableCache = true,
+                        )
+                }
+
+            val viewModel = accountsViewModel(repository)
+            val effects = mutableListOf<AccountsEffect>()
+            val collector =
+                backgroundScope.async(start = CoroutineStart.UNDISPATCHED) {
+                    viewModel.effects.collect { effects += it }
+                }
+            advanceUntilIdle()
+
+            assertEquals(AccountsUiState.Empty(), viewModel.state.value)
+            assertTrue(effects.isEmpty())
+            collector.cancel()
         }
 
     @Test
@@ -248,7 +284,8 @@ private class FakeAccountsRepository(
                 FinanceRefreshResult.Success
             }
 
-            is AccountsLoadResult.Failure -> FinanceRefreshResult.Failure(result.reason)
+            is AccountsLoadResult.Failure ->
+                FinanceRefreshResult.Failure(result.reason, hasUsableCache = false)
         }
     }
 

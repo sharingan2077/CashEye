@@ -81,10 +81,33 @@ class FinanceRepositoryImplTest {
                 )
 
             assertEquals(
-                FinanceRefreshResult.Failure(FinanceFailureReason.Network),
+                FinanceRefreshResult.Failure(
+                    FinanceFailureReason.Network,
+                    hasUsableCache = false,
+                ),
                 repository.refreshAccounts(),
             )
             assertEquals(listOf(cached), repository.observeAccounts().first())
+        }
+
+    @Test
+    fun `failed refresh reports usable cache when categories were saved`() =
+        runBlocking {
+            val localStore = FakeFinanceLocalStore(hasUsableCache = true)
+
+            val result =
+                repository(
+                    ThrowingFinanceApi(IOException("offline")),
+                    localStore,
+                ).refreshAccounts()
+
+            assertEquals(
+                FinanceRefreshResult.Failure(
+                    FinanceFailureReason.Network,
+                    hasUsableCache = true,
+                ),
+                result,
+            )
         }
 
     @Test
@@ -274,6 +297,7 @@ class FinanceRepositoryImplTest {
                 FinanceDataLoadResult.Failure(FinanceFailureReason.Server),
                 result,
             )
+            assertEquals(3, api.accountRequests)
         }
 
     @Test
@@ -319,6 +343,7 @@ private fun repository(
 
 private class FakeFinanceLocalStore(
     initialAccounts: List<Account> = emptyList(),
+    private val hasUsableCache: Boolean = false,
 ) : FinanceLocalStore {
     private val accounts = MutableStateFlow(initialAccounts)
     private var categories: List<Category> = emptyList()
@@ -341,6 +366,8 @@ private class FakeFinanceLocalStore(
 
     override suspend fun getCategories(isIncome: Boolean): List<Category> =
         categories.filter { it.isIncome == isIncome }
+
+    override suspend fun hasUsableCache(): Boolean = hasUsableCache || categories.isNotEmpty()
 
     override suspend fun getTransaction(id: Int): Transaction? = transactions.value.firstOrNull { it.id == id }
 
@@ -485,7 +512,12 @@ private class FakeFinanceApi(
 private class ThrowingFinanceApi(
     private val error: Exception,
 ) : FinanceApi {
-    override suspend fun getAccounts(): List<AccountDto> = throw error
+    var accountRequests: Int = 0
+
+    override suspend fun getAccounts(): List<AccountDto> {
+        accountRequests += 1
+        throw error
+    }
 
     override suspend fun getAccount(id: Int) = throw error
 
