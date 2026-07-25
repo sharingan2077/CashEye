@@ -8,11 +8,17 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,8 +32,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import com.yandex.school.casheye.core.designsystem.R
 import kotlin.math.roundToInt
 
 @Composable
@@ -38,7 +47,7 @@ fun SwipeToRevealDeleteItem(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
-    val actionWidth = 128.dp
+    val actionWidth = 88.dp
     val density = LocalDensity.current
     var actionWidthPx by remember { mutableFloatStateOf(with(density) { actionWidth.toPx() }) }
     var targetOffset by remember { mutableFloatStateOf(0f) }
@@ -59,23 +68,33 @@ fun SwipeToRevealDeleteItem(
         Box(
             modifier =
                 Modifier
-                    .matchParentSize()
-                    .background(MaterialTheme.colorScheme.error),
+                    .matchParentSize(),
         ) {
-            Box(
+            Column(
                 modifier =
                     Modifier
                         .align(Alignment.CenterEnd)
                         .fillMaxHeight()
                         .width(actionWidth)
+                        .background(MaterialTheme.colorScheme.error)
                         .onSizeChanged { actionWidthPx = it.width.toFloat() }
                         .clickable(onClick = onDelete),
-                contentAlignment = Alignment.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
             ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_delete_outline),
+                    contentDescription = null,
+                    modifier = Modifier.size(32.dp),
+                    tint = MaterialTheme.colorScheme.onError,
+                )
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = actionLabel,
                     color = MaterialTheme.colorScheme.onError,
-                    style = MaterialTheme.typography.labelLarge,
+                    style = MaterialTheme.typography.labelMedium,
+                    textAlign = TextAlign.Center,
+                    maxLines = 2,
                 )
             }
         }
@@ -84,6 +103,7 @@ fun SwipeToRevealDeleteItem(
             modifier =
                 Modifier
                     .offset { IntOffset(offset.roundToInt(), 0) }
+                    .background(MaterialTheme.colorScheme.background)
                     .draggable(
                         state =
                             rememberDraggableState { delta ->

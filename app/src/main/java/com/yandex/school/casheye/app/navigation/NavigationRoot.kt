@@ -8,7 +8,6 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -27,6 +26,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import com.yandex.school.casheye.R
+import com.yandex.school.casheye.core.designsystem.component.CashEyeSnackbarHost
 import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
 import com.yandex.school.casheye.feature.accounts.presentation.AccountEditorRoute
 import com.yandex.school.casheye.feature.accounts.presentation.AccountsRoute
@@ -214,7 +214,7 @@ private fun NavigationScaffold(
             if (showBars) FloatingButton(onClick = onAddClick)
         },
         snackbarHost = {
-            SnackbarHost(
+            CashEyeSnackbarHost(
                 hostState = snackbarHostState,
             )
         },

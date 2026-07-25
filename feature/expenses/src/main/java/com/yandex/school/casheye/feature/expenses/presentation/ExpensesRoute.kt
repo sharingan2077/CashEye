@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yandex.school.casheye.core.designsystem.component.DismissSnackbarOnDispose
+import com.yandex.school.casheye.core.designsystem.component.showSuccessSnackbar
 import com.yandex.school.casheye.core.designsystem.component.showRetrySnackbar
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import com.yandex.school.casheye.feature.expenses.R
@@ -64,7 +65,7 @@ fun ExpensesRoute(
                     )
                 }
 
-                ExpensesEffect.TransactionDeleted -> snackbarHostState.showSnackbar(deletedMessage)
+                ExpensesEffect.TransactionDeleted -> snackbarHostState.showSuccessSnackbar(deletedMessage)
             }
         }
     }
