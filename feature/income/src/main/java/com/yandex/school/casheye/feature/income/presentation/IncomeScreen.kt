@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -27,6 +26,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.yandex.school.casheye.core.designsystem.component.DelayedCircularProgressIndicator
 import com.yandex.school.casheye.core.designsystem.component.ErrorState
 import com.yandex.school.casheye.core.designsystem.component.ErrorStateType
 import com.yandex.school.casheye.core.designsystem.component.MoneyListItem
@@ -58,7 +58,7 @@ fun IncomeScreen(
         ) {
             when (state) {
                 IncomeUiState.Loading -> {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                    DelayedCircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 }
 
                 is IncomeUiState.Empty -> {

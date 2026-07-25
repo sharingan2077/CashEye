@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -35,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.patrykandpatrick.vico.compose.pie.data.PieChartModelProducer
 import com.patrykandpatrick.vico.compose.pie.data.pieSeries
+import com.yandex.school.casheye.core.designsystem.component.DelayedCircularProgressIndicator
 import com.yandex.school.casheye.core.designsystem.component.EmojiCircle
 import com.yandex.school.casheye.core.designsystem.component.ErrorState
 import com.yandex.school.casheye.core.designsystem.component.ErrorStateType
@@ -62,7 +62,7 @@ fun AnalyticsScreen(
         Box(modifier = Modifier.fillMaxSize()) {
             when (state) {
                 is AnalyticsUiState.Loading -> {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                    DelayedCircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 }
 
                 is AnalyticsUiState.Content -> {
