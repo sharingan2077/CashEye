@@ -81,6 +81,12 @@ class FinanceRepositoryImpl(
             scheduleSync()
         }
 
+    override suspend fun deleteTransaction(id: Int): EditorResult<Unit> =
+        editorRequest(ioDispatcher) {
+            localStore.deleteTransaction(id, Instant.now())
+            scheduleSync()
+        }
+
     override suspend fun getAccount(id: Int): EditorResult<Account> =
         editorRequest(ioDispatcher) {
             localStore.getAccount(id)
@@ -93,6 +99,30 @@ class FinanceRepositoryImpl(
         editorRequest(ioDispatcher) {
             localStore.saveAccount(command, Instant.now())
             scheduleSync()
+        }
+
+    override suspend fun getAccountTransactionCount(id: Int): EditorResult<Int> =
+        editorRequest(ioDispatcher) {
+            if (id > 0) {
+                try {
+                    api
+                        .getTransactions(
+                            accountId = id,
+                            startDate = EARLIEST_TRANSACTION_DATE,
+                            endDate = LocalDate.now().toString(),
+                        ).forEach { localStore.cacheTransaction(it) }
+                } catch (error: CancellationException) {
+                    throw error
+                } catch (_: Exception) {
+                    // Offline deletion uses the fully preloaded local history.
+                }
+            }
+            localStore.getAccountTransactionCount(id)
+        }
+
+    override suspend fun deleteAccount(id: Int): EditorResult<Int> =
+        editorRequest(ioDispatcher) {
+            localStore.deleteAccount(id, Instant.now()).also { scheduleSync() }
         }
 
     override suspend fun getTransactions(query: TransactionsQuery): FinanceDataLoadResult<List<Transaction>> =
@@ -262,3 +292,5 @@ private object HttpStatus {
     const val SERVER_ERROR_MIN = 500
     const val SERVER_ERROR_MAX = 599
 }
+
+private const val EARLIEST_TRANSACTION_DATE = "1970-01-01"

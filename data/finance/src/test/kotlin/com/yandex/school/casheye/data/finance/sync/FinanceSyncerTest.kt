@@ -142,6 +142,42 @@ class FinanceSyncerTest {
             assertEquals(Instant.parse("2026-07-22T23:59:59.999Z"), store.refreshEnd)
         }
 
+    @Test
+    fun `transaction deletes are sent before account delete`() =
+        runBlocking {
+            val store =
+                FakeSyncStore(
+                    deleteOperation(PendingEntityType.ACCOUNT, entityId = 1, operationId = 1),
+                    deleteOperation(PendingEntityType.TRANSACTION, entityId = 10, operationId = 2),
+                    deleteOperation(PendingEntityType.TRANSACTION, entityId = 11, operationId = 3),
+                )
+            val api = FakeFinanceApi()
+
+            val result = syncer(api, store).sync()
+
+            assertEquals(FinanceSyncResult.Success, result)
+            assertEquals(
+                listOf("transaction:delete:10", "transaction:delete:11", "account:delete:1"),
+                api.writeCalls,
+            )
+            assertTrue(store.getPendingOperations().isEmpty())
+        }
+
+    @Test
+    fun `missing remote entity completes delete idempotently`() =
+        runBlocking {
+            val store =
+                FakeSyncStore(
+                    deleteOperation(PendingEntityType.TRANSACTION, entityId = 10, operationId = 1),
+                )
+            val api = FakeFinanceApi(writeFailure = httpError(404))
+
+            val result = syncer(api, store).sync()
+
+            assertEquals(FinanceSyncResult.Success, result)
+            assertTrue(store.getPendingOperations().isEmpty())
+        }
+
     private fun syncer(
         api: FinanceApi,
         store: FinanceSyncStore,
@@ -239,6 +275,22 @@ class FinanceSyncerTest {
                 ),
         )
 
+    private fun deleteOperation(
+        entityType: PendingEntityType,
+        entityId: Int,
+        operationId: Long,
+    ): PendingOperationEntity =
+        PendingOperationEntity(
+            id = operationId,
+            entityType = entityType,
+            operationType = PendingOperationType.DELETE,
+            localEntityId = entityId,
+            relatedAccountId = 1,
+            dependsOnOperationId = null,
+            createdAt = operationId,
+            payload = "",
+        )
+
     private fun httpError(code: Int): HttpException =
         HttpException(Response.error<Unit>(code, "error".toResponseBody()))
 
@@ -288,6 +340,9 @@ class FinanceSyncerTest {
             response: TransactionResponseDto,
         ) = complete(sentOperations)
 
+        override suspend fun completeDelete(sentOperations: List<PendingOperationEntity>) =
+            complete(sentOperations)
+
         override suspend fun refreshAfterSync(
             accounts: List<AccountDto>,
             categories: List<CategoryDto>,
@@ -334,6 +389,11 @@ class FinanceSyncerTest {
             return account(id, request)
         }
 
+        override suspend fun deleteAccount(id: Int) {
+            writeFailure?.let { throw it }
+            writeCalls += "account:delete:$id"
+        }
+
         override suspend fun getCategories(isIncome: Boolean): List<CategoryDto> = emptyList()
 
         override suspend fun getTransaction(id: Int): TransactionResponseDto = error("Not used")
@@ -359,6 +419,11 @@ class FinanceSyncerTest {
         ): TransactionResponseDto {
             writeCalls += "transaction:$id"
             return transaction(id, request)
+        }
+
+        override suspend fun deleteTransaction(id: Int) {
+            writeFailure?.let { throw it }
+            writeCalls += "transaction:delete:$id"
         }
 
         override suspend fun getTransactions(

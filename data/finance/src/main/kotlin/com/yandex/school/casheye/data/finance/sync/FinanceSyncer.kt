@@ -84,6 +84,11 @@ class FinanceSyncer internal constructor(
     }
 
     private suspend fun sendAccount(batch: PendingBatch) {
+        if (batch.operationType == PendingOperationType.DELETE) {
+            deleteIfPresent { api.deleteAccount(batch.latest.localEntityId) }
+            store.completeDelete(batch.operations)
+            return
+        }
         val snapshot = json.decodeFromString<AccountCommandSnapshot>(batch.latest.payload)
         val request =
             AccountRequestDto(
@@ -102,6 +107,11 @@ class FinanceSyncer internal constructor(
     }
 
     private suspend fun sendTransaction(batch: PendingBatch) {
+        if (batch.operationType == PendingOperationType.DELETE) {
+            deleteIfPresent { api.deleteTransaction(batch.latest.localEntityId) }
+            store.completeDelete(batch.operations)
+            return
+        }
         val snapshot = json.decodeFromString<TransactionCommandSnapshot>(batch.latest.payload)
         val request =
             TransactionRequestDto(
@@ -159,11 +169,20 @@ class FinanceSyncer internal constructor(
         return block()
     }
 
+    private suspend fun deleteIfPresent(block: suspend () -> Unit) {
+        try {
+            withServerRetry(block)
+        } catch (error: HttpException) {
+            if (error.code() != HTTP_NOT_FOUND) throw error
+        }
+    }
+
     private data class PendingBatch(
         val operations: List<PendingOperationEntity>,
     ) {
         val latest: PendingOperationEntity = operations.maxWith(compareBy({ it.createdAt }, { it.id }))
         val entityType: PendingEntityType = latest.entityType
+        val operationType: PendingOperationType = latest.operationType
         val isCreate: Boolean = operations.any { it.operationType == PendingOperationType.CREATE }
     }
 
@@ -173,17 +192,30 @@ class FinanceSyncer internal constructor(
             .map(::PendingBatch)
             .sortedWith(
                 compareBy<PendingBatch>(
-                    { if (it.entityType == PendingEntityType.ACCOUNT) ACCOUNT_PRIORITY else TRANSACTION_PRIORITY },
+                    { it.priority },
                     { it.operations.minOf(PendingOperationEntity::createdAt) },
                     { it.operations.minOf(PendingOperationEntity::id) },
                 ),
             )
 
+    private val PendingBatch.priority: Int
+        get() =
+            when {
+                operationType == PendingOperationType.DELETE && entityType == PendingEntityType.TRANSACTION ->
+                    TRANSACTION_DELETE_PRIORITY
+                operationType == PendingOperationType.DELETE -> ACCOUNT_DELETE_PRIORITY
+                entityType == PendingEntityType.ACCOUNT -> ACCOUNT_WRITE_PRIORITY
+                else -> TRANSACTION_WRITE_PRIORITY
+            }
+
     private companion object {
         const val MAX_SERVER_ATTEMPTS = 3
         const val RETRY_DELAY_MILLIS = 2_000L
-        const val ACCOUNT_PRIORITY = 0
-        const val TRANSACTION_PRIORITY = 1
+        const val TRANSACTION_DELETE_PRIORITY = 0
+        const val ACCOUNT_DELETE_PRIORITY = 1
+        const val ACCOUNT_WRITE_PRIORITY = 2
+        const val TRANSACTION_WRITE_PRIORITY = 3
+        const val HTTP_NOT_FOUND = 404
         val SERVER_ERROR_RANGE = 500..599
     }
 }

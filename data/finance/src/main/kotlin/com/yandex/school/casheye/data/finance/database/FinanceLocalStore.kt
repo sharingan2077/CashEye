@@ -57,6 +57,12 @@ interface FinanceLocalStore {
     suspend fun saveAccount(command: SaveAccountCommand, now: Instant)
 
     suspend fun saveTransaction(command: SaveTransactionCommand, now: Instant)
+
+    suspend fun getAccountTransactionCount(id: Int): Int
+
+    suspend fun deleteTransaction(id: Int, now: Instant)
+
+    suspend fun deleteAccount(id: Int, now: Instant): Int
 }
 
 internal interface FinanceSyncStore {
@@ -81,6 +87,8 @@ internal interface FinanceSyncStore {
         sentOperations: List<PendingOperationEntity>,
         response: TransactionResponseDto,
     )
+
+    suspend fun completeDelete(sentOperations: List<PendingOperationEntity>)
 
     suspend fun refreshAfterSync(
         accounts: List<AccountDto>,
@@ -201,6 +209,16 @@ class RoomFinanceLocalStore(
         }
     }
 
+    override suspend fun getAccountTransactionCount(id: Int): Int =
+        database.transactionDao().countByAccountId(id)
+
+    override suspend fun deleteTransaction(id: Int, now: Instant) {
+        database.offlineWriteDao().deleteTransaction(id, now)
+    }
+
+    override suspend fun deleteAccount(id: Int, now: Instant): Int =
+        database.offlineWriteDao().deleteAccount(id, now)
+
     internal suspend fun getPendingOperations(): List<PendingOperationEntity> =
         database.pendingOperationDao().getAll()
 
@@ -247,6 +265,10 @@ class RoomFinanceLocalStore(
         )
     }
 
+    internal suspend fun completeDelete(sentOperations: List<PendingOperationEntity>) {
+        database.offlineWriteDao().completeDelete(sentOperations)
+    }
+
     private companion object {
         const val DATABASE_NAME = "finance.db"
     }
@@ -284,6 +306,10 @@ internal class RoomFinanceSyncStore(
         response: TransactionResponseDto,
     ) {
         localStore.completeTransactionUpdate(sentOperations, response)
+    }
+
+    override suspend fun completeDelete(sentOperations: List<PendingOperationEntity>) {
+        localStore.completeDelete(sentOperations)
     }
 
     override suspend fun refreshAfterSync(

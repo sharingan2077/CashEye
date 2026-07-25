@@ -324,6 +324,20 @@ private class FakeFinanceLocalStore(
     override suspend fun saveTransaction(command: SaveTransactionCommand, now: Instant) {
         savedTransaction = command
     }
+
+    override suspend fun getAccountTransactionCount(id: Int): Int =
+        transactions.count { it.account.id == id }
+
+    override suspend fun deleteTransaction(id: Int, now: Instant) {
+        transactions = transactions.filterNot { it.id == id }
+    }
+
+    override suspend fun deleteAccount(id: Int, now: Instant): Int {
+        val transactionCount = transactions.count { it.account.id == id }
+        transactions = transactions.filterNot { it.account.id == id }
+        accounts = accounts.filterNot { it.id == id }
+        return transactionCount
+    }
 }
 
 private class RecordingSyncScheduler : FinanceSyncScheduler {
@@ -360,6 +374,8 @@ private class FakeFinanceApi(
         request: com.yandex.school.casheye.data.finance.dto.AccountRequestDto,
     ) = accountDto(id)
 
+    override suspend fun deleteAccount(id: Int) = Unit
+
     override suspend fun getCategories(isIncome: Boolean): List<CategoryDto> = emptyList()
 
     override suspend fun getTransaction(id: Int) = error("Unexpected transaction request")
@@ -380,6 +396,8 @@ private class FakeFinanceApi(
         id: Int,
         request: com.yandex.school.casheye.data.finance.dto.TransactionRequestDto,
     ) = transactionDto(id, request.amount, request.transactionDate)
+
+    override suspend fun deleteTransaction(id: Int) = Unit
 
     override suspend fun getTransactions(
         accountId: Int,
@@ -409,6 +427,8 @@ private class ThrowingFinanceApi(
         request: com.yandex.school.casheye.data.finance.dto.AccountRequestDto,
     ) = throw error
 
+    override suspend fun deleteAccount(id: Int) = throw error
+
     override suspend fun getCategories(isIncome: Boolean) = throw error
 
     override suspend fun getTransaction(id: Int) = throw error
@@ -420,6 +440,8 @@ private class ThrowingFinanceApi(
         id: Int,
         request: com.yandex.school.casheye.data.finance.dto.TransactionRequestDto,
     ) = throw error
+
+    override suspend fun deleteTransaction(id: Int) = throw error
 
     override suspend fun getTransactions(
         accountId: Int,

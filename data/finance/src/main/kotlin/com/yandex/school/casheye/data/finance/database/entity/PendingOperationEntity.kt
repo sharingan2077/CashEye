@@ -14,6 +14,7 @@ internal enum class PendingEntityType {
 internal enum class PendingOperationType {
     CREATE,
     UPDATE,
+    DELETE,
 }
 
 @Entity(

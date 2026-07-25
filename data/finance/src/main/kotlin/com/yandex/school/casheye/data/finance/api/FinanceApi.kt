@@ -8,6 +8,7 @@ import com.yandex.school.casheye.data.finance.dto.TransactionRequestDto
 import com.yandex.school.casheye.data.finance.dto.TransactionDto
 import com.yandex.school.casheye.data.finance.dto.TransactionResponseDto
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.PUT
@@ -34,6 +35,11 @@ interface FinanceApi {
         @Body request: AccountRequestDto,
     ): AccountDto
 
+    @DELETE("accounts/{id}")
+    suspend fun deleteAccount(
+        @Path("id") id: Int,
+    )
+
     @GET("categories/type/{isIncome}")
     suspend fun getCategories(
         @Path("isIncome") isIncome: Boolean,
@@ -54,6 +60,11 @@ interface FinanceApi {
         @Path("id") id: Int,
         @Body request: TransactionRequestDto,
     ): TransactionResponseDto
+
+    @DELETE("transactions/{id}")
+    suspend fun deleteTransaction(
+        @Path("id") id: Int,
+    )
 
     @GET("transactions/account/{accountId}/period")
     suspend fun getTransactions(

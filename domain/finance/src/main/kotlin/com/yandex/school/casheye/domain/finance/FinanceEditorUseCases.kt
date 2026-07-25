@@ -30,6 +30,12 @@ class SaveTransactionUseCase(
     suspend operator fun invoke(command: SaveTransactionCommand) = repository.saveTransaction(command)
 }
 
+class DeleteTransactionUseCase(
+    private val repository: FinanceRepository,
+) {
+    suspend operator fun invoke(id: Int) = repository.deleteTransaction(id)
+}
+
 class GetAccountUseCase(
     private val repository: FinanceRepository,
 ) {
@@ -40,4 +46,16 @@ class SaveAccountUseCase(
     private val repository: FinanceRepository,
 ) {
     suspend operator fun invoke(command: SaveAccountCommand) = repository.saveAccount(command)
+}
+
+class GetAccountTransactionCountUseCase(
+    private val repository: FinanceRepository,
+) {
+    suspend operator fun invoke(id: Int) = repository.getAccountTransactionCount(id)
+}
+
+class DeleteAccountUseCase(
+    private val repository: FinanceRepository,
+) {
+    suspend operator fun invoke(id: Int) = repository.deleteAccount(id)
 }

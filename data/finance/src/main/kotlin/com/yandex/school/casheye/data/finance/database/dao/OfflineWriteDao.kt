@@ -228,6 +228,41 @@ internal abstract class OfflineWriteDao {
     }
 
     @Transaction
+    open suspend fun deleteTransaction(
+        id: Int,
+        now: Instant,
+    ) {
+        val existing = checkNotNull(transactionById(id)) { "Transaction $id was not found" }
+        deleteTransactionInternal(existing, now)
+    }
+
+    @Transaction
+    open suspend fun deleteAccount(
+        id: Int,
+        now: Instant,
+    ): Int {
+        check(accountById(id) != null) { "Account $id was not found" }
+        val transactions = transactionsByAccount(id)
+        transactions.forEach { deleteTransactionInternal(it, now) }
+        deleteOperationsForEntity(PendingEntityType.ACCOUNT, id)
+        check(deleteAccountRow(id) == 1) { "Account $id was not found" }
+        if (id > 0) {
+            insertOperation(
+                PendingOperationEntity(
+                    entityType = PendingEntityType.ACCOUNT,
+                    operationType = PendingOperationType.DELETE,
+                    localEntityId = id,
+                    relatedAccountId = id,
+                    dependsOnOperationId = null,
+                    createdAt = now.toEpochMilli(),
+                    payload = "",
+                ),
+            )
+        }
+        return transactions.size
+    }
+
+    @Transaction
     open suspend fun completeAccountCreate(
         sentOperations: List<PendingOperationEntity>,
         serverAccount: AccountEntity,
@@ -237,6 +272,22 @@ internal abstract class OfflineWriteDao {
         require(temporaryId < 0) { "Temporary ids must be negative" }
         require(serverId > 0) { "Server ids must be positive" }
         val unchangedOperationIds = unchangedOperationIds(sentOperations)
+
+        if (accountById(temporaryId) == null) {
+            insertOperation(
+                PendingOperationEntity(
+                    entityType = PendingEntityType.ACCOUNT,
+                    operationType = PendingOperationType.DELETE,
+                    localEntityId = serverId,
+                    relatedAccountId = serverId,
+                    dependsOnOperationId = null,
+                    createdAt = sentOperations.maxOf(PendingOperationEntity::createdAt) + 1,
+                    payload = "",
+                ),
+            )
+            unchangedOperationIds.forEach { deleteOperation(it) }
+            return
+        }
 
         operationsReferencingAccount(temporaryId).forEach { operation ->
             val updatedPayload =
@@ -288,6 +339,22 @@ internal abstract class OfflineWriteDao {
         require(serverId > 0) { "Server ids must be positive" }
         val unchangedOperationIds = unchangedOperationIds(sentOperations)
 
+        if (transactionById(temporaryId) == null) {
+            insertOperation(
+                PendingOperationEntity(
+                    entityType = PendingEntityType.TRANSACTION,
+                    operationType = PendingOperationType.DELETE,
+                    localEntityId = serverId,
+                    relatedAccountId = serverTransaction.accountId,
+                    dependsOnOperationId = null,
+                    createdAt = sentOperations.maxOf(PendingOperationEntity::createdAt) + 1,
+                    payload = "",
+                ),
+            )
+            unchangedOperationIds.forEach { deleteOperation(it) }
+            return
+        }
+
         operationsForEntity(PendingEntityType.TRANSACTION, temporaryId).forEach { operation ->
             val snapshot = json.decodeFromString<TransactionCommandSnapshot>(operation.payload)
             updateOperation(
@@ -314,7 +381,9 @@ internal abstract class OfflineWriteDao {
         serverAccount: AccountEntity,
     ) {
         unchangedOperationIds(sentOperations).forEach { deleteOperation(it) }
-        check(accountById(serverAccount.id) != null) { "Account ${serverAccount.id} was not found" }
+        // A local delete may win while this update is in flight. In that case the account row is
+        // intentionally absent and its newer DELETE tombstone must remain queued.
+        if (accountById(serverAccount.id) == null) return
     }
 
     @Transaction
@@ -326,6 +395,11 @@ internal abstract class OfflineWriteDao {
         if (countOperations(PendingEntityType.TRANSACTION, serverTransaction.id) == 0) {
             upsertTransaction(serverTransaction)
         }
+    }
+
+    @Transaction
+    open suspend fun completeDelete(sentOperations: List<PendingOperationEntity>) {
+        unchangedOperationIds(sentOperations).forEach { deleteOperation(it) }
     }
 
     private suspend fun unchangedOperationIds(sentOperations: List<PendingOperationEntity>): List<Long> =
@@ -346,6 +420,33 @@ internal abstract class OfflineWriteDao {
                 balance = BigDecimal(account.balance).add(balanceDelta).toPlainString(),
             ),
         )
+    }
+
+    private suspend fun deleteTransactionInternal(
+        transaction: TransactionEntity,
+        now: Instant,
+    ) {
+        adjustAccountBalance(
+            accountId = transaction.accountId,
+            categoryId = transaction.categoryId,
+            amount = BigDecimal(transaction.amount),
+            reverse = true,
+        )
+        deleteOperationsForEntity(PendingEntityType.TRANSACTION, transaction.id)
+        check(deleteTransactionRow(transaction.id) == 1) { "Transaction ${transaction.id} was not found" }
+        if (transaction.id > 0) {
+            insertOperation(
+                PendingOperationEntity(
+                    entityType = PendingEntityType.TRANSACTION,
+                    operationType = PendingOperationType.DELETE,
+                    localEntityId = transaction.id,
+                    relatedAccountId = transaction.accountId,
+                    dependsOnOperationId = null,
+                    createdAt = now.toEpochMilli(),
+                    payload = "",
+                ),
+            )
+        }
     }
 
     @Query("SELECT COALESCE(MIN(id), 0) - 1 FROM accounts WHERE id < 0")
@@ -369,6 +470,9 @@ internal abstract class OfflineWriteDao {
     @Query("SELECT * FROM transactions WHERE id = :id")
     protected abstract suspend fun transactionById(id: Int): TransactionEntity?
 
+    @Query("SELECT * FROM transactions WHERE account_id = :accountId")
+    protected abstract suspend fun transactionsByAccount(accountId: Int): List<TransactionEntity>
+
     @Query("SELECT * FROM categories WHERE id = :id")
     protected abstract suspend fun categoryById(id: Int): CategoryEntity?
 
@@ -377,6 +481,12 @@ internal abstract class OfflineWriteDao {
 
     @Update
     protected abstract suspend fun updateTransactionRow(transaction: TransactionEntity)
+
+    @Query("DELETE FROM transactions WHERE id = :id")
+    protected abstract suspend fun deleteTransactionRow(id: Int): Int
+
+    @Query("DELETE FROM accounts WHERE id = :id")
+    protected abstract suspend fun deleteAccountRow(id: Int): Int
 
     @Update
     protected abstract suspend fun updateOperation(operation: PendingOperationEntity)
@@ -439,6 +549,14 @@ internal abstract class OfflineWriteDao {
         entityType: PendingEntityType,
         localId: Int,
     ): List<PendingOperationEntity>
+
+    @Query(
+        "DELETE FROM pending_operations WHERE entity_type = :entityType AND local_entity_id = :localId",
+    )
+    protected abstract suspend fun deleteOperationsForEntity(
+        entityType: PendingEntityType,
+        localId: Int,
+    ): Int
 
     @Query("UPDATE accounts SET id = :serverId WHERE id = :temporaryId")
     protected abstract suspend fun replaceAccountId(

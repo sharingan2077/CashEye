@@ -29,6 +29,9 @@ internal interface TransactionDao {
         endInclusive: Long,
     ): List<TransactionWithRelations>
 
+    @Query("SELECT COUNT(*) FROM transactions WHERE account_id = :accountId")
+    suspend fun countByAccountId(accountId: Int): Int
+
     @Transaction
     @Query(
         """

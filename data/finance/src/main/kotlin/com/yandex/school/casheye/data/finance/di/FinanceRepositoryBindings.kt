@@ -9,7 +9,10 @@ import com.yandex.school.casheye.data.finance.sync.FinanceSyncScheduler
 import com.yandex.school.casheye.data.finance.sync.FinanceSyncer
 import com.yandex.school.casheye.data.finance.sync.WorkManagerFinanceSyncScheduler
 import com.yandex.school.casheye.domain.finance.FinanceRepository
+import com.yandex.school.casheye.domain.finance.DeleteAccountUseCase
+import com.yandex.school.casheye.domain.finance.DeleteTransactionUseCase
 import com.yandex.school.casheye.domain.finance.GetAccountUseCase
+import com.yandex.school.casheye.domain.finance.GetAccountTransactionCountUseCase
 import com.yandex.school.casheye.domain.finance.GetAccountsUseCase
 import com.yandex.school.casheye.domain.finance.GetAnalyticsUseCase
 import com.yandex.school.casheye.domain.finance.GetDailySummaryUseCase
@@ -80,8 +83,20 @@ object FinanceUseCaseBindings {
         SaveTransactionUseCase(repository)
 
     @Provides
+    fun provideDeleteTransactionUseCase(repository: FinanceRepository): DeleteTransactionUseCase =
+        DeleteTransactionUseCase(repository)
+
+    @Provides
     fun provideGetAccountUseCase(repository: FinanceRepository): GetAccountUseCase = GetAccountUseCase(repository)
 
     @Provides
     fun provideSaveAccountUseCase(repository: FinanceRepository): SaveAccountUseCase = SaveAccountUseCase(repository)
+
+    @Provides
+    fun provideGetAccountTransactionCountUseCase(repository: FinanceRepository): GetAccountTransactionCountUseCase =
+        GetAccountTransactionCountUseCase(repository)
+
+    @Provides
+    fun provideDeleteAccountUseCase(repository: FinanceRepository): DeleteAccountUseCase =
+        DeleteAccountUseCase(repository)
 }

@@ -6,6 +6,8 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.yandex.school.casheye.data.finance.database.entity.AccountEntity
 import com.yandex.school.casheye.data.finance.database.entity.CategoryEntity
+import com.yandex.school.casheye.data.finance.database.entity.PendingEntityType
+import com.yandex.school.casheye.data.finance.database.entity.PendingOperationType
 import com.yandex.school.casheye.data.finance.database.entity.TransactionEntity
 import com.yandex.school.casheye.data.finance.database.model.TransactionCommandSnapshot
 import com.yandex.school.casheye.domain.finance.SaveAccountCommand
@@ -16,6 +18,7 @@ import kotlinx.serialization.json.Json
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -205,6 +208,86 @@ class OfflineWriteDaoTest {
             val transaction = database.transactionDao().getById(15)
             assertEquals("12.3400", transaction?.transaction?.amount)
             assertEquals(1, database.pendingOperationDao().getAll().size)
+        }
+
+    @Test
+    fun deletingExpenseRestoresBalanceAndCreatesDeleteTombstone() =
+        runTest {
+            database.accountDao().upsert(AccountEntity(5, "Main", "💳", "75.00", "RUB"))
+            database.categoryDao().upsertAll(listOf(category))
+            database.transactionDao().upsert(
+                TransactionEntity(
+                    id = 15,
+                    accountId = 5,
+                    categoryId = category.id,
+                    amount = "25.00",
+                    transactionDate = NOW.toEpochMilli(),
+                    comment = null,
+                    createdAt = NOW.toEpochMilli(),
+                    updatedAt = NOW.toEpochMilli(),
+                ),
+            )
+
+            database.offlineWriteDao().deleteTransaction(15, NOW.plusSeconds(1))
+
+            assertEquals("100.00", database.accountDao().getById(5)?.balance)
+            assertEquals(null, database.transactionDao().getById(15))
+            val operation = database.pendingOperationDao().getAll().single()
+            assertEquals(PendingOperationType.DELETE, operation.operationType)
+            assertEquals(PendingEntityType.TRANSACTION, operation.entityType)
+            assertEquals(5, operation.relatedAccountId)
+        }
+
+    @Test
+    fun deletingOfflineAccountCancelsItsCreates() =
+        runTest {
+            database.categoryDao().upsertAll(listOf(category))
+            val account = database.offlineWriteDao().createAccount(accountCommand(), NOW)
+            database.offlineWriteDao().createTransaction(
+                transactionCommand(account.localId),
+                NOW.plusSeconds(1),
+            )
+
+            val deletedTransactions =
+                database.offlineWriteDao().deleteAccount(account.localId, NOW.plusSeconds(2))
+
+            assertEquals(1, deletedTransactions)
+            assertEquals(null, database.accountDao().getById(account.localId))
+            assertTrue(database.pendingOperationDao().getAll().isEmpty())
+        }
+
+    @Test
+    fun createResponseAfterLocalDeleteQueuesServerDelete() =
+        runTest {
+            database.accountDao().upsert(AccountEntity(5, "Main", "💳", "100.00", "RUB"))
+            database.categoryDao().upsertAll(listOf(category))
+            val write =
+                database.offlineWriteDao().createTransaction(
+                    transactionCommand(accountId = 5),
+                    NOW,
+                )
+            val sentOperation = database.pendingOperationDao().getById(write.operationId)!!
+
+            database.offlineWriteDao().deleteTransaction(write.localId, NOW.plusSeconds(1))
+            database.offlineWriteDao().completeTransactionCreate(
+                sentOperations = listOf(sentOperation),
+                serverTransaction =
+                    TransactionEntity(
+                        id = 50,
+                        accountId = 5,
+                        categoryId = category.id,
+                        amount = "12.3400",
+                        transactionDate = NOW.plusSeconds(30).toEpochMilli(),
+                        comment = "Offline",
+                        createdAt = NOW.toEpochMilli(),
+                        updatedAt = NOW.toEpochMilli(),
+                    ),
+            )
+
+            assertEquals(null, database.transactionDao().getById(50))
+            val operation = database.pendingOperationDao().getAll().single()
+            assertEquals(PendingOperationType.DELETE, operation.operationType)
+            assertEquals(50, operation.localEntityId)
         }
 
     private fun accountCommand(
