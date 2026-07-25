@@ -195,7 +195,19 @@ class FinanceRepositoryImpl(
         } catch (error: CancellationException) {
             throw error
         } catch (error: Exception) {
-            FinanceRefreshResult.Failure(error.toFailureReason())
+            FinanceRefreshResult.Failure(
+                reason = error.toFailureReason(),
+                hasUsableCache = hasUsableCache(),
+            )
+        }
+
+    private suspend fun hasUsableCache(): Boolean =
+        try {
+            withContext(ioDispatcher) { localStore.hasUsableCache() }
+        } catch (error: CancellationException) {
+            throw error
+        } catch (_: Exception) {
+            false
         }
 
     private suspend fun loadRemotePeriod(period: InstantPeriod) {

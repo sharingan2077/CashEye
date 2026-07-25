@@ -268,7 +268,7 @@ class AnalyticsViewModel(
                         renderSummary(isRefreshing = false)
                     }
 
-                    is FinanceRefreshResult.Failure -> handleRefreshFailure(result.reason, observationReady)
+                    is FinanceRefreshResult.Failure -> handleRefreshFailure(result, observationReady)
                 }
             }
     }
@@ -298,17 +298,23 @@ class AnalyticsViewModel(
     }
 
     private suspend fun handleRefreshFailure(
-        reason: FinanceFailureReason,
+        failure: FinanceRefreshResult.Failure,
         observationReady: CompletableDeferred<Unit>,
     ) {
         observationReady.await()
         initialRefreshCompleted = true
         val hasVisibleCache = _state.value.isRefreshable() || latestSummary?.transactions?.isNotEmpty() == true
-        if (hasVisibleCache) {
+        if (
+            failure.reason == FinanceFailureReason.Network &&
+            failure.hasUsableCache &&
+            latestSummary != null
+        ) {
             renderSummary(isRefreshing = false)
-            _effects.emit(AnalyticsEffect.ShowError(reason))
+        } else if (hasVisibleCache) {
+            renderSummary(isRefreshing = false)
+            _effects.emit(AnalyticsEffect.ShowError(failure.reason))
         } else {
-            _state.value = AnalyticsUiState.Error(screenData, reason)
+            _state.value = AnalyticsUiState.Error(screenData, failure.reason)
         }
     }
 }

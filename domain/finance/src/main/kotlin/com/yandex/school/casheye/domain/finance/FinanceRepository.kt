@@ -14,12 +14,12 @@ interface FinanceRepository {
     fun observeTransactions(query: TransactionsQuery): Flow<List<Transaction>> = flowOf(emptyList())
 
     suspend fun refreshAccounts(): FinanceRefreshResult =
-        FinanceRefreshResult.Failure(FinanceFailureReason.Unknown)
+        FinanceRefreshResult.Failure(FinanceFailureReason.Unknown, hasUsableCache = false)
 
     suspend fun refreshPeriod(
         startDate: LocalDate,
         endDate: LocalDate,
-    ): FinanceRefreshResult = FinanceRefreshResult.Failure(FinanceFailureReason.Unknown)
+    ): FinanceRefreshResult = FinanceRefreshResult.Failure(FinanceFailureReason.Unknown, hasUsableCache = false)
 
     suspend fun getAccounts(): FinanceDataLoadResult<List<Account>>
 
@@ -69,6 +69,7 @@ sealed interface FinanceRefreshResult {
 
     data class Failure(
         val reason: FinanceFailureReason,
+        val hasUsableCache: Boolean,
     ) : FinanceRefreshResult
 }
 

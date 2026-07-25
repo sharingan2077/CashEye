@@ -17,6 +17,9 @@ internal interface CategoryDao {
     @Query("SELECT * FROM categories WHERE id = :id")
     suspend fun getById(id: Int): CategoryEntity?
 
+    @Query("SELECT COUNT(*) FROM categories")
+    suspend fun count(): Int
+
     @Upsert
     suspend fun upsertAll(categories: List<CategoryEntity>)
 }

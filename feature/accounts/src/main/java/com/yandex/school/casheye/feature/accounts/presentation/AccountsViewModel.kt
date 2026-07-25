@@ -6,6 +6,7 @@ import com.yandex.school.casheye.domain.finance.AccountsLoadResult
 import com.yandex.school.casheye.domain.finance.AccountsSummary
 import com.yandex.school.casheye.domain.finance.DeleteAccountUseCase
 import com.yandex.school.casheye.domain.finance.EditorResult
+import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import com.yandex.school.casheye.domain.finance.FinanceRefreshResult
 import com.yandex.school.casheye.domain.finance.GetAccountTransactionCountUseCase
 import com.yandex.school.casheye.domain.finance.GetAccountsUseCase
@@ -65,7 +66,9 @@ class AccountsViewModel(
                     }
                 }
 
-                is EditorResult.Failure -> _effects.emit(AccountsEffect.ShowDeleteError(result.reason))
+                is EditorResult.Failure -> {
+                    _effects.emit(AccountsEffect.ShowDeleteError(result.reason))
+                }
             }
         }
     }
@@ -85,7 +88,9 @@ class AccountsViewModel(
                 _effects.emit(AccountsEffect.AccountDeleted(result.value))
             }
 
-            is EditorResult.Failure -> _effects.emit(AccountsEffect.ShowDeleteError(result.reason))
+            is EditorResult.Failure -> {
+                _effects.emit(AccountsEffect.ShowDeleteError(result.reason))
+            }
         }
     }
 
@@ -153,7 +158,13 @@ class AccountsViewModel(
                         initialRefreshCompleted = true
                         val hasVisibleCache =
                             _state.value.isRefreshable() || latestSummary?.accounts?.isNotEmpty() == true
-                        if (hasVisibleCache) {
+                        if (
+                            result.reason == FinanceFailureReason.Network &&
+                            result.hasUsableCache &&
+                            latestSummary != null
+                        ) {
+                            renderSummary(isRefreshing = false)
+                        } else if (hasVisibleCache) {
                             renderSummary(isRefreshing = false)
                             _effects.emit(AccountsEffect.ShowError(result.reason))
                         } else {

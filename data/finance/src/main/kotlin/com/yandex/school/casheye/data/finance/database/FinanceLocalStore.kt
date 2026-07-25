@@ -44,6 +44,8 @@ interface FinanceLocalStore {
 
     suspend fun getCategories(isIncome: Boolean): List<Category>
 
+    suspend fun hasUsableCache(): Boolean
+
     suspend fun getTransaction(id: Int): Transaction?
 
     suspend fun getTransactions(
@@ -143,6 +145,8 @@ class RoomFinanceLocalStore(
 
     override suspend fun getCategories(isIncome: Boolean): List<Category> =
         database.categoryDao().getByType(isIncome).map { it.toDomain() }
+
+    override suspend fun hasUsableCache(): Boolean = database.categoryDao().count() > 0
 
     override suspend fun getTransaction(id: Int): Transaction? = database.transactionDao().getById(id)?.toDomain()
 

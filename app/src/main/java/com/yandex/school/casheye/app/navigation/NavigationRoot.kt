@@ -53,7 +53,6 @@ fun NavigationRoot(
     var previousOnline by rememberSaveable { mutableStateOf<Boolean?>(null) }
     var networkRefreshKey by rememberSaveable { mutableLongStateOf(0) }
     val offlineMessage = stringResource(R.string.network_offline_message)
-    val restoredMessage = stringResource(R.string.network_restored_message)
 
     LaunchedEffect(isOnline) {
         val wasOnline = previousOnline
@@ -61,15 +60,9 @@ fun NavigationRoot(
         if (isOnline && wasOnline == false) {
             networkRefreshKey++
         }
-        val message =
-            when {
-                !isOnline && wasOnline != false -> offlineMessage
-                isOnline && wasOnline == false -> restoredMessage
-                else -> null
-            }
-        if (message != null) {
+        if (!isOnline && wasOnline != false) {
             snackbarHostState.showSnackbar(
-                message = message,
+                message = offlineMessage,
                 duration = SnackbarDuration.Long,
             )
         }

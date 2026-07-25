@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.yandex.school.casheye.domain.finance.DeleteTransactionUseCase
 import com.yandex.school.casheye.domain.finance.EditorResult
+import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import com.yandex.school.casheye.domain.finance.FinanceLoadResult
 import com.yandex.school.casheye.domain.finance.FinanceRefreshResult
 import com.yandex.school.casheye.domain.finance.FinanceSummary
@@ -66,7 +67,9 @@ class IncomeViewModel(
                     _effects.emit(IncomeEffect.TransactionDeleted)
                 }
 
-                is EditorResult.Failure -> _effects.emit(IncomeEffect.ShowDeleteError(result.reason))
+                is EditorResult.Failure -> {
+                    _effects.emit(IncomeEffect.ShowDeleteError(result.reason))
+                }
             }
         }
     }
@@ -146,7 +149,13 @@ class IncomeViewModel(
                         initialRefreshCompleted = true
                         val hasVisibleCache =
                             _state.value.isRefreshable() || latestSummary?.transactions?.isNotEmpty() == true
-                        if (hasVisibleCache) {
+                        if (
+                            result.reason == FinanceFailureReason.Network &&
+                            result.hasUsableCache &&
+                            latestSummary != null
+                        ) {
+                            renderSummary(isRefreshing = false)
+                        } else if (hasVisibleCache) {
                             renderSummary(isRefreshing = false)
                             _effects.emit(IncomeEffect.ShowError(result.reason))
                         } else {
