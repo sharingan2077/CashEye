@@ -1,5 +1,6 @@
 package com.yandex.school.casheye.core.designsystem.component
 
+import androidx.activity.compose.BackHandler
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.animation.animateContentSize
@@ -140,7 +141,6 @@ fun TransactionEditorSheet(
 ) {
     var nested by remember { mutableStateOf<TransactionNestedSheet?>(null) }
     var shouldRequestAmountFocus by remember { mutableStateOf(true) }
-    var interceptedDismiss by remember { mutableStateOf(false) }
     val transactionIsValid = amount.isNotBlank() && category != null && account != null
     val dateFormatter = rememberEditorDateFormatter()
     val currentNested by rememberUpdatedState(nested)
@@ -150,32 +150,23 @@ fun TransactionEditorSheet(
             confirmValueChange = { target ->
                 if (target == SheetValue.Hidden && currentNested.isSheetContent) {
                     nested = null
-                    interceptedDismiss = true
                     false
                 } else {
                     true
                 }
             },
         )
-    LaunchedEffect(interceptedDismiss) {
-        if (interceptedDismiss) {
-            awaitFrame()
-            interceptedDismiss = false
-        }
-    }
-
     EditorModalSheet(
         sheetState = sheetState,
         onDismiss = {
-            if (interceptedDismiss) {
-                interceptedDismiss = false
-            } else if (nested.isSheetContent) {
+            if (nested.isSheetContent) {
                 nested = null
             } else {
                 onDismiss()
             }
         },
     ) {
+        BackHandler(enabled = nested.isSheetContent) { nested = null }
         when (nested) {
             TransactionNestedSheet.Category -> {
                 EditorOptionContent(
@@ -461,7 +452,7 @@ private fun EditorAmountField(
                     modifier =
                         Modifier
                             .width(IntrinsicSize.Min)
-                            .widthIn(min = 2.dp)
+                            .widthIn(min = 16.dp)
                             .padding(horizontal = 1.dp)
                             .focusRequester(focusRequester),
                     singleLine = true,

@@ -1,5 +1,6 @@
 package com.yandex.school.casheye.core.designsystem.component
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,7 +12,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -21,7 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.yandex.school.casheye.core.designsystem.R
-import kotlinx.coroutines.android.awaitFrame
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,7 +39,6 @@ fun AccountEditorSheet(
 ) {
     var nested by remember { mutableStateOf<AccountNestedSheet?>(null) }
     var shouldRequestAmountFocus by remember { mutableStateOf(true) }
-    var interceptedDismiss by remember { mutableStateOf(false) }
     val currentNested by rememberUpdatedState(nested)
     val sheetState =
         rememberModalBottomSheetState(
@@ -48,32 +46,23 @@ fun AccountEditorSheet(
             confirmValueChange = { target ->
                 if (target == SheetValue.Hidden && currentNested != null) {
                     nested = null
-                    interceptedDismiss = true
                     false
                 } else {
                     true
                 }
             },
         )
-    LaunchedEffect(interceptedDismiss) {
-        if (interceptedDismiss) {
-            awaitFrame()
-            interceptedDismiss = false
-        }
-    }
-
     EditorModalSheet(
         sheetState = sheetState,
         onDismiss = {
-            if (interceptedDismiss) {
-                interceptedDismiss = false
-            } else if (nested != null) {
+            if (nested != null) {
                 nested = null
             } else {
                 onDismiss()
             }
         },
     ) {
+        BackHandler(enabled = nested != null) { nested = null }
         when (nested) {
             AccountNestedSheet.Name ->
                 EditorTextContent(
