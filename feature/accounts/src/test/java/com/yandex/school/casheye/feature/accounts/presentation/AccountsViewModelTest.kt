@@ -18,6 +18,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -160,6 +161,34 @@ class AccountsViewModelTest {
             refresh.complete(FinanceRefreshResult.Success)
             advanceUntilIdle()
             assertEquals(false, (viewModel.state.value as AccountsUiState.Content).isRefreshing)
+        }
+
+    @Test
+    fun `network failure waits for cached accounts before deciding error`() =
+        runTest {
+            val cacheReady = CompletableDeferred<Unit>()
+            val repository =
+                object : FinanceRepository {
+                    override fun observeAccounts(): Flow<List<Account>> =
+                        flow {
+                            cacheReady.await()
+                            emit(listOf(account()))
+                        }
+
+                    override suspend fun refreshAccounts(): FinanceRefreshResult =
+                        FinanceRefreshResult.Failure(FinanceFailureReason.Network)
+                }
+            val viewModel = accountsViewModel(repository)
+
+            runCurrent()
+            assertEquals(AccountsUiState.Loading, viewModel.state.value)
+
+            val effect = async(start = CoroutineStart.UNDISPATCHED) { viewModel.effects.first() }
+            cacheReady.complete(Unit)
+            advanceUntilIdle()
+
+            assertTrue(viewModel.state.value is AccountsUiState.Content)
+            assertEquals(AccountsEffect.ShowError(FinanceFailureReason.Network), effect.await())
         }
 
     @Test

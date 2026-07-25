@@ -10,6 +10,7 @@ import com.yandex.school.casheye.domain.finance.FinanceRefreshResult
 import com.yandex.school.casheye.domain.finance.GetAccountTransactionCountUseCase
 import com.yandex.school.casheye.domain.finance.GetAccountsUseCase
 import dev.zacsweers.metro.Inject
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,6 +37,7 @@ class AccountsViewModel(
     private var refreshJob: Job? = null
     private var latestSummary: AccountsSummary? = null
     private var initialRefreshCompleted = false
+    private var localObservationReady = CompletableDeferred<Unit>()
 
     init {
         observeAccounts()
@@ -111,9 +113,11 @@ class AccountsViewModel(
 
     private fun observeAccounts() {
         observeJob?.cancel()
+        val observationReady = localObservationReady
         observeJob =
             viewModelScope.launch {
                 getAccounts(currencyCode = CURRENCY_RUB).collectLatest { result ->
+                    observationReady.complete(Unit)
                     when (result) {
                         is AccountsLoadResult.Success -> {
                             latestSummary = result.summary
@@ -132,6 +136,7 @@ class AccountsViewModel(
 
     private fun refreshAccounts() {
         refreshJob?.cancel()
+        val observationReady = localObservationReady
         if (_state.value.isRefreshable()) {
             _state.value = _state.value.withRefreshing(true)
         }
@@ -144,6 +149,7 @@ class AccountsViewModel(
                     }
 
                     is FinanceRefreshResult.Failure -> {
+                        observationReady.await()
                         initialRefreshCompleted = true
                         val hasVisibleCache =
                             _state.value.isRefreshable() || latestSummary?.accounts?.isNotEmpty() == true

@@ -10,6 +10,7 @@ import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import com.yandex.school.casheye.domain.finance.FinanceRefreshResult
 import com.yandex.school.casheye.domain.finance.GetAnalyticsUseCase
 import dev.zacsweers.metro.Inject
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -46,6 +47,7 @@ class AnalyticsViewModel(
     private var refreshJob: Job? = null
     private var latestSummary: AnalyticsSummary? = null
     private var initialRefreshCompleted = false
+    private var localObservationReady = CompletableDeferred<Unit>()
 
     @Suppress("CyclomaticComplexMethod")
     fun onIntent(intent: AnalyticsIntent) {
@@ -228,10 +230,13 @@ class AnalyticsViewModel(
         refreshJob?.cancel()
         latestSummary = null
         initialRefreshCompleted = false
+        localObservationReady = CompletableDeferred()
         _state.value = AnalyticsUiState.Loading(screenData)
+        val observationReady = localObservationReady
         observeJob =
             viewModelScope.launch {
                 getAnalytics(query).collectLatest { result ->
+                    observationReady.complete(Unit)
                     when (result) {
                         is AnalyticsLoadResult.Success -> {
                             latestSummary = result.summary
@@ -251,6 +256,7 @@ class AnalyticsViewModel(
 
     private fun refreshAnalytics(query: AnalyticsQuery) {
         refreshJob?.cancel()
+        val observationReady = localObservationReady
         if (_state.value.isRefreshable()) {
             _state.value = _state.value.withRefreshing(true)
         }
@@ -262,7 +268,7 @@ class AnalyticsViewModel(
                         renderSummary(isRefreshing = false)
                     }
 
-                    is FinanceRefreshResult.Failure -> handleRefreshFailure(result.reason)
+                    is FinanceRefreshResult.Failure -> handleRefreshFailure(result.reason, observationReady)
                 }
             }
     }
@@ -291,7 +297,11 @@ class AnalyticsViewModel(
             }
     }
 
-    private suspend fun handleRefreshFailure(reason: FinanceFailureReason) {
+    private suspend fun handleRefreshFailure(
+        reason: FinanceFailureReason,
+        observationReady: CompletableDeferred<Unit>,
+    ) {
+        observationReady.await()
         initialRefreshCompleted = true
         val hasVisibleCache = _state.value.isRefreshable() || latestSummary?.transactions?.isNotEmpty() == true
         if (hasVisibleCache) {

@@ -20,6 +20,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -202,6 +203,43 @@ class ExpensesViewModelTest {
             refresh.complete(FinanceRefreshResult.Success)
             advanceUntilIdle()
             assertEquals(false, (viewModel.state.value as ExpensesUiState.Content).isRefreshing)
+        }
+
+    @Test
+    fun `network failure waits for cached expenses before deciding error`() =
+        runTest {
+            val cached = transaction()
+            val cacheReady = CompletableDeferred<Unit>()
+            val repository =
+                object : FinanceRepository {
+                    override fun observeAccounts(): Flow<List<Account>> =
+                        flow {
+                            cacheReady.await()
+                            emit(listOf(cached.account))
+                        }
+
+                    override fun observeTransactions(query: TransactionsQuery): Flow<List<Transaction>> =
+                        flow {
+                            cacheReady.await()
+                            emit(listOf(cached))
+                        }
+
+                    override suspend fun refreshPeriod(
+                        startDate: LocalDate,
+                        endDate: LocalDate,
+                    ): FinanceRefreshResult = FinanceRefreshResult.Failure(FinanceFailureReason.Network)
+                }
+            val viewModel = expensesViewModel(repository, clock)
+
+            runCurrent()
+            assertEquals(ExpensesUiState.Loading, viewModel.state.value)
+
+            val effect = async(start = CoroutineStart.UNDISPATCHED) { viewModel.effects.first() }
+            cacheReady.complete(Unit)
+            advanceUntilIdle()
+
+            assertTrue(viewModel.state.value is ExpensesUiState.Content)
+            assertEquals(ExpensesEffect.ShowError(FinanceFailureReason.Network), effect.await())
         }
 
     @Test

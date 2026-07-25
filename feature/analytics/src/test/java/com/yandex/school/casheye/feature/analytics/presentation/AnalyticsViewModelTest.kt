@@ -18,6 +18,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -291,6 +292,44 @@ class AnalyticsViewModelTest {
             refresh.complete(FinanceRefreshResult.Success)
             advanceUntilIdle()
             assertEquals(false, (viewModel.state.value as AnalyticsUiState.Content).isRefreshing)
+        }
+
+    @Test
+    fun `network failure waits for cached analytics before deciding error`() =
+        runTest {
+            val cached = transaction(id = 1, categoryId = 10, amount = "3")
+            val cacheReady = CompletableDeferred<Unit>()
+            val repository =
+                object : FinanceRepository {
+                    override fun observeAccounts(): Flow<List<Account>> =
+                        flow {
+                            cacheReady.await()
+                            emit(listOf(cached.account))
+                        }
+
+                    override fun observeTransactions(query: TransactionsQuery): Flow<List<Transaction>> =
+                        flow {
+                            cacheReady.await()
+                            emit(listOf(cached))
+                        }
+
+                    override suspend fun refreshPeriod(
+                        startDate: LocalDate,
+                        endDate: LocalDate,
+                    ): FinanceRefreshResult = FinanceRefreshResult.Failure(FinanceFailureReason.Network)
+                }
+            val viewModel = AnalyticsViewModel(GetAnalyticsUseCase(repository), clock)
+            viewModel.onIntent(AnalyticsIntent.Initialize(AnalyticsEntryPoint.Expenses))
+
+            runCurrent()
+            assertTrue(viewModel.state.value is AnalyticsUiState.Loading)
+
+            val effect = async(start = CoroutineStart.UNDISPATCHED) { viewModel.effects.first() }
+            cacheReady.complete(Unit)
+            advanceUntilIdle()
+
+            assertTrue(viewModel.state.value is AnalyticsUiState.Content)
+            assertEquals(AnalyticsEffect.ShowError(FinanceFailureReason.Network), effect.await())
         }
 
     @Test

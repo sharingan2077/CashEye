@@ -10,6 +10,7 @@ import com.yandex.school.casheye.domain.finance.FinanceSummary
 import com.yandex.school.casheye.domain.finance.GetDailySummaryUseCase
 import com.yandex.school.casheye.domain.finance.TransactionKind
 import dev.zacsweers.metro.Inject
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -39,6 +40,7 @@ class IncomeViewModel(
     private var refreshJob: Job? = null
     private var latestSummary: FinanceSummary? = null
     private var initialRefreshCompleted = false
+    private var localObservationReady = CompletableDeferred<Unit>()
 
     private var selectedDate = LocalDate.now(clock)
 
@@ -92,6 +94,7 @@ class IncomeViewModel(
         selectedDate = selectableDate
         latestSummary = null
         initialRefreshCompleted = false
+        localObservationReady = CompletableDeferred()
         _state.value = IncomeUiState.Loading
         observeIncome(selectedDate)
         refreshIncome(selectedDate)
@@ -99,6 +102,7 @@ class IncomeViewModel(
 
     private fun observeIncome(date: LocalDate) {
         observeJob?.cancel()
+        val observationReady = localObservationReady
         observeJob =
             viewModelScope.launch {
                 getIncome(
@@ -106,6 +110,7 @@ class IncomeViewModel(
                     currencyCode = CURRENCY_CODE,
                     transactionKind = TransactionKind.Income,
                 ).collectLatest { result ->
+                    observationReady.complete(Unit)
                     when (result) {
                         is FinanceLoadResult.Success -> {
                             latestSummary = result.summary
@@ -124,6 +129,7 @@ class IncomeViewModel(
 
     private fun refreshIncome(date: LocalDate) {
         refreshJob?.cancel()
+        val observationReady = localObservationReady
         if (_state.value.isRefreshable()) {
             _state.value = _state.value.withRefreshing(true)
         }
@@ -136,6 +142,7 @@ class IncomeViewModel(
                     }
 
                     is FinanceRefreshResult.Failure -> {
+                        observationReady.await()
                         initialRefreshCompleted = true
                         val hasVisibleCache =
                             _state.value.isRefreshable() || latestSummary?.transactions?.isNotEmpty() == true
