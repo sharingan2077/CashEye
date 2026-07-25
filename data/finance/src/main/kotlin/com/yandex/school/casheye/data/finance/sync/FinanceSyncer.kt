@@ -9,6 +9,7 @@ import com.yandex.school.casheye.data.finance.database.model.AccountCommandSnaps
 import com.yandex.school.casheye.data.finance.database.model.TransactionCommandSnapshot
 import com.yandex.school.casheye.data.finance.dto.AccountRequestDto
 import com.yandex.school.casheye.data.finance.dto.TransactionRequestDto
+import com.yandex.school.casheye.data.finance.network.ServerRetryPolicy
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
@@ -43,6 +44,7 @@ class FinanceSyncer internal constructor(
     private val waitBeforeRetry: suspend (Long) -> Unit = { delay(it) },
 ) {
     private val mutex = Mutex()
+    private val retryPolicy = ServerRetryPolicy(waitBeforeRetry)
 
     suspend fun sync(): FinanceSyncResult = mutex.withLock { syncLocked() }
 
@@ -98,10 +100,10 @@ class FinanceSyncer internal constructor(
                 currency = snapshot.currency,
             )
         if (batch.isCreate) {
-            val response = withServerRetry { api.createAccount(request) }
+            val response = retryPolicy.execute { api.createAccount(request) }
             store.completeAccountCreate(batch.operations, response)
         } else {
-            val response = withServerRetry { api.updateAccount(snapshot.id, request) }
+            val response = retryPolicy.execute { api.updateAccount(snapshot.id, request) }
             store.completeAccountUpdate(batch.operations, response)
         }
     }
@@ -122,24 +124,24 @@ class FinanceSyncer internal constructor(
                 comment = snapshot.comment,
             )
         if (batch.isCreate) {
-            val response = withServerRetry { api.createTransaction(request) }
+            val response = retryPolicy.execute { api.createTransaction(request) }
             store.completeTransactionCreate(batch.operations, response)
         } else {
-            val response = withServerRetry { api.updateTransaction(snapshot.id, request) }
+            val response = retryPolicy.execute { api.updateTransaction(snapshot.id, request) }
             store.completeTransactionUpdate(batch.operations, response)
         }
     }
 
     private suspend fun refreshAllHistory() {
         val today = LocalDate.now(clock)
-        val accounts = withServerRetry { api.getAccounts() }
+        val accounts = retryPolicy.execute { api.getAccounts() }
         val categories =
-            withServerRetry { api.getCategories(true) } +
-                withServerRetry { api.getCategories(false) }
+            retryPolicy.execute { api.getCategories(true) } +
+                retryPolicy.execute { api.getCategories(false) }
         val transactions =
             accounts.flatMap { account ->
                 val startDate = account.createdAt.atZone(clock.zone).toLocalDate().coerceAtMost(today)
-                withServerRetry {
+                retryPolicy.execute {
                     api.getTransactions(account.id, startDate.toString(), today.toString())
                 }
             }
@@ -157,21 +159,9 @@ class FinanceSyncer internal constructor(
         )
     }
 
-    private suspend fun <T> withServerRetry(block: suspend () -> T): T {
-        repeat(MAX_SERVER_ATTEMPTS - 1) {
-            try {
-                return block()
-            } catch (error: HttpException) {
-                if (error.code() !in SERVER_ERROR_RANGE) throw error
-                waitBeforeRetry(RETRY_DELAY_MILLIS)
-            }
-        }
-        return block()
-    }
-
     private suspend fun deleteIfPresent(block: suspend () -> Unit) {
         try {
-            withServerRetry(block)
+            retryPolicy.execute(block)
         } catch (error: HttpException) {
             if (error.code() != HTTP_NOT_FOUND) throw error
         }
@@ -209,8 +199,6 @@ class FinanceSyncer internal constructor(
             }
 
     private companion object {
-        const val MAX_SERVER_ATTEMPTS = 3
-        const val RETRY_DELAY_MILLIS = 2_000L
         const val TRANSACTION_DELETE_PRIORITY = 0
         const val ACCOUNT_DELETE_PRIORITY = 1
         const val ACCOUNT_WRITE_PRIORITY = 2

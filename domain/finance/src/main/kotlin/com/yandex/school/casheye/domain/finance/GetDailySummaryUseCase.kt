@@ -1,51 +1,50 @@
 package com.yandex.school.casheye.domain.finance
 
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
 import java.math.BigDecimal
 import java.time.LocalDate
 
 class GetDailySummaryUseCase(
     private val repository: FinanceRepository,
 ) {
-    suspend operator fun invoke(
+    operator fun invoke(
         date: LocalDate,
         currencyCode: String,
         transactionKind: TransactionKind,
-    ): FinanceLoadResult {
-        val accounts =
-            when (val result = repository.getAccounts()) {
-                is FinanceDataLoadResult.Success -> result.data
-                is FinanceDataLoadResult.Failure -> return FinanceLoadResult.Failure(result.reason)
-            }
-
-        val transactions =
-            repository.getTransactions(
+    ): Flow<FinanceLoadResult> =
+        combine(
+            repository.observeAccounts(),
+            repository.observeTransactions(
                 TransactionsQuery(
-                    accountIds = accounts.mapTo(mutableSetOf()) { it.id },
+                    accountIds = emptySet(),
                     startDate = date,
                     endDate = date,
                 ),
-            )
-        val transactionList =
-            when (transactions) {
-                is FinanceDataLoadResult.Success -> transactions.data
-                is FinanceDataLoadResult.Failure -> return FinanceLoadResult.Failure(transactions.reason)
-            }
-
-        val finance =
-            transactionList
-                .filter { transaction ->
-                    when (transactionKind) {
-                        TransactionKind.Income -> transaction.category.isIncome
-                        TransactionKind.Expense -> !transaction.category.isIncome
-                    }
-                }.sortedByDescending { it.transactionDate }
-
-        return FinanceLoadResult.Success(
-            FinanceSummary(
-                total = finance.fold(BigDecimal.ZERO) { total, transaction -> total + transaction.amount },
-                currencyCode = currencyCode,
-                transactions = finance,
             ),
-        )
-    }
+        ) { accounts, transactions ->
+            val accountIds = accounts.mapTo(mutableSetOf()) { it.id }
+            val finance =
+                transactions
+                    .filter { transaction ->
+                        transaction.account.id in accountIds &&
+                            when (transactionKind) {
+                                TransactionKind.Income -> transaction.category.isIncome
+                                TransactionKind.Expense -> !transaction.category.isIncome
+                            }
+                    }.sortedByDescending { it.transactionDate }
+
+            val result: FinanceLoadResult =
+                FinanceLoadResult.Success(
+                    FinanceSummary(
+                        total = finance.fold(BigDecimal.ZERO) { total, transaction -> total + transaction.amount },
+                        currencyCode = currencyCode,
+                        transactions = finance,
+                    ),
+                )
+            result
+        }.catch { emit(FinanceLoadResult.Failure(FinanceFailureReason.Unknown)) }
+
+    suspend fun refresh(date: LocalDate): FinanceRefreshResult = repository.refreshPeriod(date, date)
 }

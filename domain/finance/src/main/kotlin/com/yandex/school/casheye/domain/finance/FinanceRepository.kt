@@ -3,10 +3,24 @@ package com.yandex.school.casheye.domain.finance
 import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.Category
 import com.yandex.school.casheye.core.model.Transaction
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import java.math.BigDecimal
 import java.time.LocalDate
 
 interface FinanceRepository {
+    fun observeAccounts(): Flow<List<Account>> = flowOf(emptyList())
+
+    fun observeTransactions(query: TransactionsQuery): Flow<List<Transaction>> = flowOf(emptyList())
+
+    suspend fun refreshAccounts(): FinanceRefreshResult =
+        FinanceRefreshResult.Failure(FinanceFailureReason.Unknown)
+
+    suspend fun refreshPeriod(
+        startDate: LocalDate,
+        endDate: LocalDate,
+    ): FinanceRefreshResult = FinanceRefreshResult.Failure(FinanceFailureReason.Unknown)
+
     suspend fun getAccounts(): FinanceDataLoadResult<List<Account>>
 
     suspend fun getTransactions(query: TransactionsQuery): FinanceDataLoadResult<List<Transaction>>
@@ -48,6 +62,14 @@ sealed interface FinanceDataLoadResult<out T> {
     data class Failure(
         val reason: FinanceFailureReason,
     ) : FinanceDataLoadResult<Nothing>
+}
+
+sealed interface FinanceRefreshResult {
+    data object Success : FinanceRefreshResult
+
+    data class Failure(
+        val reason: FinanceFailureReason,
+    ) : FinanceRefreshResult
 }
 
 data class AnalyticsQuery(

@@ -8,10 +8,12 @@ import com.yandex.school.casheye.data.finance.database.FinanceLocalStore
 import com.yandex.school.casheye.data.finance.dto.AccountDto
 import com.yandex.school.casheye.data.finance.dto.CategoryDto
 import com.yandex.school.casheye.data.finance.dto.TransactionResponseDto
+import com.yandex.school.casheye.data.finance.network.ServerRetryPolicy
 import com.yandex.school.casheye.data.finance.sync.FinanceSyncScheduler
 import com.yandex.school.casheye.domain.finance.EditorResult
 import com.yandex.school.casheye.domain.finance.FinanceDataLoadResult
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
+import com.yandex.school.casheye.domain.finance.FinanceRefreshResult
 import com.yandex.school.casheye.domain.finance.FinanceRepository
 import com.yandex.school.casheye.domain.finance.SaveAccountCommand
 import com.yandex.school.casheye.domain.finance.SaveTransactionCommand
@@ -22,6 +24,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import retrofit2.HttpException
 import java.io.IOException
@@ -34,12 +39,43 @@ class FinanceRepositoryImpl(
     private val localStore: FinanceLocalStore,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val syncScheduler: FinanceSyncScheduler = NoOpFinanceSyncScheduler,
+    waitBeforeRetry: suspend (Long) -> Unit = { delay(it) },
 ) : FinanceRepository {
+    private val retryPolicy = ServerRetryPolicy(waitBeforeRetry)
+
+    override fun observeAccounts(): Flow<List<Account>> = localStore.observeAccounts()
+
+    override fun observeTransactions(query: TransactionsQuery): Flow<List<Transaction>> {
+        val period = query.startDate.toPeriod(query.endDate)
+        return localStore
+            .observeTransactions(null, period.start, period.end)
+            .map { transactions ->
+                if (query.accountIds.isEmpty()) {
+                    transactions
+                } else {
+                    transactions.filter { it.account.id in query.accountIds }
+                }
+            }
+    }
+
+    override suspend fun refreshAccounts(): FinanceRefreshResult =
+        refreshCatching {
+            localStore.refreshAccounts(retryPolicy.execute { api.getAccounts() })
+        }
+
+    override suspend fun refreshPeriod(
+        startDate: LocalDate,
+        endDate: LocalDate,
+    ): FinanceRefreshResult =
+        refreshCatching {
+            loadRemotePeriod(startDate.toPeriod(endDate))
+        }
+
     override suspend fun getAccounts(): FinanceDataLoadResult<List<Account>> =
         withContext(ioDispatcher) {
             val refreshFailure =
                 try {
-                    localStore.refreshAccounts(api.getAccounts())
+                    localStore.refreshAccounts(retryPolicy.execute { api.getAccounts() })
                     null
                 } catch (error: CancellationException) {
                     throw error
@@ -62,7 +98,7 @@ class FinanceRepositoryImpl(
 
     override suspend fun getCategories(isIncome: Boolean): EditorResult<List<Category>> =
         localFirstEditorRequest(
-            refresh = { localStore.refreshCategories(api.getCategories(isIncome)) },
+            refresh = { localStore.refreshCategories(retryPolicy.execute { api.getCategories(isIncome) }) },
             read = { localStore.getCategories(isIncome) },
             hasCache = { it.isNotEmpty() },
         )
@@ -70,7 +106,7 @@ class FinanceRepositoryImpl(
     override suspend fun getTransaction(id: Int): EditorResult<Transaction> =
         editorRequest(ioDispatcher) {
             localStore.getTransaction(id)
-                ?: api.getTransaction(id).also { localStore.cacheTransaction(it) }.let {
+                ?: retryPolicy.execute { api.getTransaction(id) }.also { localStore.cacheTransaction(it) }.let {
                     checkNotNull(localStore.getTransaction(it.id))
                 }
         }
@@ -90,7 +126,7 @@ class FinanceRepositoryImpl(
     override suspend fun getAccount(id: Int): EditorResult<Account> =
         editorRequest(ioDispatcher) {
             localStore.getAccount(id)
-                ?: api.getAccount(id).also { localStore.cacheAccount(it) }.let {
+                ?: retryPolicy.execute { api.getAccount(id) }.also { localStore.cacheAccount(it) }.let {
                     checkNotNull(localStore.getAccount(it.id))
                 }
         }
@@ -105,12 +141,13 @@ class FinanceRepositoryImpl(
         editorRequest(ioDispatcher) {
             if (id > 0) {
                 try {
-                    api
-                        .getTransactions(
+                    retryPolicy.execute {
+                        api.getTransactions(
                             accountId = id,
                             startDate = EARLIEST_TRANSACTION_DATE,
                             endDate = LocalDate.now().toString(),
-                        ).forEach { localStore.cacheTransaction(it) }
+                        )
+                    }.forEach { localStore.cacheTransaction(it) }
                 } catch (error: CancellationException) {
                     throw error
                 } catch (_: Exception) {
@@ -128,7 +165,11 @@ class FinanceRepositoryImpl(
     override suspend fun getTransactions(query: TransactionsQuery): FinanceDataLoadResult<List<Transaction>> =
         withContext(ioDispatcher) {
             val period = query.startDate.toPeriod(query.endDate)
-            val refreshFailure = refreshPeriodCatching(period)
+            val refreshFailure =
+                when (val refresh = refreshPeriod(query.startDate, query.endDate)) {
+                    FinanceRefreshResult.Success -> null
+                    is FinanceRefreshResult.Failure -> refresh.reason
+                }
             try {
                 val accounts = localStore.getAccounts()
                 val transactions =
@@ -147,29 +188,33 @@ class FinanceRepositoryImpl(
             }
         }
 
-    private suspend fun refreshPeriodCatching(period: InstantPeriod): FinanceFailureReason? =
+    private suspend fun refreshCatching(block: suspend () -> Unit): FinanceRefreshResult =
         try {
-            refreshPeriod(period)
-            null
+            withContext(ioDispatcher) { block() }
+            FinanceRefreshResult.Success
         } catch (error: CancellationException) {
             throw error
         } catch (error: Exception) {
-            error.toFailureReason()
+            FinanceRefreshResult.Failure(error.toFailureReason())
         }
 
-    private suspend fun refreshPeriod(period: InstantPeriod) {
+    private suspend fun loadRemotePeriod(period: InstantPeriod) {
         val requestStart = period.startDate.toString()
         val requestEnd = period.endDate.toString()
         val snapshot =
             coroutineScope {
-                val accounts = async { api.getAccounts() }
-                val incomeCategories = async { api.getCategories(true) }
-                val expenseCategories = async { api.getCategories(false) }
+                val accounts = async { retryPolicy.execute { api.getAccounts() } }
+                val incomeCategories = async { retryPolicy.execute { api.getCategories(true) } }
+                val expenseCategories = async { retryPolicy.execute { api.getCategories(false) } }
                 val loadedAccounts = accounts.await()
                 val transactions =
                     loadedAccounts
                         .map { account ->
-                            async { api.getTransactions(account.id, requestStart, requestEnd) }
+                            async {
+                                retryPolicy.execute {
+                                    api.getTransactions(account.id, requestStart, requestEnd)
+                                }
+                            }
                         }.awaitAll()
                         .flatten()
                 RemoteSnapshot(

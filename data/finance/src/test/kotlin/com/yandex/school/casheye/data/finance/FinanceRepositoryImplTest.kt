@@ -17,10 +17,14 @@ import com.yandex.school.casheye.data.finance.sync.FinanceSyncScheduler
 import com.yandex.school.casheye.domain.finance.EditorResult
 import com.yandex.school.casheye.domain.finance.FinanceDataLoadResult
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
+import com.yandex.school.casheye.domain.finance.FinanceRefreshResult
 import com.yandex.school.casheye.domain.finance.SaveAccountCommand
 import com.yandex.school.casheye.domain.finance.SaveTransactionCommand
 import com.yandex.school.casheye.domain.finance.TransactionsQuery
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
@@ -35,6 +39,54 @@ import java.time.LocalDate
 import java.util.Collections
 
 class FinanceRepositoryImplTest {
+    @Test
+    fun `accounts observer returns cache without waiting for api`() =
+        runBlocking {
+            val cached = Account(7, "Cached", "💳", BigDecimal("25.00"), "RUB")
+            val repository =
+                FinanceRepositoryImpl(
+                    ThrowingFinanceApi(IOException("offline")),
+                    FakeFinanceLocalStore(initialAccounts = listOf(cached)),
+                    Dispatchers.Unconfined,
+                )
+
+            assertEquals(listOf(cached), repository.observeAccounts().first())
+        }
+
+    @Test
+    fun `successful accounts refresh updates observed cache`() =
+        runBlocking {
+            val localStore = FakeFinanceLocalStore()
+            val repository =
+                FinanceRepositoryImpl(
+                    FakeFinanceApi(listOf(accountDto(1)), emptyMap()),
+                    localStore,
+                    Dispatchers.Unconfined,
+                )
+
+            assertEquals(FinanceRefreshResult.Success, repository.refreshAccounts())
+
+            assertEquals(listOf(1), repository.observeAccounts().first().map { it.id })
+        }
+
+    @Test
+    fun `failed accounts refresh preserves observed cache`() =
+        runBlocking {
+            val cached = Account(7, "Cached", "💳", BigDecimal("25.00"), "RUB")
+            val repository =
+                FinanceRepositoryImpl(
+                    ThrowingFinanceApi(IOException("offline")),
+                    FakeFinanceLocalStore(initialAccounts = listOf(cached)),
+                    Dispatchers.Unconfined,
+                )
+
+            assertEquals(
+                FinanceRefreshResult.Failure(FinanceFailureReason.Network),
+                repository.refreshAccounts(),
+            )
+            assertEquals(listOf(cached), repository.observeAccounts().first())
+        }
+
     @Test
     fun `cached accounts are returned when refresh is offline`() =
         runBlocking {
@@ -239,9 +291,10 @@ class FinanceRepositoryImplTest {
                         ),
                     failingAccountId = 2,
                 )
+            val localStore = FakeFinanceLocalStore()
 
             val result =
-                repository(api).getTransactions(
+                repository(api, localStore).getTransactions(
                     TransactionsQuery(setOf(1, 2), LocalDate.of(2026, 7, 17), LocalDate.of(2026, 7, 17)),
                 )
 
@@ -249,45 +302,61 @@ class FinanceRepositoryImplTest {
                 FinanceDataLoadResult.Failure(FinanceFailureReason.Network),
                 result,
             )
+            assertEquals(0, localStore.periodRefreshes)
         }
 }
 
 private fun repository(
     api: FinanceApi,
     localStore: FinanceLocalStore = FakeFinanceLocalStore(),
-): FinanceRepositoryImpl = FinanceRepositoryImpl(api, localStore, Dispatchers.Unconfined)
+): FinanceRepositoryImpl =
+    FinanceRepositoryImpl(
+        api,
+        localStore,
+        Dispatchers.Unconfined,
+        waitBeforeRetry = {},
+    )
 
 private class FakeFinanceLocalStore(
     initialAccounts: List<Account> = emptyList(),
 ) : FinanceLocalStore {
-    private var accounts: List<Account> = initialAccounts
+    private val accounts = MutableStateFlow(initialAccounts)
     private var categories: List<Category> = emptyList()
-    private var transactions: List<Transaction> = emptyList()
+    private val transactions = MutableStateFlow<List<Transaction>>(emptyList())
     var savedTransaction: SaveTransactionCommand? = null
     var savedAccount: SaveAccountCommand? = null
+    var periodRefreshes: Int = 0
 
-    override suspend fun getAccounts(): List<Account> = accounts
+    override fun observeAccounts(): Flow<List<Account>> = accounts
 
-    override suspend fun getAccount(id: Int): Account? = accounts.firstOrNull { it.id == id }
+    override fun observeTransactions(
+        accountId: Int?,
+        startInclusive: Instant,
+        endInclusive: Instant,
+    ): Flow<List<Transaction>> = transactions
+
+    override suspend fun getAccounts(): List<Account> = accounts.value
+
+    override suspend fun getAccount(id: Int): Account? = accounts.value.firstOrNull { it.id == id }
 
     override suspend fun getCategories(isIncome: Boolean): List<Category> =
         categories.filter { it.isIncome == isIncome }
 
-    override suspend fun getTransaction(id: Int): Transaction? = transactions.firstOrNull { it.id == id }
+    override suspend fun getTransaction(id: Int): Transaction? = transactions.value.firstOrNull { it.id == id }
 
     override suspend fun getTransactions(
         accountId: Int?,
         startInclusive: Instant,
         endInclusive: Instant,
     ): List<Transaction> =
-        transactions.filter {
+        transactions.value.filter {
             (accountId == null || it.account.id == accountId) &&
                 it.transactionDate >= startInclusive &&
                 it.transactionDate <= endInclusive
         }
 
     override suspend fun refreshAccounts(accounts: List<AccountDto>) {
-        this.accounts = accounts.map { it.toDomain() }
+        this.accounts.value = accounts.map { it.toDomain() }
     }
 
     override suspend fun refreshCategories(categories: List<CategoryDto>) {
@@ -301,17 +370,18 @@ private class FakeFinanceLocalStore(
         startInclusive: Instant,
         endInclusive: Instant,
     ) {
-        this.accounts = accounts.map { it.toDomain() }
+        periodRefreshes += 1
+        this.accounts.value = accounts.map { it.toDomain() }
         this.categories = categories.map { it.toDomain() }
-        this.transactions = transactions.map { it.toDomain() }
+        this.transactions.value = transactions.map { it.toDomain() }
     }
 
     override suspend fun cacheAccount(account: com.yandex.school.casheye.data.finance.dto.AccountResponseDto) {
-        accounts = accounts.filterNot { it.id == account.id } + account.toDomain()
+        accounts.value = accounts.value.filterNot { it.id == account.id } + account.toDomain()
     }
 
     override suspend fun cacheTransaction(transaction: TransactionResponseDto) {
-        transactions = transactions.filterNot { it.id == transaction.id } + transaction.toDomain()
+        transactions.value = transactions.value.filterNot { it.id == transaction.id } + transaction.toDomain()
     }
 
     override suspend fun saveAccount(
@@ -326,16 +396,16 @@ private class FakeFinanceLocalStore(
     }
 
     override suspend fun getAccountTransactionCount(id: Int): Int =
-        transactions.count { it.account.id == id }
+        transactions.value.count { it.account.id == id }
 
     override suspend fun deleteTransaction(id: Int, now: Instant) {
-        transactions = transactions.filterNot { it.id == id }
+        transactions.value = transactions.value.filterNot { it.id == id }
     }
 
     override suspend fun deleteAccount(id: Int, now: Instant): Int {
-        val transactionCount = transactions.count { it.account.id == id }
-        transactions = transactions.filterNot { it.account.id == id }
-        accounts = accounts.filterNot { it.id == id }
+        val transactionCount = transactions.value.count { it.account.id == id }
+        transactions.value = transactions.value.filterNot { it.account.id == id }
+        accounts.value = accounts.value.filterNot { it.id == id }
         return transactionCount
     }
 }

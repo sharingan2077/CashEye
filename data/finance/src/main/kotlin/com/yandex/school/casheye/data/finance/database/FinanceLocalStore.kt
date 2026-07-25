@@ -21,9 +21,23 @@ import com.yandex.school.casheye.domain.finance.SaveTransactionCommand
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import java.time.Instant
 
 interface FinanceLocalStore {
+    fun observeAccounts(): Flow<List<Account>> = flow { emit(getAccounts()) }
+
+    fun observeTransactions(
+        accountId: Int?,
+        startInclusive: Instant,
+        endInclusive: Instant,
+    ): Flow<List<Transaction>> =
+        flow {
+            emit(getTransactions(accountId, startInclusive, endInclusive))
+        }
+
     suspend fun getAccounts(): List<Account>
 
     suspend fun getAccount(id: Int): Account?
@@ -110,6 +124,18 @@ class RoomFinanceLocalStore(
             FinanceDatabase::class.java,
             DATABASE_NAME,
         ).build()
+
+    override fun observeAccounts(): Flow<List<Account>> =
+        database.accountDao().observeAll().map { accounts -> accounts.map { it.toDomain() } }
+
+    override fun observeTransactions(
+        accountId: Int?,
+        startInclusive: Instant,
+        endInclusive: Instant,
+    ): Flow<List<Transaction>> =
+        database.transactionDao()
+            .observeForPeriod(accountId, startInclusive.toEpochMilli(), endInclusive.toEpochMilli())
+            .map { transactions -> transactions.map { it.toDomain() } }
 
     override suspend fun getAccounts(): List<Account> = database.accountDao().getAll().map { it.toDomain() }
 
