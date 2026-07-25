@@ -63,6 +63,7 @@ fun NavigationRoot(
         if (!isOnline && wasOnline != false) {
             snackbarHostState.showSnackbar(
                 message = offlineMessage,
+                withDismissAction = true,
                 duration = SnackbarDuration.Long,
             )
         }
