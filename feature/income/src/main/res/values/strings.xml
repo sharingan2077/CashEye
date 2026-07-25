@@ -12,4 +12,7 @@
     <string name="error_select_account">Select an account</string>
     <string name="error_select_category">Select a category</string>
     <string name="error_save_income">Could not save income</string>
+    <string name="delete_income">Delete income</string>
+    <string name="income_deleted">Income deleted</string>
+    <string name="error_delete_income">Could not delete income</string>
 </resources>

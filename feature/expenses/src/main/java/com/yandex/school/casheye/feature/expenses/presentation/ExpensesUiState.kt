@@ -35,10 +35,20 @@ sealed interface ExpensesIntent {
     data class SelectDate(
         val date: LocalDate,
     ) : ExpensesIntent
+
+    data class DeleteTransaction(
+        val id: Int,
+    ) : ExpensesIntent
 }
 
 sealed interface ExpensesEffect {
     data class ShowError(
         val reason: FinanceFailureReason,
     ) : ExpensesEffect
+
+    data class ShowDeleteError(
+        val reason: FinanceFailureReason,
+    ) : ExpensesEffect
+
+    data object TransactionDeleted : ExpensesEffect
 }

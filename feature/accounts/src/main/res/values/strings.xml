@@ -11,4 +11,18 @@
     <string name="error_invalid_balance">Enter a valid balance</string>
     <string name="error_select_currency">Select a currency</string>
     <string name="error_save_account">Could not save account</string>
+    <string name="delete_account">Delete account</string>
+    <string name="account_deleted">Account deleted</string>
+    <string name="error_delete_account">Could not delete account</string>
+    <string name="delete_account_confirmation_title">Delete account?</string>
+    <string name="delete">Delete</string>
+    <string name="cancel">Cancel</string>
+    <plurals name="delete_account_confirmation">
+        <item quantity="one">This account has %d transaction. The account and transaction will be deleted permanently.</item>
+        <item quantity="other">This account has %d transactions. The account and all transactions will be deleted permanently.</item>
+    </plurals>
+    <plurals name="account_with_transactions_deleted">
+        <item quantity="one">Account and %d transaction deleted</item>
+        <item quantity="other">Account and %d transactions deleted</item>
+    </plurals>
 </resources>

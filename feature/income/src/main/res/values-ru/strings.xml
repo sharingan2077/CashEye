@@ -12,4 +12,7 @@
     <string name="error_select_account">Выберите счёт</string>
     <string name="error_select_category">Выберите статью</string>
     <string name="error_save_income">Не удалось сохранить доход</string>
+    <string name="delete_income">Удалить доход</string>
+    <string name="income_deleted">Доход удалён</string>
+    <string name="error_delete_income">Не удалось удалить доход</string>
 </resources>

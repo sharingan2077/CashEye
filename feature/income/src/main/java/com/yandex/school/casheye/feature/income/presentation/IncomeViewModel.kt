@@ -2,6 +2,8 @@ package com.yandex.school.casheye.feature.income.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.yandex.school.casheye.domain.finance.DeleteTransactionUseCase
+import com.yandex.school.casheye.domain.finance.EditorResult
 import com.yandex.school.casheye.domain.finance.FinanceLoadResult
 import com.yandex.school.casheye.domain.finance.GetDailySummaryUseCase
 import com.yandex.school.casheye.domain.finance.TransactionKind
@@ -20,6 +22,7 @@ import java.time.LocalDate
 @Inject
 class IncomeViewModel(
     private val getIncome: GetDailySummaryUseCase,
+    private val deleteTransactionUseCase: DeleteTransactionUseCase,
     private val clock: Clock = Clock.systemDefaultZone(),
 ) : ViewModel() {
     private val _state = MutableStateFlow<IncomeUiState>(IncomeUiState.Loading)
@@ -42,7 +45,37 @@ class IncomeViewModel(
             IncomeIntent.Retry -> loadData(selectedDate, preserveContent = _state.value.isRefreshable())
             IncomeIntent.Refresh -> loadData(selectedDate, preserveContent = true)
             is IncomeIntent.SelectDate -> selectDate(intent.date)
+            is IncomeIntent.DeleteTransaction -> deleteTransaction(intent.id)
         }
+    }
+
+    private fun deleteTransaction(id: Int) {
+        viewModelScope.launch {
+            when (val result = deleteTransactionUseCase(id)) {
+                is EditorResult.Success -> {
+                    removeTransaction(id)
+                    _effects.emit(IncomeEffect.TransactionDeleted)
+                }
+
+                is EditorResult.Failure -> _effects.emit(IncomeEffect.ShowDeleteError(result.reason))
+            }
+        }
+    }
+
+    private fun removeTransaction(id: Int) {
+        val content = _state.value as? IncomeUiState.Content ?: return
+        val removed = content.transactions.firstOrNull { it.id == id } ?: return
+        val remaining = content.transactions.filterNot { it.id == id }
+        _state.value =
+            if (remaining.isEmpty()) {
+                IncomeUiState.Empty()
+            } else {
+                content.copy(
+                    total = content.total.subtract(removed.amount),
+                    transactions = remaining,
+                    isRefreshing = false,
+                )
+            }
     }
 
     private fun selectDate(date: LocalDate) {

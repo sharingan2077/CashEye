@@ -27,6 +27,8 @@ fun IncomeRoute(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val failureMessages = localizedFailureMessages()
     val retryLabel = stringResource(R.string.retry)
+    val deletedMessage = stringResource(R.string.income_deleted)
+    val deleteErrorMessage = stringResource(R.string.error_delete_income)
 
     DismissSnackbarOnDispose(snackbarHostState)
 
@@ -51,6 +53,18 @@ fun IncomeRoute(
                         viewModel.onIntent(IncomeIntent.Retry)
                     }
                 }
+
+                is IncomeEffect.ShowDeleteError -> {
+                    snackbarHostState.showSnackbar(
+                        if (effect.reason == FinanceFailureReason.Unknown) {
+                            deleteErrorMessage
+                        } else {
+                            failureMessages.getValue(effect.reason)
+                        },
+                    )
+                }
+
+                IncomeEffect.TransactionDeleted -> snackbarHostState.showSnackbar(deletedMessage)
             }
         }
     }

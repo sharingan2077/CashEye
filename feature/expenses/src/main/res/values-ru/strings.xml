@@ -16,4 +16,7 @@
     <string name="error_select_category">Выберите статью</string>
     <string name="error_insufficient_balance">На счёте недостаточно средств</string>
     <string name="error_save_expense">Не удалось сохранить расход</string>
+    <string name="delete_expense">Удалить расход</string>
+    <string name="expense_deleted">Расход удалён</string>
+    <string name="error_delete_expense">Не удалось удалить расход</string>
 </resources>

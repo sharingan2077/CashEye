@@ -11,4 +11,18 @@
     <string name="error_invalid_balance">Saisissez un solde valide</string>
     <string name="error_select_currency">Sélectionnez une devise</string>
     <string name="error_save_account">Impossible d’enregistrer le compte</string>
+    <string name="delete_account">Supprimer le compte</string>
+    <string name="account_deleted">Compte supprimé</string>
+    <string name="error_delete_account">Impossible de supprimer le compte</string>
+    <string name="delete_account_confirmation_title">Supprimer le compte ?</string>
+    <string name="delete">Supprimer</string>
+    <string name="cancel">Annuler</string>
+    <plurals name="delete_account_confirmation">
+        <item quantity="one">Ce compte contient %d opération. Le compte et cette opération seront définitivement supprimés.</item>
+        <item quantity="other">Ce compte contient %d opérations. Le compte et toutes les opérations seront définitivement supprimés.</item>
+    </plurals>
+    <plurals name="account_with_transactions_deleted">
+        <item quantity="one">Compte et %d opération supprimés</item>
+        <item quantity="other">Compte et %d opérations supprimés</item>
+    </plurals>
 </resources>

@@ -35,10 +35,20 @@ sealed interface IncomeIntent {
     data class SelectDate(
         val date: LocalDate,
     ) : IncomeIntent
+
+    data class DeleteTransaction(
+        val id: Int,
+    ) : IncomeIntent
 }
 
 sealed interface IncomeEffect {
     data class ShowError(
         val reason: FinanceFailureReason,
     ) : IncomeEffect
+
+    data class ShowDeleteError(
+        val reason: FinanceFailureReason,
+    ) : IncomeEffect
+
+    data object TransactionDeleted : IncomeEffect
 }

@@ -11,4 +11,18 @@
     <string name="error_invalid_balance">Geben Sie einen gültigen Kontostand ein</string>
     <string name="error_select_currency">Wählen Sie eine Währung</string>
     <string name="error_save_account">Konto konnte nicht gespeichert werden</string>
+    <string name="delete_account">Konto löschen</string>
+    <string name="account_deleted">Konto gelöscht</string>
+    <string name="error_delete_account">Konto konnte nicht gelöscht werden</string>
+    <string name="delete_account_confirmation_title">Konto löschen?</string>
+    <string name="delete">Löschen</string>
+    <string name="cancel">Abbrechen</string>
+    <plurals name="delete_account_confirmation">
+        <item quantity="one">Dieses Konto enthält %d Transaktion. Das Konto und die Transaktion werden dauerhaft gelöscht.</item>
+        <item quantity="other">Dieses Konto enthält %d Transaktionen. Das Konto und alle Transaktionen werden dauerhaft gelöscht.</item>
+    </plurals>
+    <plurals name="account_with_transactions_deleted">
+        <item quantity="one">Konto und %d Transaktion gelöscht</item>
+        <item quantity="other">Konto und %d Transaktionen gelöscht</item>
+    </plurals>
 </resources>

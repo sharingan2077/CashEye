@@ -11,4 +11,22 @@
     <string name="error_invalid_balance">Введите корректный баланс</string>
     <string name="error_select_currency">Выберите валюту</string>
     <string name="error_save_account">Не удалось сохранить счёт</string>
+    <string name="delete_account">Удалить счёт</string>
+    <string name="account_deleted">Счёт удалён</string>
+    <string name="error_delete_account">Не удалось удалить счёт</string>
+    <string name="delete_account_confirmation_title">Удалить счёт?</string>
+    <string name="delete">Удалить</string>
+    <string name="cancel">Отмена</string>
+    <plurals name="delete_account_confirmation">
+        <item quantity="one">У счёта %d операция. Счёт и операция будут удалены без возможности восстановления.</item>
+        <item quantity="few">У счёта %d операции. Счёт и все операции будут удалены без возможности восстановления.</item>
+        <item quantity="many">У счёта %d операций. Счёт и все операции будут удалены без возможности восстановления.</item>
+        <item quantity="other">У счёта %d операции. Счёт и все операции будут удалены без возможности восстановления.</item>
+    </plurals>
+    <plurals name="account_with_transactions_deleted">
+        <item quantity="one">Удалены счёт и %d операция</item>
+        <item quantity="few">Удалены счёт и %d операции</item>
+        <item quantity="many">Удалены счёт и %d операций</item>
+        <item quantity="other">Удалены счёт и %d операции</item>
+    </plurals>
 </resources>

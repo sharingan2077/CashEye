@@ -3,6 +3,8 @@ package com.yandex.school.casheye.feature.expenses.presentation
 import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.Category
 import com.yandex.school.casheye.core.model.Transaction
+import com.yandex.school.casheye.domain.finance.DeleteTransactionUseCase
+import com.yandex.school.casheye.domain.finance.EditorResult
 import com.yandex.school.casheye.domain.finance.FinanceDataLoadResult
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import com.yandex.school.casheye.domain.finance.FinanceLoadResult
@@ -52,7 +54,7 @@ class ExpensesViewModelTest {
         runTest {
             val summary = FinanceSummary(BigDecimal("25.00"), "RUB", listOf(transaction()))
             val repository = FakeFinanceRepository(FinanceLoadResult.Success(summary))
-            val viewModel = ExpensesViewModel(GetDailySummaryUseCase(repository), clock)
+            val viewModel = expensesViewModel(repository, clock)
 
             advanceUntilIdle()
 
@@ -66,11 +68,9 @@ class ExpensesViewModelTest {
     fun `empty load exposes empty state`() =
         runTest {
             val viewModel =
-                ExpensesViewModel(
-                    GetDailySummaryUseCase(
-                        FakeFinanceRepository(
-                            FinanceLoadResult.Success(FinanceSummary(BigDecimal.ZERO, "RUB", emptyList())),
-                        ),
+                expensesViewModel(
+                    FakeFinanceRepository(
+                        FinanceLoadResult.Success(FinanceSummary(BigDecimal.ZERO, "RUB", emptyList())),
                     ),
                     clock,
                 )
@@ -84,10 +84,8 @@ class ExpensesViewModelTest {
     fun `initial failure exposes error state`() =
         runTest {
             val viewModel =
-                ExpensesViewModel(
-                    GetDailySummaryUseCase(
-                        FakeFinanceRepository(FinanceLoadResult.Failure(FinanceFailureReason.Network)),
-                    ),
+                expensesViewModel(
+                    FakeFinanceRepository(FinanceLoadResult.Failure(FinanceFailureReason.Network)),
                     clock,
                 )
 
@@ -101,12 +99,10 @@ class ExpensesViewModelTest {
         runTest {
             val summary = FinanceSummary(BigDecimal("25.00"), "RUB", listOf(transaction()))
             val viewModel =
-                ExpensesViewModel(
-                    GetDailySummaryUseCase(
-                        FakeFinanceRepository(
-                            FinanceLoadResult.Success(summary),
-                            FinanceLoadResult.Failure(FinanceFailureReason.Network),
-                        ),
+                expensesViewModel(
+                    FakeFinanceRepository(
+                        FinanceLoadResult.Success(summary),
+                        FinanceLoadResult.Failure(FinanceFailureReason.Network),
                     ),
                     clock,
                 )
@@ -131,7 +127,7 @@ class ExpensesViewModelTest {
                     FinanceLoadResult.Success(FinanceSummary(BigDecimal.ZERO, "RUB", emptyList())),
                     FinanceLoadResult.Success(FinanceSummary(BigDecimal.ZERO, "RUB", emptyList())),
                 )
-            val viewModel = ExpensesViewModel(GetDailySummaryUseCase(repository), clock)
+            val viewModel = expensesViewModel(repository, clock)
             val selectedDate = LocalDate.of(2026, 6, 18)
 
             advanceUntilIdle()
@@ -148,7 +144,7 @@ class ExpensesViewModelTest {
                 FakeFinanceRepository(
                     FinanceLoadResult.Success(FinanceSummary(BigDecimal.ZERO, "RUB", emptyList())),
                 )
-            val viewModel = ExpensesViewModel(GetDailySummaryUseCase(repository), clock)
+            val viewModel = expensesViewModel(repository, clock)
 
             advanceUntilIdle()
             viewModel.onIntent(ExpensesIntent.SelectDate(LocalDate.of(2026, 7, 18)))
@@ -165,7 +161,7 @@ class ExpensesViewModelTest {
                     FinanceLoadResult.Success(FinanceSummary(BigDecimal.ZERO, "RUB", emptyList())),
                     FinanceLoadResult.Success(FinanceSummary(BigDecimal.ZERO, "RUB", emptyList())),
                 )
-            val viewModel = ExpensesViewModel(GetDailySummaryUseCase(repository), clock)
+            val viewModel = expensesViewModel(repository, clock)
 
             advanceUntilIdle()
             viewModel.onIntent(ExpensesIntent.Refresh)
@@ -173,13 +169,41 @@ class ExpensesViewModelTest {
 
             assertEquals(listOf(LocalDate.of(2026, 7, 17), LocalDate.of(2026, 7, 17)), repository.requestedDates)
         }
+
+    @Test
+    fun `deleting expense removes it and emits success effect`() =
+        runTest {
+            val summary = FinanceSummary(BigDecimal("25.00"), "RUB", listOf(transaction()))
+            val repository = FakeFinanceRepository(FinanceLoadResult.Success(summary))
+            val viewModel = expensesViewModel(repository, clock)
+
+            advanceUntilIdle()
+            val effect = async(start = CoroutineStart.UNDISPATCHED) { viewModel.effects.first() }
+            viewModel.onIntent(ExpensesIntent.DeleteTransaction(1))
+            advanceUntilIdle()
+
+            assertEquals(listOf(1), repository.deletedTransactionIds)
+            assertEquals(ExpensesUiState.Empty(), viewModel.state.value)
+            assertEquals(ExpensesEffect.TransactionDeleted, effect.await())
+        }
 }
+
+private fun expensesViewModel(
+    repository: FinanceRepository,
+    clock: Clock,
+): ExpensesViewModel =
+    ExpensesViewModel(
+        GetDailySummaryUseCase(repository),
+        DeleteTransactionUseCase(repository),
+        clock,
+    )
 
 private class FakeFinanceRepository(
     vararg results: FinanceLoadResult,
 ) : FinanceRepository {
     private val results = ArrayDeque(results.toList())
     val requestedDates = mutableListOf<LocalDate>()
+    val deletedTransactionIds = mutableListOf<Int>()
 
     override suspend fun getAccounts(): FinanceDataLoadResult<List<Account>> =
         when (val result = results.first()) {
@@ -202,6 +226,11 @@ private class FakeFinanceRepository(
             is FinanceLoadResult.Success -> FinanceDataLoadResult.Success(result.summary.transactions)
             is FinanceLoadResult.Failure -> FinanceDataLoadResult.Failure(result.reason)
         }
+    }
+
+    override suspend fun deleteTransaction(id: Int): EditorResult<Unit> {
+        deletedTransactionIds += id
+        return EditorResult.Success(Unit)
     }
 }
 

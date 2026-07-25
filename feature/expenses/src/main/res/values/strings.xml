@@ -16,4 +16,7 @@
     <string name="error_select_category">Select a category</string>
     <string name="error_insufficient_balance">Insufficient balance in the account</string>
     <string name="error_save_expense">Could not save expense</string>
+    <string name="delete_expense">Delete expense</string>
+    <string name="expense_deleted">Expense deleted</string>
+    <string name="error_delete_expense">Could not delete expense</string>
 </resources>

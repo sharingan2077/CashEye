@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yandex.school.casheye.core.designsystem.component.DismissSnackbarOnDispose
@@ -25,6 +26,9 @@ fun AccountsRoute(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val failureMessages = localizedFailureMessages()
     val retryLabel = stringResource(R.string.retry)
+    val accountDeletedMessage = stringResource(R.string.account_deleted)
+    val deleteErrorMessage = stringResource(R.string.error_delete_account)
+    val resources = LocalContext.current.resources
 
     DismissSnackbarOnDispose(snackbarHostState)
 
@@ -44,6 +48,30 @@ fun AccountsRoute(
                     ) {
                         viewModel.onIntent(AccountsIntent.Retry)
                     }
+                }
+
+                is AccountsEffect.ShowDeleteError -> {
+                    snackbarHostState.showSnackbar(
+                        if (effect.reason == FinanceFailureReason.Unknown) {
+                            deleteErrorMessage
+                        } else {
+                            failureMessages.getValue(effect.reason)
+                        },
+                    )
+                }
+
+                is AccountsEffect.AccountDeleted -> {
+                    val message =
+                        if (effect.transactionCount == 0) {
+                            accountDeletedMessage
+                        } else {
+                            resources.getQuantityString(
+                                R.plurals.account_with_transactions_deleted,
+                                effect.transactionCount,
+                                effect.transactionCount,
+                            )
+                        }
+                    snackbarHostState.showSnackbar(message)
                 }
             }
         }

@@ -3,7 +3,6 @@ package com.yandex.school.casheye.feature.accounts.presentation
 import android.content.res.Configuration
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,14 +14,17 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -32,6 +34,7 @@ import com.yandex.school.casheye.core.designsystem.component.ErrorState
 import com.yandex.school.casheye.core.designsystem.component.ErrorStateType
 import com.yandex.school.casheye.core.designsystem.component.MoneyListItem
 import com.yandex.school.casheye.core.designsystem.component.PullToRefreshContainer
+import com.yandex.school.casheye.core.designsystem.component.SwipeToRevealDeleteItem
 import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
 import com.yandex.school.casheye.core.format.formatAmount
 import com.yandex.school.casheye.core.model.Account
@@ -66,7 +69,11 @@ fun AccountsScreen(
                 }
 
                 is AccountsUiState.Content -> {
-                    AccountsContent(state = state, onAccountClick = onAccountClick)
+                    AccountsContent(
+                        state = state,
+                        onAccountClick = onAccountClick,
+                        onAccountDelete = { onIntent(AccountsIntent.RequestAccountDelete(it)) },
+                    )
                 }
 
                 is AccountsUiState.Error -> {
@@ -79,12 +86,40 @@ fun AccountsScreen(
             }
         }
     }
+
+    val confirmation = (state as? AccountsUiState.Content)?.deleteConfirmation
+    if (confirmation != null) {
+        AlertDialog(
+            onDismissRequest = { onIntent(AccountsIntent.CancelAccountDelete) },
+            title = { Text(stringResource(R.string.delete_account_confirmation_title)) },
+            text = {
+                Text(
+                    pluralStringResource(
+                        R.plurals.delete_account_confirmation,
+                        confirmation.transactionCount,
+                        confirmation.transactionCount,
+                    ),
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { onIntent(AccountsIntent.ConfirmAccountDelete) }) {
+                    Text(stringResource(R.string.delete))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { onIntent(AccountsIntent.CancelAccountDelete) }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            },
+        )
+    }
 }
 
 @Composable
 private fun AccountsContent(
     state: AccountsUiState.Content,
     onAccountClick: (Int) -> Unit,
+    onAccountDelete: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxSize()) {
@@ -105,16 +140,21 @@ private fun AccountsContent(
                 items = state.accounts,
                 key = Account::id,
             ) { accountItem ->
-                MoneyListItem(
-                    emoji = accountItem.emoji,
-                    title = accountItem.name,
-                    amount =
-                        formatAmount(
-                            amount = accountItem.balance,
-                            currencyCode = accountItem.currency,
-                        ),
-                    modifier = Modifier.clickable { onAccountClick(accountItem.id) },
-                )
+                SwipeToRevealDeleteItem(
+                    actionLabel = stringResource(R.string.delete_account),
+                    onClick = { onAccountClick(accountItem.id) },
+                    onDelete = { onAccountDelete(accountItem.id) },
+                ) {
+                    MoneyListItem(
+                        emoji = accountItem.emoji,
+                        title = accountItem.name,
+                        amount =
+                            formatAmount(
+                                amount = accountItem.balance,
+                                currencyCode = accountItem.currency,
+                            ),
+                    )
+                }
             }
         }
     }

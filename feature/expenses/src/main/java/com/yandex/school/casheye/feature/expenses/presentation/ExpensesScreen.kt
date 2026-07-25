@@ -3,7 +3,6 @@ package com.yandex.school.casheye.feature.expenses.presentation
 import android.content.res.Configuration
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,6 +31,7 @@ import com.yandex.school.casheye.core.designsystem.component.ErrorState
 import com.yandex.school.casheye.core.designsystem.component.ErrorStateType
 import com.yandex.school.casheye.core.designsystem.component.MoneyListItem
 import com.yandex.school.casheye.core.designsystem.component.PullToRefreshContainer
+import com.yandex.school.casheye.core.designsystem.component.SwipeToRevealDeleteItem
 import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
 import com.yandex.school.casheye.core.format.formatAmount
 import com.yandex.school.casheye.core.model.Transaction
@@ -66,7 +66,11 @@ fun ExpenseScreen(
                 }
 
                 is ExpensesUiState.Content -> {
-                    ExpensesContent(state = state, onTransactionClick = onTransactionClick)
+                    ExpensesContent(
+                        state = state,
+                        onTransactionClick = onTransactionClick,
+                        onTransactionDelete = { onIntent(ExpensesIntent.DeleteTransaction(it)) },
+                    )
                 }
 
                 is ExpensesUiState.Error -> {
@@ -85,6 +89,7 @@ fun ExpenseScreen(
 private fun ExpensesContent(
     state: ExpensesUiState.Content,
     onTransactionClick: (Int) -> Unit,
+    onTransactionDelete: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxSize()) {
@@ -105,16 +110,21 @@ private fun ExpensesContent(
                 items = state.transactions,
                 key = Transaction::id,
             ) { transaction ->
-                MoneyListItem(
-                    emoji = transaction.category.emoji,
-                    title = transaction.category.name,
-                    amount =
-                        formatAmount(
-                            amount = transaction.amount,
-                            currencyCode = transaction.account.currency,
-                        ),
-                    modifier = Modifier.clickable { onTransactionClick(transaction.id) },
-                )
+                SwipeToRevealDeleteItem(
+                    actionLabel = stringResource(R.string.delete_expense),
+                    onClick = { onTransactionClick(transaction.id) },
+                    onDelete = { onTransactionDelete(transaction.id) },
+                ) {
+                    MoneyListItem(
+                        emoji = transaction.category.emoji,
+                        title = transaction.category.name,
+                        amount =
+                            formatAmount(
+                                amount = transaction.amount,
+                                currencyCode = transaction.account.currency,
+                            ),
+                    )
+                }
             }
         }
     }

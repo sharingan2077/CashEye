@@ -12,4 +12,7 @@
     <string name="error_select_account">Sélectionnez un compte</string>
     <string name="error_select_category">Sélectionnez une catégorie</string>
     <string name="error_save_income">Impossible d’enregistrer le revenu</string>
+    <string name="delete_income">Supprimer le revenu</string>
+    <string name="income_deleted">Revenu supprimé</string>
+    <string name="error_delete_income">Impossible de supprimer le revenu</string>
 </resources>

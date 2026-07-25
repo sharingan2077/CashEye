@@ -12,4 +12,7 @@
     <string name="error_select_account">Wählen Sie ein Konto</string>
     <string name="error_select_category">Wählen Sie eine Kategorie</string>
     <string name="error_save_income">Einnahme konnte nicht gespeichert werden</string>
+    <string name="delete_income">Einnahme löschen</string>
+    <string name="income_deleted">Einnahme gelöscht</string>
+    <string name="error_delete_income">Einnahme konnte nicht gelöscht werden</string>
 </resources>

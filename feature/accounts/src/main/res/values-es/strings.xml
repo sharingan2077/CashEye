@@ -11,4 +11,18 @@
     <string name="error_invalid_balance">Introduce un saldo válido</string>
     <string name="error_select_currency">Selecciona una moneda</string>
     <string name="error_save_account">No se pudo guardar la cuenta</string>
+    <string name="delete_account">Eliminar cuenta</string>
+    <string name="account_deleted">Cuenta eliminada</string>
+    <string name="error_delete_account">No se pudo eliminar la cuenta</string>
+    <string name="delete_account_confirmation_title">¿Eliminar la cuenta?</string>
+    <string name="delete">Eliminar</string>
+    <string name="cancel">Cancelar</string>
+    <plurals name="delete_account_confirmation">
+        <item quantity="one">Esta cuenta tiene %d operación. La cuenta y la operación se eliminarán de forma permanente.</item>
+        <item quantity="other">Esta cuenta tiene %d operaciones. La cuenta y todas las operaciones se eliminarán de forma permanente.</item>
+    </plurals>
+    <plurals name="account_with_transactions_deleted">
+        <item quantity="one">Cuenta y %d operación eliminadas</item>
+        <item quantity="other">Cuenta y %d operaciones eliminadas</item>
+    </plurals>
 </resources>
