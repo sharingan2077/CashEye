@@ -1,5 +1,17 @@
 package com.yandex.school.casheye.app.navigation
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -17,6 +29,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -177,12 +190,33 @@ private fun NavigationScaffold(
     onAddClick: () -> Unit = {},
 ) {
     val currentRoute = navigationState.backStacks[navigationState.topLevelRoute]?.lastOrNull()
-    val showBars = currentRoute !is Route.Analytics
+    val showMainChrome = currentRoute in TOP_LEVEL_DESTINATIONS
 
     Scaffold(
         modifier = modifier,
         bottomBar = {
-            if (showBars) {
+            AnimatedVisibility(
+                visible = showMainChrome,
+                enter =
+                    slideInVertically(
+                        animationSpec = tween(APP_CHROME_ANIMATION_DURATION_MILLIS),
+                        initialOffsetY = { it },
+                    ) +
+                        expandVertically(
+                            animationSpec = tween(APP_CHROME_ANIMATION_DURATION_MILLIS),
+                            expandFrom = Alignment.Bottom,
+                        ),
+                exit =
+                    slideOutVertically(
+                        animationSpec = tween(APP_CHROME_ANIMATION_DURATION_MILLIS),
+                        targetOffsetY = { it },
+                    ) +
+                        shrinkVertically(
+                            animationSpec = tween(APP_CHROME_ANIMATION_DURATION_MILLIS),
+                            shrinkTowards = Alignment.Bottom,
+                        ),
+                label = "bottom navigation visibility",
+            ) {
                 BottomNavigationBar(
                     selectedKey = navigationState.topLevelRoute,
                     onSelectKey = navigator::navigate,
@@ -190,22 +224,48 @@ private fun NavigationScaffold(
             }
         },
         topBar = {
-            if (showBars) {
-                NavigationTopBar(
-                    date = selectedDate,
-                    onDateClick = onDateClick,
-                    onAnalyticsClick = {
-                        navigator.navigate(
-                            Route.Analytics(navigationState.topLevelRoute.toAnalyticsEntryPoint()),
-                        )
-                    },
-                )
-            } else {
-                ArrowTopBar(title = stringResource(R.string.analytics_title), onBackClick = navigator::goBack)
+            AnimatedContent(
+                targetState = showMainChrome,
+                transitionSpec = {
+                    fadeIn(tween(APP_CHROME_ANIMATION_DURATION_MILLIS)) togetherWith
+                        fadeOut(tween(APP_CHROME_ANIMATION_DURATION_MILLIS))
+                },
+                label = "top bar transition",
+            ) { showMain ->
+                if (showMain) {
+                    NavigationTopBar(
+                        date = selectedDate,
+                        onDateClick = onDateClick,
+                        onAnalyticsClick = {
+                            navigator.navigate(
+                                Route.Analytics(navigationState.topLevelRoute.toAnalyticsEntryPoint()),
+                            )
+                        },
+                    )
+                } else {
+                    ArrowTopBar(title = stringResource(R.string.analytics_title), onBackClick = navigator::goBack)
+                }
             }
         },
         floatingActionButton = {
-            if (showBars) FloatingButton(onClick = onAddClick)
+            AnimatedVisibility(
+                visible = showMainChrome,
+                enter =
+                    fadeIn(tween(APP_CHROME_ANIMATION_DURATION_MILLIS)) +
+                        scaleIn(
+                            animationSpec = tween(APP_CHROME_ANIMATION_DURATION_MILLIS),
+                            initialScale = FAB_INITIAL_SCALE,
+                        ),
+                exit =
+                    fadeOut(tween(APP_CHROME_ANIMATION_DURATION_MILLIS)) +
+                        scaleOut(
+                            animationSpec = tween(APP_CHROME_ANIMATION_DURATION_MILLIS),
+                            targetScale = FAB_INITIAL_SCALE,
+                        ),
+                label = "floating action button visibility",
+            ) {
+                FloatingButton(onClick = onAddClick)
+            }
         },
         snackbarHost = {
             CashEyeSnackbarHost(
@@ -248,6 +308,14 @@ private fun NavigationContent(
     NavDisplay(
         modifier = modifier.fillMaxSize(),
         onBack = navigator::goBack,
+        transitionSpec = {
+            fadeIn(tween(APP_CHROME_ANIMATION_DURATION_MILLIS)) togetherWith
+                fadeOut(tween(APP_CHROME_ANIMATION_DURATION_MILLIS))
+        },
+        popTransitionSpec = {
+            fadeIn(tween(APP_CHROME_ANIMATION_DURATION_MILLIS)) togetherWith
+                fadeOut(tween(APP_CHROME_ANIMATION_DURATION_MILLIS))
+        },
         entries =
             navigationState.toEntries(
                 entryProvider {
@@ -330,3 +398,6 @@ private fun FloatingButton(onClick: () -> Unit) {
 private fun FloatingButtonPreview() {
     CashEyeTheme(dynamicColor = false) { FloatingButton {} }
 }
+
+private const val APP_CHROME_ANIMATION_DURATION_MILLIS = 220
+private const val FAB_INITIAL_SCALE = 0.8f
