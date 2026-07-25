@@ -6,9 +6,9 @@ import com.yandex.school.casheye.data.finance.dto.AccountDto
 import com.yandex.school.casheye.data.finance.dto.CategoryDto
 import com.yandex.school.casheye.data.finance.dto.TransactionResponseDto
 import com.yandex.school.casheye.data.finance.repository.FinanceRepositoryImpl
+import com.yandex.school.casheye.domain.finance.FinanceDataLoadResult
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
-import com.yandex.school.casheye.domain.finance.FinanceLoadResult
-import com.yandex.school.casheye.domain.finance.TransactionKind
+import com.yandex.school.casheye.domain.finance.TransactionsQuery
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import okhttp3.ResponseBody.Companion.toResponseBody
@@ -18,7 +18,6 @@ import org.junit.Test
 import retrofit2.HttpException
 import retrofit2.Response
 import java.io.IOException
-import java.math.BigDecimal
 import java.time.Instant
 import java.time.LocalDate
 import java.util.Collections
@@ -34,7 +33,9 @@ class FinanceRepositoryImplTest {
                 )
             val date = LocalDate.of(2026, 7, 17)
 
-            FinanceRepositoryImpl(api, Dispatchers.Unconfined).getDailySummary(date, "RUB", TransactionKind.Expense)
+            val repository = FinanceRepositoryImpl(api, Dispatchers.Unconfined)
+            repository.getAccounts()
+            repository.getTransactions(TransactionsQuery(setOf(1, 2, 3), date, date))
 
             assertEquals(setOf(1, 2, 3), api.requests.map { it.accountId }.toSet())
             assertTrue(api.requests.all { it.startDate == "2026-07-17" })
@@ -42,7 +43,7 @@ class FinanceRepositoryImplTest {
         }
 
     @Test
-    fun `filters expenses sorts newest first and calculates total`() =
+    fun `returns transactions without applying domain filters or ordering`() =
         runBlocking {
             val api =
                 FakeFinanceApi(
@@ -67,36 +68,30 @@ class FinanceRepositoryImplTest {
                 )
 
             val result =
-                FinanceRepositoryImpl(api, Dispatchers.Unconfined).getDailySummary(
-                    date = LocalDate.of(2026, 7, 17),
-                    currencyCode = "RUB",
-                    transactionKind = TransactionKind.Expense,
-                ) as FinanceLoadResult.Success
+                FinanceRepositoryImpl(api, Dispatchers.Unconfined).getTransactions(
+                    TransactionsQuery(setOf(1, 2), LocalDate.of(2026, 7, 17), LocalDate.of(2026, 7, 17)),
+                ) as FinanceDataLoadResult.Success
 
-            assertEquals(listOf(3, 1), result.summary.transactions.map { it.id })
-            assertEquals(BigDecimal("31.00"), result.summary.total)
-            assertEquals("RUB", result.summary.currencyCode)
+            assertEquals(listOf(1, 2, 3), result.data.map { it.id })
         }
 
     @Test
-    fun `no accounts returns successful empty summary`() =
+    fun `returns empty account collection`() =
         runBlocking {
             val api = FakeFinanceApi(accounts = emptyList(), transactionsByAccount = emptyMap())
 
             val result =
-                FinanceRepositoryImpl(api, Dispatchers.Unconfined).getDailySummary(
-                    LocalDate.of(2026, 7, 17),
-                    "RUB",
-                    TransactionKind.Expense,
-                ) as FinanceLoadResult.Success
+                FinanceRepositoryImpl(
+                    api,
+                    Dispatchers.Unconfined,
+                ).getAccounts() as FinanceDataLoadResult.Success
 
-            assertTrue(result.summary.transactions.isEmpty())
-            assertEquals(BigDecimal.ZERO, result.summary.total)
+            assertTrue(result.data.isEmpty())
             assertTrue(api.requests.isEmpty())
         }
 
     @Test
-    fun `only income returns successful empty summary`() =
+    fun `returns income transactions without filtering`() =
         runBlocking {
             val api =
                 FakeFinanceApi(
@@ -116,41 +111,11 @@ class FinanceRepositoryImplTest {
                 )
 
             val result =
-                FinanceRepositoryImpl(api, Dispatchers.Unconfined).getDailySummary(
-                    LocalDate.of(2026, 7, 17),
-                    "RUB",
-                    TransactionKind.Expense,
-                ) as FinanceLoadResult.Success
+                FinanceRepositoryImpl(api, Dispatchers.Unconfined).getTransactions(
+                    TransactionsQuery(setOf(1), LocalDate.of(2026, 7, 17), LocalDate.of(2026, 7, 17)),
+                ) as FinanceDataLoadResult.Success
 
-            assertTrue(result.summary.transactions.isEmpty())
-            assertEquals(BigDecimal.ZERO, result.summary.total)
-        }
-
-    @Test
-    fun `income kind keeps only income transactions`() =
-        runBlocking {
-            val api =
-                FakeFinanceApi(
-                    accounts = listOf(accountDto(1)),
-                    transactionsByAccount =
-                        mapOf(
-                            1 to
-                                listOf(
-                                    transactionDto(1, "100.00", Instant.parse("2026-07-17T10:00:00Z"), true),
-                                    transactionDto(2, "20.00", Instant.parse("2026-07-17T11:00:00Z")),
-                                ),
-                        ),
-                )
-
-            val result =
-                FinanceRepositoryImpl(api, Dispatchers.Unconfined).getDailySummary(
-                    LocalDate.of(2026, 7, 17),
-                    "RUB",
-                    TransactionKind.Income,
-                ) as FinanceLoadResult.Success
-
-            assertEquals(listOf(1), result.summary.transactions.map { it.id })
-            assertEquals(BigDecimal("100.00"), result.summary.total)
+            assertEquals(listOf(1), result.data.map { it.id })
         }
 
     @Test
@@ -159,14 +124,10 @@ class FinanceRepositoryImplTest {
             val api = ThrowingFinanceApi(IOException("offline"))
 
             val result =
-                FinanceRepositoryImpl(api, Dispatchers.Unconfined).getDailySummary(
-                    LocalDate.of(2026, 7, 17),
-                    "RUB",
-                    TransactionKind.Expense,
-                )
+                FinanceRepositoryImpl(api, Dispatchers.Unconfined).getAccounts()
 
             assertEquals(
-                FinanceLoadResult.Failure(FinanceFailureReason.Network),
+                FinanceDataLoadResult.Failure(FinanceFailureReason.Network),
                 result,
             )
         }
@@ -178,14 +139,10 @@ class FinanceRepositoryImplTest {
             val api = ThrowingFinanceApi(HttpException(response))
 
             val result =
-                FinanceRepositoryImpl(api, Dispatchers.Unconfined).getDailySummary(
-                    LocalDate.of(2026, 7, 17),
-                    "RUB",
-                    TransactionKind.Expense,
-                )
+                FinanceRepositoryImpl(api, Dispatchers.Unconfined).getAccounts()
 
             assertEquals(
-                FinanceLoadResult.Failure(FinanceFailureReason.Server),
+                FinanceDataLoadResult.Failure(FinanceFailureReason.Server),
                 result,
             )
         }
@@ -207,14 +164,12 @@ class FinanceRepositoryImplTest {
                 )
 
             val result =
-                FinanceRepositoryImpl(api, Dispatchers.Unconfined).getDailySummary(
-                    LocalDate.of(2026, 7, 17),
-                    "RUB",
-                    TransactionKind.Expense,
+                FinanceRepositoryImpl(api, Dispatchers.Unconfined).getTransactions(
+                    TransactionsQuery(setOf(1, 2), LocalDate.of(2026, 7, 17), LocalDate.of(2026, 7, 17)),
                 )
 
             assertEquals(
-                FinanceLoadResult.Failure(FinanceFailureReason.Network),
+                FinanceDataLoadResult.Failure(FinanceFailureReason.Network),
                 result,
             )
         }
