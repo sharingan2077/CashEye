@@ -1,3 +1,7 @@
+## Current Homework
+
+local/HW_3_android_HW_3_Android.md
+
 ## Code search
 
 For any code search or project exploration in CashEye, use the

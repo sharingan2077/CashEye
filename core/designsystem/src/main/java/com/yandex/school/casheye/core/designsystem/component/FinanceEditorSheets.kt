@@ -61,15 +61,20 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.painter.BrushPainter
 import androidx.compose.ui.layout.FirstBaseline
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.yandex.school.casheye.core.designsystem.R
+import kotlinx.coroutines.android.awaitFrame
+import java.text.DecimalFormatSymbols
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
@@ -279,8 +284,11 @@ internal fun FinanceEditorSheet(
     rows: @Composable ColumnScope.(clearPrimaryFocus: () -> Unit) -> Unit,
 ) {
     val amountFocusRequester = remember { FocusRequester() }
-    val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
-    LaunchedEffect(Unit) { amountFocusRequester.requestFocus() }
+    val focusManager = LocalFocusManager.current
+    LaunchedEffect(sheetState) {
+        awaitFrame()
+        amountFocusRequester.requestFocus()
+    }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -363,6 +371,22 @@ private fun EditorAmountField(
     focusRequester: FocusRequester,
     modifier: Modifier = Modifier,
 ) {
+    val locale =
+        LocalConfiguration.current.locales[0]?.let { Locale.forLanguageTag(it.toLanguageTag()) }
+            ?: LocalLocale.current.platformLocale
+    var renderedAmount by remember { mutableStateOf(amount) }
+    var fieldValue by
+        remember(locale) {
+            mutableStateOf(amountFieldValue(amount, locale, selection = formatAmount(amount, locale).length))
+        }
+
+    LaunchedEffect(amount, locale) {
+        if (amount != renderedAmount) {
+            renderedAmount = amount
+            fieldValue = amountFieldValue(amount, locale, selection = formatAmount(amount, locale).length)
+        }
+    }
+
     Box(
         modifier = modifier.fillMaxWidth(),
         contentAlignment = Alignment.Center,
@@ -371,34 +395,236 @@ private fun EditorAmountField(
             modifier =
                 Modifier
                     .width(IntrinsicSize.Min)
-                    .widthIn(min = 160.dp)
+                    .widthIn(min = 200.dp)
                     .animateContentSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier.width(IntrinsicSize.Max).padding(horizontal = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 BasicTextField(
-                    value = amount,
-                    onValueChange = onAmountChange,
-                    modifier = Modifier.width(IntrinsicSize.Min).focusRequester(focusRequester),
+                    value = fieldValue,
+                    onValueChange = { proposedValue ->
+                        val update =
+                            updateAmountField(
+                                canonicalAmount = renderedAmount,
+                                previousValue = fieldValue,
+                                proposedValue = proposedValue,
+                                locale = locale,
+                            )
+                        renderedAmount = update.canonicalAmount
+                        fieldValue = update.fieldValue
+                        if (amount != update.canonicalAmount) onAmountChange(update.canonicalAmount)
+                    },
+                    modifier =
+                        Modifier
+                            .width(IntrinsicSize.Min)
+                            .widthIn(min = 2.dp)
+                            .padding(horizontal = 1.dp)
+                            .focusRequester(focusRequester),
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                     textStyle =
                         MaterialTheme.typography.displaySmall.copy(
                             color = MaterialTheme.colorScheme.onSurface,
-                            textAlign = TextAlign.Center,
+                            textAlign = TextAlign.Start,
                         ),
                 )
-                Text(
-                    text = currency,
-                    style = MaterialTheme.typography.displaySmall,
-                    modifier = Modifier.padding(start = 4.dp),
-                )
+                if (fieldValue.text.isNotEmpty()) {
+                    Text(
+                        text = currency,
+                        style = MaterialTheme.typography.displaySmall,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(start = 4.dp),
+                    )
+                }
             }
             Spacer(Modifier.height(8.dp))
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         }
     }
+}
+
+internal data class AmountFieldUpdate(
+    val canonicalAmount: String,
+    val fieldValue: TextFieldValue,
+)
+
+/** Formats the value shown in editor fields; persistence continues to use a dot-separated value. */
+internal fun formatAmount(
+    canonicalAmount: String,
+    locale: Locale,
+): String {
+    val normalized = normalizeAmount(canonicalAmount)
+    if (normalized.isEmpty()) return ""
+
+    val symbols = DecimalFormatSymbols.getInstance(locale)
+    val (integerPart, fractionPart) = normalized.split('.', limit = 2).let { it[0] to it.getOrNull(1) }
+    val groupedInteger =
+        integerPart
+            .reversed()
+            .chunked(3)
+            .joinToString(symbols.groupingSeparator.toString())
+            .reversed()
+    return buildString {
+        append(groupedInteger)
+        fractionPart?.let {
+            append(symbols.decimalSeparator)
+            append(it)
+        }
+    }
+}
+
+internal fun updateAmountField(
+    canonicalAmount: String,
+    previousValue: TextFieldValue,
+    proposedValue: TextFieldValue,
+    locale: Locale,
+): AmountFieldUpdate {
+    val normalized = normalizeAmount(canonicalAmount)
+    if (previousValue.text == proposedValue.text) {
+        return AmountFieldUpdate(normalized, proposedValue)
+    }
+
+    val prefixLength = previousValue.text.commonPrefixWith(proposedValue.text).length
+    val suffixLength =
+        previousValue.text
+            .drop(prefixLength)
+            .commonSuffixWith(proposedValue.text.drop(prefixLength))
+            .length
+    val removed = previousValue.text.substring(prefixLength, previousValue.text.length - suffixLength)
+    val inserted = proposedValue.text.substring(prefixLength, proposedValue.text.length - suffixLength)
+    val selectionOffset = canonicalOffset(previousValue.text, prefixLength, locale)
+    val decimalOffset = normalized.indexOf('.')
+
+    val next =
+        when {
+            inserted.any { it == '.' || it == ',' } && decimalOffset == -1 -> {
+                val integerPart = normalized.ifEmpty { "0" }
+                AmountEdit("$integerPart.00", integerPart.length + 1)
+            }
+
+            inserted.any { it == '.' || it == ',' } -> {
+                AmountEdit(normalized, canonicalOffset(previousValue.text, previousValue.selection.start, locale))
+            }
+
+            inserted.length == 1 && inserted[0].isDigit() &&
+                decimalOffset >= 0 && selectionOffset > decimalOffset && selectionOffset < decimalOffset + 3 -> {
+                val replacement = normalized.replaceRange(selectionOffset, selectionOffset + 1, inserted)
+                AmountEdit(replacement, selectionOffset + 1)
+            }
+
+            removed.length == 1 && removed[0].isDigit() &&
+                decimalOffset >= 0 && selectionOffset > decimalOffset && selectionOffset < decimalOffset + 3 -> {
+                val fraction =
+                    normalized.substring(decimalOffset + 1).removeRange(
+                        selectionOffset - decimalOffset - 1,
+                        selectionOffset - decimalOffset,
+                    )
+                AmountEdit(
+                    normalized.substring(0, decimalOffset + 1) + fraction.padEnd(2, '0'),
+                    selectionOffset,
+                )
+            }
+
+            else -> {
+                AmountEdit(
+                    canonicalFromVisual(proposedValue.text, locale),
+                    canonicalOffset(proposedValue.text, proposedValue.selection.start, locale),
+                )
+            }
+        }
+
+    val proposedAmount = normalizeAmount(next.amount)
+    val isWithinLimit = proposedAmount.substringBefore('.').length <= MAX_INTEGER_DIGITS
+    val keepsDecimalAtLimit =
+        !isWithinLimit &&
+            decimalOffset >= 0 &&
+            selectionOffset == decimalOffset &&
+            removed.singleOrNull() == DecimalFormatSymbols.getInstance(locale).decimalSeparator
+    val nextAmount =
+        when {
+            isWithinLimit -> proposedAmount
+            keepsDecimalAtLimit -> "${normalized.substringBefore('.')}.99"
+            else -> normalized
+        }
+    val nextSelection =
+        when {
+            isWithinLimit -> next.selection
+            keepsDecimalAtLimit -> decimalOffset
+            else -> canonicalOffset(previousValue.text, previousValue.selection.start, locale)
+        }
+    val text = formatAmount(nextAmount, locale)
+    return AmountFieldUpdate(
+        canonicalAmount = nextAmount,
+        fieldValue = TextFieldValue(text, TextRange(visualOffset(text, nextSelection, locale))),
+    )
+}
+
+private data class AmountEdit(
+    val amount: String,
+    val selection: Int,
+)
+
+private const val MAX_INTEGER_DIGITS = 9
+
+private fun amountFieldValue(
+    amount: String,
+    locale: Locale,
+    selection: Int,
+): TextFieldValue {
+    val text = formatAmount(amount, locale)
+    return TextFieldValue(text, TextRange(selection.coerceIn(0, text.length)))
+}
+
+private fun normalizeAmount(value: String): String {
+    val separator = value.indexOfFirst { it == '.' || it == ',' }
+    val integer = (if (separator == -1) value else value.substring(0, separator)).filter(Char::isDigit)
+    val normalizedInteger = integer.trimStart('0').ifEmpty { if (integer.isNotEmpty()) "0" else "" }
+    if (separator == -1) return normalizedInteger
+    val fraction =
+        value
+            .substring(separator + 1)
+            .filter(Char::isDigit)
+            .take(2)
+            .padEnd(2, '0')
+    return "${normalizedInteger.ifEmpty { "0" }}.$fraction"
+}
+
+private fun canonicalFromVisual(
+    value: String,
+    locale: Locale,
+): String {
+    val groupingSeparator = DecimalFormatSymbols.getInstance(locale).groupingSeparator
+    val cleaned = value.filter { it.isDigit() || (it != groupingSeparator && (it == '.' || it == ',')) }
+    return normalizeAmount(cleaned)
+}
+
+private fun canonicalOffset(
+    value: String,
+    visualOffset: Int,
+    locale: Locale,
+): Int {
+    val groupingSeparator = DecimalFormatSymbols.getInstance(locale).groupingSeparator
+    return value.take(visualOffset).count { it.isDigit() || (it != groupingSeparator && (it == '.' || it == ',')) }
+}
+
+private fun visualOffset(
+    value: String,
+    canonicalOffset: Int,
+    locale: Locale,
+): Int {
+    val groupingSeparator = DecimalFormatSymbols.getInstance(locale).groupingSeparator
+    var canonicalIndex = 0
+    value.forEachIndexed { index, character ->
+        if (canonicalIndex == canonicalOffset) return index
+        if (character.isDigit() || (character != groupingSeparator && (character == '.' || character == ','))) {
+            canonicalIndex++
+        }
+    }
+    return value.length
 }
 
 @Composable

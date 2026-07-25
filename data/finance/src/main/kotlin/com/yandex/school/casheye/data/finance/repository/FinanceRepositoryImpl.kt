@@ -16,9 +16,6 @@ import com.yandex.school.casheye.domain.finance.FinanceRepository
 import com.yandex.school.casheye.domain.finance.SaveAccountCommand
 import com.yandex.school.casheye.domain.finance.SaveTransactionCommand
 import com.yandex.school.casheye.domain.finance.TransactionsQuery
-import dev.zacsweers.metro.AppScope
-import dev.zacsweers.metro.Inject
-import dev.zacsweers.metro.SingleIn
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -105,7 +102,8 @@ class FinanceRepositoryImpl(
             try {
                 val accounts = localStore.getAccounts()
                 val transactions =
-                    localStore.getTransactions(null, period.start, period.end)
+                    localStore
+                        .getTransactions(null, period.start, period.end)
                         .filter { it.account.id in query.accountIds }
                 if (refreshFailure != null && transactions.isEmpty() && accounts.isEmpty()) {
                     FinanceDataLoadResult.Failure(refreshFailure)
@@ -139,9 +137,11 @@ class FinanceRepositoryImpl(
                 val expenseCategories = async { api.getCategories(false) }
                 val loadedAccounts = accounts.await()
                 val transactions =
-                    loadedAccounts.map { account ->
-                        async { api.getTransactions(account.id, requestStart, requestEnd) }
-                    }.awaitAll().flatten()
+                    loadedAccounts
+                        .map { account ->
+                            async { api.getTransactions(account.id, requestStart, requestEnd) }
+                        }.awaitAll()
+                        .flatten()
                 RemoteSnapshot(
                     accounts = loadedAccounts,
                     categories = incomeCategories.await() + expenseCategories.await(),
@@ -216,21 +216,14 @@ private fun LocalDate.toPeriod(endDate: LocalDate): InstantPeriod {
         startDate = this,
         endDate = endDate,
         start = atStartOfDay(zone).toInstant(),
-        end = endDate.plusDays(1).atStartOfDay(zone).toInstant().minusMillis(1),
+        end =
+            endDate
+                .plusDays(1)
+                .atStartOfDay(zone)
+                .toInstant()
+                .minusMillis(1),
     )
 }
-
-private fun List<Transaction>.filterBy(kind: AnalyticsTransactionKind): List<Transaction> =
-    filter {
-        when (kind) {
-            AnalyticsTransactionKind.Income -> it.category.isIncome
-            AnalyticsTransactionKind.Expense -> !it.category.isIncome
-            AnalyticsTransactionKind.All -> true
-        }
-    }
-
-private fun List<Transaction>.sumAmounts(): BigDecimal =
-    fold(BigDecimal.ZERO) { total, transaction -> total + transaction.amount }
 
 private suspend inline fun <T> editorRequest(
     dispatcher: CoroutineDispatcher,
@@ -246,14 +239,21 @@ private suspend inline fun <T> editorRequest(
 
 private fun Exception.toFailureReason(): FinanceFailureReason =
     when (this) {
-        is IOException -> FinanceFailureReason.Network
-        is HttpException ->
+        is IOException -> {
+            FinanceFailureReason.Network
+        }
+
+        is HttpException -> {
             when (code()) {
                 HttpStatus.UNAUTHORIZED, HttpStatus.FORBIDDEN -> FinanceFailureReason.Authorization
                 in HttpStatus.SERVER_ERROR_MIN..HttpStatus.SERVER_ERROR_MAX -> FinanceFailureReason.Server
                 else -> FinanceFailureReason.Unknown
             }
-        else -> FinanceFailureReason.Unknown
+        }
+
+        else -> {
+            FinanceFailureReason.Unknown
+        }
     }
 
 private object HttpStatus {

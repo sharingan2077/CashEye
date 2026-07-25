@@ -132,7 +132,11 @@ class AddExpenseViewModel(
 
     private fun updateAmount(value: String) {
         val normalized = value.replace(',', '.')
-        if (normalized.count { it == '.' } <= 1 && normalized.all { it.isDigit() || it == '.' }) {
+        if (
+            normalized.count { it == '.' } <= 1 &&
+            normalized.all { it.isDigit() || it == '.' } &&
+            normalized.substringAfter('.', "").length <= 2
+        ) {
             _state.value = _state.value.copy(amount = normalized, error = null)
         }
     }

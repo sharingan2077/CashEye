@@ -51,6 +51,7 @@ fun SplashScreen(
                 min = 0f,
                 max = SPLASH_END_PROGRESS,
             ),
+        speed = 20f, // TODO: Убрать скорость Splash Анимации
     )
 
     LaunchedEffect(compositionResult.isFailure, composition, progress) {
