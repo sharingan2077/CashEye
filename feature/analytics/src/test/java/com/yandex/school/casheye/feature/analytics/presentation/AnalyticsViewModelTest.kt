@@ -3,16 +3,13 @@ package com.yandex.school.casheye.feature.analytics.presentation
 import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.Category
 import com.yandex.school.casheye.core.model.Transaction
-import com.yandex.school.casheye.domain.finance.AccountsLoadResult
 import com.yandex.school.casheye.domain.finance.AnalyticsLoadResult
-import com.yandex.school.casheye.domain.finance.AnalyticsQuery
 import com.yandex.school.casheye.domain.finance.AnalyticsSummary
-import com.yandex.school.casheye.domain.finance.AnalyticsTransactionKind
+import com.yandex.school.casheye.domain.finance.FinanceDataLoadResult
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
-import com.yandex.school.casheye.domain.finance.FinanceLoadResult
 import com.yandex.school.casheye.domain.finance.FinanceRepository
 import com.yandex.school.casheye.domain.finance.GetAnalyticsUseCase
-import com.yandex.school.casheye.domain.finance.TransactionKind
+import com.yandex.school.casheye.domain.finance.TransactionsQuery
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
@@ -67,14 +64,6 @@ class AnalyticsViewModelTest {
                 advanceUntilIdle()
             }
 
-            assertEquals(
-                listOf(
-                    AnalyticsTransactionKind.Expense,
-                    AnalyticsTransactionKind.Income,
-                    AnalyticsTransactionKind.Expense,
-                ),
-                repository.queries.map { it.transactionKind },
-            )
             repository.queries.forEach { query ->
                 assertEquals(LocalDate.of(2026, 7, 1), query.startDate)
                 assertEquals(LocalDate.of(2026, 7, 18), query.endDate)
@@ -183,9 +172,6 @@ class AnalyticsViewModelTest {
             viewModel.onIntent(AnalyticsIntent.SelectAccount(2))
             advanceUntilIdle()
 
-            assertEquals(AnalyticsTransactionKind.All, repository.queries[1].transactionKind)
-            assertEquals(setOf(10), repository.queries[2].categoryIds)
-            assertEquals(2, repository.queries[3].accountId)
             assertEquals(null, viewModel.state.value.data.activeSheet)
         }
 
@@ -235,7 +221,8 @@ class AnalyticsViewModelTest {
             advanceUntilIdle()
 
             assertTrue(viewModel.state.value is AnalyticsUiState.Empty)
-            assertEquals(2, repository.queries.size)
+            assertEquals(2, repository.accountRequests)
+            assertEquals(1, repository.queries.size)
         }
 
     @Test
@@ -307,40 +294,48 @@ private class QueueAnalyticsRepository(
     vararg results: AnalyticsLoadResult,
 ) : FinanceRepository {
     private val results = ArrayDeque(results.toList())
-    val queries = mutableListOf<AnalyticsQuery>()
+    val queries = mutableListOf<TransactionsQuery>()
+    var accountRequests = 0
 
-    override suspend fun getAnalytics(query: AnalyticsQuery): AnalyticsLoadResult {
-        queries += query
-        return results.removeFirst()
+    override suspend fun getAccounts(): FinanceDataLoadResult<List<Account>> {
+        accountRequests += 1
+        return when (val result = results.first()) {
+            is AnalyticsLoadResult.Success -> {
+                FinanceDataLoadResult.Success(result.summary.accounts)
+            }
+
+            is AnalyticsLoadResult.Failure -> {
+                results.removeFirst()
+                FinanceDataLoadResult.Failure(result.reason)
+            }
+        }
     }
 
-    override suspend fun getDailySummary(
-        date: LocalDate,
-        currencyCode: String,
-        transactionKind: TransactionKind,
-    ): FinanceLoadResult = error("Not used")
-
-    override suspend fun getAccountsSummary(currencyCode: String): AccountsLoadResult = error("Not used")
+    override suspend fun getTransactions(query: TransactionsQuery): FinanceDataLoadResult<List<Transaction>> {
+        queries += query
+        return when (val result = results.removeFirst()) {
+            is AnalyticsLoadResult.Success -> FinanceDataLoadResult.Success(result.summary.transactions)
+            is AnalyticsLoadResult.Failure -> FinanceDataLoadResult.Failure(result.reason)
+        }
+    }
 }
 
 private class LambdaAnalyticsRepository(
-    private val block: suspend (AnalyticsQuery, Int) -> AnalyticsLoadResult,
+    private val block: suspend (TransactionsQuery, Int) -> AnalyticsLoadResult,
 ) : FinanceRepository {
-    val queries = mutableListOf<AnalyticsQuery>()
+    val queries = mutableListOf<TransactionsQuery>()
 
-    override suspend fun getAnalytics(query: AnalyticsQuery): AnalyticsLoadResult {
+    override suspend fun getAccounts(): FinanceDataLoadResult<List<Account>> =
+        FinanceDataLoadResult.Success(listOf(account(1), account(2)))
+
+    override suspend fun getTransactions(query: TransactionsQuery): FinanceDataLoadResult<List<Transaction>> {
         val index = queries.size
         queries += query
-        return block(query, index)
+        return when (val result = block(query, index)) {
+            is AnalyticsLoadResult.Success -> FinanceDataLoadResult.Success(result.summary.transactions)
+            is AnalyticsLoadResult.Failure -> FinanceDataLoadResult.Failure(result.reason)
+        }
     }
-
-    override suspend fun getDailySummary(
-        date: LocalDate,
-        currencyCode: String,
-        transactionKind: TransactionKind,
-    ): FinanceLoadResult = error("Not used")
-
-    override suspend fun getAccountsSummary(currencyCode: String): AccountsLoadResult = error("Not used")
 }
 
 private fun success(transactions: List<Transaction> = emptyList()): AnalyticsLoadResult =

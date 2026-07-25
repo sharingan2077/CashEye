@@ -7,17 +7,9 @@ import java.math.BigDecimal
 import java.time.LocalDate
 
 interface FinanceRepository {
-    suspend fun getDailySummary(
-        date: LocalDate,
-        currencyCode: String,
-        transactionKind: TransactionKind,
-    ): FinanceLoadResult
+    suspend fun getAccounts(): FinanceDataLoadResult<List<Account>>
 
-    suspend fun getAccountsSummary(currencyCode: String): AccountsLoadResult
-
-    suspend fun getAnalytics(query: AnalyticsQuery): AnalyticsLoadResult
-
-    suspend fun getAccounts(): EditorResult<List<Account>> = EditorResult.Failure(FinanceFailureReason.Unknown)
+    suspend fun getTransactions(query: TransactionsQuery): FinanceDataLoadResult<List<Transaction>>
 
     suspend fun getCategories(isIncome: Boolean): EditorResult<List<Category>> =
         EditorResult.Failure(FinanceFailureReason.Unknown)
@@ -31,6 +23,22 @@ interface FinanceRepository {
 
     suspend fun saveAccount(command: SaveAccountCommand): EditorResult<Unit> =
         EditorResult.Failure(FinanceFailureReason.Unknown)
+}
+
+data class TransactionsQuery(
+    val accountIds: Set<Int>,
+    val startDate: LocalDate,
+    val endDate: LocalDate,
+)
+
+sealed interface FinanceDataLoadResult<out T> {
+    data class Success<T>(
+        val data: T,
+    ) : FinanceDataLoadResult<T>
+
+    data class Failure(
+        val reason: FinanceFailureReason,
+    ) : FinanceDataLoadResult<Nothing>
 }
 
 data class AnalyticsQuery(

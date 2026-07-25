@@ -1,9 +1,15 @@
 package com.yandex.school.casheye.domain.finance
 
+import com.yandex.school.casheye.core.model.Account
+
 class GetEditorAccountsUseCase(
     private val repository: FinanceRepository,
 ) {
-    suspend operator fun invoke() = repository.getAccounts()
+    suspend operator fun invoke(): EditorResult<List<Account>> =
+        when (val result = repository.getAccounts()) {
+            is FinanceDataLoadResult.Success -> EditorResult.Success(result.data)
+            is FinanceDataLoadResult.Failure -> EditorResult.Failure(result.reason)
+        }
 }
 
 class GetEditorCategoriesUseCase(

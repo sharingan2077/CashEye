@@ -15,11 +15,11 @@ import com.yandex.school.casheye.data.finance.mapper.toDomain
 import com.yandex.school.casheye.data.finance.repository.FinanceRepositoryImpl
 import com.yandex.school.casheye.data.finance.sync.FinanceSyncScheduler
 import com.yandex.school.casheye.domain.finance.EditorResult
+import com.yandex.school.casheye.domain.finance.FinanceDataLoadResult
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
-import com.yandex.school.casheye.domain.finance.FinanceLoadResult
 import com.yandex.school.casheye.domain.finance.SaveAccountCommand
 import com.yandex.school.casheye.domain.finance.SaveTransactionCommand
-import com.yandex.school.casheye.domain.finance.TransactionKind
+import com.yandex.school.casheye.domain.finance.TransactionsQuery
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import okhttp3.ResponseBody.Companion.toResponseBody
@@ -48,7 +48,7 @@ class FinanceRepositoryImplTest {
                     Dispatchers.Unconfined,
                 ).getAccounts()
 
-            assertEquals(EditorResult.Success(listOf(cached)), result)
+            assertEquals(FinanceDataLoadResult.Success(listOf(cached)), result)
         }
 
     @Test
@@ -80,7 +80,7 @@ class FinanceRepositoryImplTest {
                     ThrowingFinanceApi(IOException("offline")),
                     FakeFinanceLocalStore(),
                     Dispatchers.Unconfined,
-                ).getAccounts()
+                ).getCategories(isIncome = false)
 
             assertEquals(EditorResult.Failure(FinanceFailureReason.Network), result)
         }
@@ -118,7 +118,7 @@ class FinanceRepositoryImplTest {
                 )
             val date = LocalDate.of(2026, 7, 17)
 
-            repository(api).getDailySummary(date, "RUB", TransactionKind.Expense)
+            repository(api).getTransactions(TransactionsQuery(setOf(1, 2, 3), date, date))
 
             assertEquals(setOf(1, 2, 3), api.requests.map { it.accountId }.toSet())
             assertTrue(api.requests.all { it.startDate == "2026-07-17" })
@@ -126,7 +126,7 @@ class FinanceRepositoryImplTest {
         }
 
     @Test
-    fun `filters expenses sorts newest first and calculates total`() =
+    fun `returns transactions without applying domain filters or ordering`() =
         runBlocking {
             val api =
                 FakeFinanceApi(
@@ -151,36 +151,26 @@ class FinanceRepositoryImplTest {
                 )
 
             val result =
-                repository(api).getDailySummary(
-                    date = LocalDate.of(2026, 7, 17),
-                    currencyCode = "RUB",
-                    transactionKind = TransactionKind.Expense,
-                ) as FinanceLoadResult.Success
+                repository(api).getTransactions(
+                    TransactionsQuery(setOf(1, 2), LocalDate.of(2026, 7, 17), LocalDate.of(2026, 7, 17)),
+                ) as FinanceDataLoadResult.Success
 
-            assertEquals(listOf(3, 1), result.summary.transactions.map { it.id })
-            assertEquals(BigDecimal("31.00"), result.summary.total)
-            assertEquals("RUB", result.summary.currencyCode)
+            assertEquals(listOf(1, 2, 3), result.data.map { it.id })
         }
 
     @Test
-    fun `no accounts returns successful empty summary`() =
+    fun `returns empty account collection`() =
         runBlocking {
             val api = FakeFinanceApi(accounts = emptyList(), transactionsByAccount = emptyMap())
 
-            val result =
-                repository(api).getDailySummary(
-                    LocalDate.of(2026, 7, 17),
-                    "RUB",
-                    TransactionKind.Expense,
-                ) as FinanceLoadResult.Success
+            val result = repository(api).getAccounts() as FinanceDataLoadResult.Success
 
-            assertTrue(result.summary.transactions.isEmpty())
-            assertEquals(BigDecimal.ZERO, result.summary.total)
+            assertTrue(result.data.isEmpty())
             assertTrue(api.requests.isEmpty())
         }
 
     @Test
-    fun `only income returns successful empty summary`() =
+    fun `returns income transactions without filtering`() =
         runBlocking {
             val api =
                 FakeFinanceApi(
@@ -200,41 +190,11 @@ class FinanceRepositoryImplTest {
                 )
 
             val result =
-                repository(api).getDailySummary(
-                    LocalDate.of(2026, 7, 17),
-                    "RUB",
-                    TransactionKind.Expense,
-                ) as FinanceLoadResult.Success
+                repository(api).getTransactions(
+                    TransactionsQuery(setOf(1), LocalDate.of(2026, 7, 17), LocalDate.of(2026, 7, 17)),
+                ) as FinanceDataLoadResult.Success
 
-            assertTrue(result.summary.transactions.isEmpty())
-            assertEquals(BigDecimal.ZERO, result.summary.total)
-        }
-
-    @Test
-    fun `income kind keeps only income transactions`() =
-        runBlocking {
-            val api =
-                FakeFinanceApi(
-                    accounts = listOf(accountDto(1)),
-                    transactionsByAccount =
-                        mapOf(
-                            1 to
-                                listOf(
-                                    transactionDto(1, "100.00", Instant.parse("2026-07-17T10:00:00Z"), true),
-                                    transactionDto(2, "20.00", Instant.parse("2026-07-17T11:00:00Z")),
-                                ),
-                        ),
-                )
-
-            val result =
-                repository(api).getDailySummary(
-                    LocalDate.of(2026, 7, 17),
-                    "RUB",
-                    TransactionKind.Income,
-                ) as FinanceLoadResult.Success
-
-            assertEquals(listOf(1), result.summary.transactions.map { it.id })
-            assertEquals(BigDecimal("100.00"), result.summary.total)
+            assertEquals(listOf(1), result.data.map { it.id })
         }
 
     @Test
@@ -242,15 +202,10 @@ class FinanceRepositoryImplTest {
         runBlocking {
             val api = ThrowingFinanceApi(IOException("offline"))
 
-            val result =
-                repository(api).getDailySummary(
-                    LocalDate.of(2026, 7, 17),
-                    "RUB",
-                    TransactionKind.Expense,
-                )
+            val result = repository(api).getAccounts()
 
             assertEquals(
-                FinanceLoadResult.Failure(FinanceFailureReason.Network),
+                FinanceDataLoadResult.Failure(FinanceFailureReason.Network),
                 result,
             )
         }
@@ -261,15 +216,10 @@ class FinanceRepositoryImplTest {
             val response = Response.error<Unit>(500, "server error".toResponseBody())
             val api = ThrowingFinanceApi(HttpException(response))
 
-            val result =
-                repository(api).getDailySummary(
-                    LocalDate.of(2026, 7, 17),
-                    "RUB",
-                    TransactionKind.Expense,
-                )
+            val result = repository(api).getAccounts()
 
             assertEquals(
-                FinanceLoadResult.Failure(FinanceFailureReason.Server),
+                FinanceDataLoadResult.Failure(FinanceFailureReason.Server),
                 result,
             )
         }
@@ -291,14 +241,12 @@ class FinanceRepositoryImplTest {
                 )
 
             val result =
-                repository(api).getDailySummary(
-                    LocalDate.of(2026, 7, 17),
-                    "RUB",
-                    TransactionKind.Expense,
+                repository(api).getTransactions(
+                    TransactionsQuery(setOf(1, 2), LocalDate.of(2026, 7, 17), LocalDate.of(2026, 7, 17)),
                 )
 
             assertEquals(
-                FinanceLoadResult.Failure(FinanceFailureReason.Network),
+                FinanceDataLoadResult.Failure(FinanceFailureReason.Network),
                 result,
             )
         }

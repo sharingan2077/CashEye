@@ -9,20 +9,16 @@ import com.yandex.school.casheye.data.finance.dto.AccountDto
 import com.yandex.school.casheye.data.finance.dto.CategoryDto
 import com.yandex.school.casheye.data.finance.dto.TransactionResponseDto
 import com.yandex.school.casheye.data.finance.sync.FinanceSyncScheduler
-import com.yandex.school.casheye.domain.finance.AccountsLoadResult
-import com.yandex.school.casheye.domain.finance.AccountsSummary
-import com.yandex.school.casheye.domain.finance.AnalyticsLoadResult
-import com.yandex.school.casheye.domain.finance.AnalyticsQuery
-import com.yandex.school.casheye.domain.finance.AnalyticsSummary
-import com.yandex.school.casheye.domain.finance.AnalyticsTransactionKind
 import com.yandex.school.casheye.domain.finance.EditorResult
+import com.yandex.school.casheye.domain.finance.FinanceDataLoadResult
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
-import com.yandex.school.casheye.domain.finance.FinanceLoadResult
 import com.yandex.school.casheye.domain.finance.FinanceRepository
-import com.yandex.school.casheye.domain.finance.FinanceSummary
 import com.yandex.school.casheye.domain.finance.SaveAccountCommand
 import com.yandex.school.casheye.domain.finance.SaveTransactionCommand
-import com.yandex.school.casheye.domain.finance.TransactionKind
+import com.yandex.school.casheye.domain.finance.TransactionsQuery
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.Inject
+import dev.zacsweers.metro.SingleIn
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -32,7 +28,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import retrofit2.HttpException
 import java.io.IOException
-import java.math.BigDecimal
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -43,12 +38,30 @@ class FinanceRepositoryImpl(
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val syncScheduler: FinanceSyncScheduler = NoOpFinanceSyncScheduler,
 ) : FinanceRepository {
-    override suspend fun getAccounts(): EditorResult<List<Account>> =
-        localFirstEditorRequest(
-            refresh = { localStore.refreshAccounts(api.getAccounts()) },
-            read = { localStore.getAccounts() },
-            hasCache = { it.isNotEmpty() },
-        )
+    override suspend fun getAccounts(): FinanceDataLoadResult<List<Account>> =
+        withContext(ioDispatcher) {
+            val refreshFailure =
+                try {
+                    localStore.refreshAccounts(api.getAccounts())
+                    null
+                } catch (error: CancellationException) {
+                    throw error
+                } catch (error: Exception) {
+                    error.toFailureReason()
+                }
+            try {
+                val accounts = localStore.getAccounts()
+                if (refreshFailure != null && accounts.isEmpty()) {
+                    FinanceDataLoadResult.Failure(refreshFailure)
+                } else {
+                    FinanceDataLoadResult.Success(accounts)
+                }
+            } catch (error: CancellationException) {
+                throw error
+            } catch (_: Exception) {
+                FinanceDataLoadResult.Failure(FinanceFailureReason.Unknown)
+            }
+        }
 
     override suspend fun getCategories(isIncome: Boolean): EditorResult<List<Category>> =
         localFirstEditorRequest(
@@ -85,101 +98,24 @@ class FinanceRepositoryImpl(
             scheduleSync()
         }
 
-    override suspend fun getAnalytics(query: AnalyticsQuery): AnalyticsLoadResult =
+    override suspend fun getTransactions(query: TransactionsQuery): FinanceDataLoadResult<List<Transaction>> =
         withContext(ioDispatcher) {
             val period = query.startDate.toPeriod(query.endDate)
             val refreshFailure = refreshPeriodCatching(period)
             try {
                 val accounts = localStore.getAccounts()
-                val transactions = localStore.getTransactions(query.accountId, period.start, period.end)
-                if (refreshFailure != null && transactions.isEmpty() && accounts.isEmpty()) {
-                    return@withContext AnalyticsLoadResult.Failure(refreshFailure)
-                }
-                val kindFiltered = transactions.filterBy(query.transactionKind)
-                val availableCategories =
-                    kindFiltered.map { it.category }.distinctBy { it.id }.sortedBy { it.name }
-                val filtered =
-                    kindFiltered
-                        .filter { query.categoryIds.isEmpty() || it.category.id in query.categoryIds }
-                        .sortedByDescending { it.transactionDate }
-                AnalyticsLoadResult.Success(
-                    AnalyticsSummary(
-                        total = filtered.sumAmounts(),
-                        currencyCode = query.currencyCode,
-                        transactions = filtered,
-                        accounts = accounts,
-                        availableCategories = availableCategories,
-                    ),
-                )
-            } catch (error: CancellationException) {
-                throw error
-            } catch (_: Exception) {
-                AnalyticsLoadResult.Failure(FinanceFailureReason.Unknown)
-            }
-        }
-
-    override suspend fun getDailySummary(
-        date: LocalDate,
-        currencyCode: String,
-        transactionKind: TransactionKind,
-    ): FinanceLoadResult =
-        withContext(ioDispatcher) {
-            val period = date.toPeriod(date)
-            val refreshFailure = refreshPeriodCatching(period)
-            try {
-                val accounts = localStore.getAccounts()
                 val transactions =
                     localStore.getTransactions(null, period.start, period.end)
-                        .filter {
-                            when (transactionKind) {
-                                TransactionKind.Income -> it.category.isIncome
-                                TransactionKind.Expense -> !it.category.isIncome
-                            }
-                        }.sortedByDescending { it.transactionDate }
+                        .filter { it.account.id in query.accountIds }
                 if (refreshFailure != null && transactions.isEmpty() && accounts.isEmpty()) {
-                    return@withContext FinanceLoadResult.Failure(refreshFailure)
+                    FinanceDataLoadResult.Failure(refreshFailure)
+                } else {
+                    FinanceDataLoadResult.Success(transactions)
                 }
-                FinanceLoadResult.Success(
-                    FinanceSummary(
-                        total = transactions.sumAmounts(),
-                        currencyCode = currencyCode,
-                        transactions = transactions,
-                    ),
-                )
             } catch (error: CancellationException) {
                 throw error
             } catch (_: Exception) {
-                FinanceLoadResult.Failure(FinanceFailureReason.Unknown)
-            }
-        }
-
-    override suspend fun getAccountsSummary(currencyCode: String): AccountsLoadResult =
-        withContext(ioDispatcher) {
-            val refreshFailure =
-                try {
-                    localStore.refreshAccounts(api.getAccounts())
-                    null
-                } catch (error: CancellationException) {
-                    throw error
-                } catch (error: Exception) {
-                    error.toFailureReason()
-                }
-            try {
-                val accounts = localStore.getAccounts()
-                if (refreshFailure != null && accounts.isEmpty()) {
-                    return@withContext AccountsLoadResult.Failure(refreshFailure)
-                }
-                AccountsLoadResult.Success(
-                    AccountsSummary(
-                        total = accounts.fold(BigDecimal.ZERO) { total, account -> total + account.balance },
-                        currencyCode = currencyCode,
-                        accounts = accounts,
-                    ),
-                )
-            } catch (error: CancellationException) {
-                throw error
-            } catch (_: Exception) {
-                AccountsLoadResult.Failure(FinanceFailureReason.Unknown)
+                FinanceDataLoadResult.Failure(FinanceFailureReason.Unknown)
             }
         }
 

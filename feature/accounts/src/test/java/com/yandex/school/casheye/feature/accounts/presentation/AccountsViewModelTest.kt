@@ -1,15 +1,14 @@
 package com.yandex.school.casheye.feature.accounts.presentation
 
 import com.yandex.school.casheye.core.model.Account
+import com.yandex.school.casheye.core.model.Transaction
 import com.yandex.school.casheye.domain.finance.AccountsLoadResult
 import com.yandex.school.casheye.domain.finance.AccountsSummary
-import com.yandex.school.casheye.domain.finance.AnalyticsLoadResult
-import com.yandex.school.casheye.domain.finance.AnalyticsQuery
+import com.yandex.school.casheye.domain.finance.FinanceDataLoadResult
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
-import com.yandex.school.casheye.domain.finance.FinanceLoadResult
 import com.yandex.school.casheye.domain.finance.FinanceRepository
 import com.yandex.school.casheye.domain.finance.GetAccountsUseCase
-import com.yandex.school.casheye.domain.finance.TransactionKind
+import com.yandex.school.casheye.domain.finance.TransactionsQuery
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -146,20 +145,16 @@ private class FakeAccountsRepository(
     private val results = ArrayDeque(results.toList())
     val requestedCurrencies = mutableListOf<String>()
 
-    override suspend fun getDailySummary(
-        date: java.time.LocalDate,
-        currencyCode: String,
-        transactionKind: TransactionKind,
-    ): FinanceLoadResult = error("Daily summary is not requested by AccountsViewModel")
-
-    override suspend fun getAccountsSummary(currencyCode: String): AccountsLoadResult {
-        requestedCurrencies += currencyCode
-        return results.removeFirst()
+    override suspend fun getAccounts(): FinanceDataLoadResult<List<Account>> {
+        requestedCurrencies += "RUB"
+        return when (val result = results.removeFirst()) {
+            is AccountsLoadResult.Success -> FinanceDataLoadResult.Success(result.summary.accounts)
+            is AccountsLoadResult.Failure -> FinanceDataLoadResult.Failure(result.reason)
+        }
     }
 
-    override suspend fun getAnalytics(query: AnalyticsQuery): AnalyticsLoadResult {
-        TODO("Not yet implemented")
-    }
+    override suspend fun getTransactions(query: TransactionsQuery): FinanceDataLoadResult<List<Transaction>> =
+        error("Transactions are not requested by AccountsViewModel")
 }
 
 private fun account(): Account =

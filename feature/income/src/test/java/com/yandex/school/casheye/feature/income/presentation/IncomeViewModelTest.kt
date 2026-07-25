@@ -3,15 +3,13 @@ package com.yandex.school.casheye.feature.income.presentation
 import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.Category
 import com.yandex.school.casheye.core.model.Transaction
-import com.yandex.school.casheye.domain.finance.AccountsLoadResult
-import com.yandex.school.casheye.domain.finance.AnalyticsLoadResult
-import com.yandex.school.casheye.domain.finance.AnalyticsQuery
+import com.yandex.school.casheye.domain.finance.FinanceDataLoadResult
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import com.yandex.school.casheye.domain.finance.FinanceLoadResult
 import com.yandex.school.casheye.domain.finance.FinanceRepository
 import com.yandex.school.casheye.domain.finance.FinanceSummary
 import com.yandex.school.casheye.domain.finance.GetDailySummaryUseCase
-import com.yandex.school.casheye.domain.finance.TransactionKind
+import com.yandex.school.casheye.domain.finance.TransactionsQuery
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -62,7 +60,6 @@ class IncomeViewModelTest {
                 IncomeUiState.Content(summary.total, summary.currencyCode, summary.transactions),
                 viewModel.state.value,
             )
-            assertEquals(listOf(TransactionKind.Income), repository.requestedKinds)
         }
 
     @Test
@@ -148,10 +145,6 @@ class IncomeViewModelTest {
                 listOf(LocalDate.of(2026, 7, 17), selectedDate, selectedDate),
                 repository.requestedDates,
             )
-            assertEquals(
-                listOf(TransactionKind.Income, TransactionKind.Income, TransactionKind.Income),
-                repository.requestedKinds,
-            )
         }
 
     @Test
@@ -193,24 +186,28 @@ private class FakeIncomeFinanceRepository(
 ) : FinanceRepository {
     private val results = ArrayDeque(results.toList())
     val requestedDates = mutableListOf<LocalDate>()
-    val requestedKinds = mutableListOf<TransactionKind>()
 
-    override suspend fun getDailySummary(
-        date: LocalDate,
-        currencyCode: String,
-        transactionKind: TransactionKind,
-    ): FinanceLoadResult {
-        requestedDates += date
-        requestedKinds += transactionKind
-        return results.removeFirst()
-    }
+    override suspend fun getAccounts(): FinanceDataLoadResult<List<Account>> =
+        when (val result = results.first()) {
+            is FinanceLoadResult.Success -> {
+                FinanceDataLoadResult.Success(
+                    result.summary.transactions
+                        .map { it.account }
+                        .distinctBy { it.id },
+                )
+            }
 
-    override suspend fun getAccountsSummary(currencyCode: String): AccountsLoadResult {
-        TODO("Not yet implemented")
-    }
+            is FinanceLoadResult.Failure -> {
+                FinanceDataLoadResult.Failure(result.reason)
+            }
+        }
 
-    override suspend fun getAnalytics(query: AnalyticsQuery): AnalyticsLoadResult {
-        TODO("Not yet implemented")
+    override suspend fun getTransactions(query: TransactionsQuery): FinanceDataLoadResult<List<Transaction>> {
+        requestedDates += query.startDate
+        return when (val result = results.removeFirst()) {
+            is FinanceLoadResult.Success -> FinanceDataLoadResult.Success(result.summary.transactions)
+            is FinanceLoadResult.Failure -> FinanceDataLoadResult.Failure(result.reason)
+        }
     }
 }
 
