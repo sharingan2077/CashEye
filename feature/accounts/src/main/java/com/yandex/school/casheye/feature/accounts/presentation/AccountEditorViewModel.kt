@@ -14,15 +14,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import java.time.Clock
-import java.time.LocalDate
-import java.time.LocalTime
 
 @Inject
 class AccountEditorViewModel(
     private val getAccount: GetAccountUseCase,
     private val saveAccount: SaveAccountUseCase,
-    private val clock: Clock = Clock.systemDefaultZone(),
 ) : ViewModel() {
     private val _state = MutableStateFlow(AccountEditorUiState())
     val state = _state.asStateFlow()
@@ -44,8 +40,6 @@ class AccountEditorViewModel(
             _state.value =
                 AccountEditorUiState(
                     editingId = id,
-                    openedDate = LocalDate.now(clock),
-                    openedTime = LocalTime.now(clock).withSecond(0).withNano(0),
                 )
             if (id == null) {
                 _state.value = _state.value.copy(isLoading = false)

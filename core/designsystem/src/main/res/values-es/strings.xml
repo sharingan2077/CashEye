@@ -26,6 +26,8 @@
     <string name="finance_editor_categories">Categorías</string>
     <string name="finance_editor_name">Nombre</string>
     <string name="finance_editor_account_name">Nombre de la cuenta</string>
+    <string name="finance_editor_account_name_placeholder">Introduce el nombre de la cuenta</string>
+    <string name="finance_editor_add_account">Añadir cuenta</string>
     <string name="finance_editor_balance_adjustment">Ajuste de saldo</string>
     <string name="finance_editor_save">Guardar</string>
     <string name="finance_editor_find_category">Buscar una categoría</string>
@@ -34,7 +36,7 @@
     <string name="finance_editor_selected">Seleccionado</string>
     <string name="finance_editor_apply">Aplicar</string>
     <string name="finance_editor_cancel">Cancelar</string>
+    <string name="finance_editor_done">Listo</string>
+    <string name="finance_editor_comment_placeholder">Introduce un comentario</string>
     <string name="finance_editor_enter_time">Introduce la hora</string>
-    <string name="finance_editor_hours">Horas</string>
-    <string name="finance_editor_minutes">Minutos</string>
 </resources>

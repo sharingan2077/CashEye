@@ -1,8 +1,6 @@
 package com.yandex.school.casheye.feature.accounts.presentation
 
 import androidx.annotation.StringRes
-import java.time.LocalDate
-import java.time.LocalTime
 
 data class AccountEditorUiState(
     val isLoading: Boolean = true,
@@ -12,8 +10,6 @@ data class AccountEditorUiState(
     val balance: String = "",
     val currency: String = "RUB",
     val emoji: String = "💵",
-    val openedDate: LocalDate = LocalDate.now(),
-    val openedTime: LocalTime = LocalTime.now().withSecond(0).withNano(0),
     @StringRes val error: Int? = null,
 )
 

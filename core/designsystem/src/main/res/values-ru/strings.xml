@@ -26,6 +26,8 @@
     <string name="finance_editor_categories">Статьи</string>
     <string name="finance_editor_name">Название</string>
     <string name="finance_editor_account_name">Название счёта</string>
+    <string name="finance_editor_account_name_placeholder">Введите название счёта</string>
+    <string name="finance_editor_add_account">Добавление счёта</string>
     <string name="finance_editor_balance_adjustment">Корректировка баланса</string>
     <string name="finance_editor_save">Сохранить</string>
     <string name="finance_editor_find_category">Найти статью</string>
@@ -34,7 +36,7 @@
     <string name="finance_editor_selected">Выбрано</string>
     <string name="finance_editor_apply">Применить</string>
     <string name="finance_editor_cancel">Отменить</string>
+    <string name="finance_editor_done">Готово</string>
+    <string name="finance_editor_comment_placeholder">Введите комментарий</string>
     <string name="finance_editor_enter_time">Введите время</string>
-    <string name="finance_editor_hours">Часы</string>
-    <string name="finance_editor_minutes">Минуты</string>
 </resources>

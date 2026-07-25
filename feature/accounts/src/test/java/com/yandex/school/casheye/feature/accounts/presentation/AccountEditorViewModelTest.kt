@@ -20,10 +20,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import java.math.BigDecimal
-import java.time.Clock
-import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneOffset
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class AccountEditorViewModelTest {
@@ -41,7 +38,6 @@ class AccountEditorViewModelTest {
                 AccountEditorViewModel(
                     GetAccountUseCase(repository),
                     SaveAccountUseCase(repository),
-                    Clock.fixed(Instant.parse("2026-07-22T10:00:00Z"), ZoneOffset.UTC),
                 )
             viewModel.onIntent(AccountEditorIntent.Open(5))
             advanceUntilIdle()

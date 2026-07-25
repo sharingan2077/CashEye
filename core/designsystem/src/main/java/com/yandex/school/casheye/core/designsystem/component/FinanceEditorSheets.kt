@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
@@ -30,6 +29,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -40,36 +40,37 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SheetState
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimeInput
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.painter.BrushPainter
-import androidx.compose.ui.layout.FirstBaseline
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.yandex.school.casheye.core.designsystem.R
@@ -78,7 +79,6 @@ import java.text.DecimalFormatSymbols
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
-import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -139,138 +139,183 @@ fun TransactionEditorSheet(
     onDismiss: () -> Unit,
 ) {
     var nested by remember { mutableStateOf<TransactionNestedSheet?>(null) }
+    var shouldRequestAmountFocus by remember { mutableStateOf(true) }
+    var interceptedDismiss by remember { mutableStateOf(false) }
     val transactionIsValid = amount.isNotBlank() && category != null && account != null
     val dateFormatter = rememberEditorDateFormatter()
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-
-    FinanceEditorSheet(
-        amount = amount,
-        currency = currencySymbol(account?.currencyCode ?: "RUB"),
-        isSaving = isSaving,
-        isSaveEnabled = transactionIsValid,
-        error = error,
-        onAmountChange = onAmountChange,
-        onSave = onSave,
-        onDismiss = onDismiss,
-        sheetState = sheetState,
-    ) { clearPrimaryFocus ->
-        EditorRow(
-            icon = R.drawable.ic_editor_category,
-            label = stringResource(R.string.finance_editor_category),
-            value = category?.label ?: "Выбрать",
-            onClick = {
-                clearPrimaryFocus()
-                nested = TransactionNestedSheet.Category
+    val currentNested by rememberUpdatedState(nested)
+    val sheetState =
+        rememberModalBottomSheetState(
+            skipPartiallyExpanded = true,
+            confirmValueChange = { target ->
+                if (target == SheetValue.Hidden && currentNested.isSheetContent) {
+                    nested = null
+                    interceptedDismiss = true
+                    false
+                } else {
+                    true
+                }
             },
         )
-        EditorRow(
-            icon = R.drawable.ic_editor_calendar,
-            label = stringResource(R.string.finance_editor_date),
-            value = date.format(dateFormatter),
-            onClick = {
-                clearPrimaryFocus()
-                nested = TransactionNestedSheet.Date
-            },
-        )
-        EditorRow(
-            icon = R.drawable.ic_editor_calendar,
-            label = stringResource(R.string.finance_editor_time),
-            value = time.format(editorTimeFormatter),
-            onClick = {
-                clearPrimaryFocus()
-                nested = TransactionNestedSheet.Time
-            },
-        )
-        EditorRow(
-            icon = R.drawable.ic_editor_wallet,
-            label = stringResource(R.string.finance_editor_account),
-            value = account?.label.orEmpty(),
-            onClick = {
-                clearPrimaryFocus()
-                nested = TransactionNestedSheet.Account
-            },
-        )
-        EditorRow(
-            icon = R.drawable.ic_editor_comment,
-            label = stringResource(R.string.finance_editor_comment),
-            value = comment.ifBlank { stringResource(R.string.finance_editor_not_specified) },
-            onClick = {
-                clearPrimaryFocus()
-                nested = TransactionNestedSheet.Comment
-            },
-        )
+    LaunchedEffect(interceptedDismiss) {
+        if (interceptedDismiss) {
+            awaitFrame()
+            interceptedDismiss = false
+        }
     }
 
-    when (nested) {
-        TransactionNestedSheet.Category -> {
-            EditorOptionSheet(
-                title = stringResource(R.string.finance_editor_categories),
-                options = categories,
-                selectedId = category?.id,
-                searchable = true,
-                onSelect = {
-                    onCategoryChange(it)
-                    nested = null
-                },
-                onDismiss = { nested = null },
-            )
-        }
+    EditorModalSheet(
+        sheetState = sheetState,
+        onDismiss = {
+            if (interceptedDismiss) {
+                interceptedDismiss = false
+            } else if (nested.isSheetContent) {
+                nested = null
+            } else {
+                onDismiss()
+            }
+        },
+    ) {
+        when (nested) {
+            TransactionNestedSheet.Category -> {
+                EditorOptionContent(
+                    title = stringResource(R.string.finance_editor_categories),
+                    options = categories,
+                    selectedId = category?.id,
+                    searchable = true,
+                    onSelect = {
+                        onCategoryChange(it)
+                        nested = null
+                    },
+                )
+            }
 
-        TransactionNestedSheet.Account -> {
-            EditorAccountSheet(
-                accounts = accounts,
-                selectedId = account?.id,
-                onSelect = {
-                    onAccountChange(it)
-                    nested = null
-                },
-                onDismiss = { nested = null },
-            )
-        }
+            TransactionNestedSheet.Account -> {
+                EditorAccountContent(
+                    accounts = accounts,
+                    selectedId = account?.id,
+                    onSelect = {
+                        onAccountChange(it)
+                        nested = null
+                    },
+                )
+            }
 
-        TransactionNestedSheet.Comment -> {
-            EditorTextSheet(
-                title = stringResource(R.string.finance_editor_comment),
-                value = comment,
-                singleLine = false,
-                onConfirm = {
-                    onCommentChange(it)
-                    nested = null
-                },
-                onDismiss = { nested = null },
-            )
-        }
+            TransactionNestedSheet.Comment -> {
+                EditorTextContent(
+                    title = stringResource(R.string.finance_editor_comment),
+                    value = comment,
+                    placeholder = stringResource(R.string.finance_editor_comment_placeholder),
+                    singleLine = false,
+                    onConfirm = {
+                        onCommentChange(it)
+                        nested = null
+                    },
+                    onDismiss = { nested = null },
+                )
+            }
 
-        TransactionNestedSheet.Date -> {
-            EditorDateSheet(
-                date = date,
-                onConfirm = {
-                    onDateChange(it)
-                    nested = null
-                },
-                onDismiss = { nested = null },
-            )
+            else -> {
+                FinanceEditorContent(
+                    amount = amount,
+                    currency = currencySymbol(account?.currencyCode ?: "RUB"),
+                    isSaving = isSaving,
+                    isSaveEnabled = transactionIsValid,
+                    error = error,
+                    onAmountChange = onAmountChange,
+                    onSave = onSave,
+                    requestAmountFocus = shouldRequestAmountFocus,
+                    onAmountFocusRequested = { shouldRequestAmountFocus = false },
+                ) { clearPrimaryFocus ->
+                    EditorRow(
+                        icon = R.drawable.ic_editor_category,
+                        label = stringResource(R.string.finance_editor_category),
+                        value = category?.label ?: stringResource(R.string.finance_editor_not_specified),
+                        onClick = {
+                            clearPrimaryFocus()
+                            nested = TransactionNestedSheet.Category
+                        },
+                    )
+                    EditorRow(
+                        icon = R.drawable.ic_editor_calendar,
+                        label = stringResource(R.string.finance_editor_date),
+                        value = date.format(dateFormatter),
+                        onClick = {
+                            clearPrimaryFocus()
+                            nested = TransactionNestedSheet.Date
+                        },
+                    )
+                    EditorRow(
+                        icon = R.drawable.ic_editor_calendar,
+                        label = stringResource(R.string.finance_editor_time),
+                        value = time.format(editorTimeFormatter),
+                        onClick = {
+                            clearPrimaryFocus()
+                            nested = TransactionNestedSheet.Time
+                        },
+                    )
+                    EditorRow(
+                        icon = R.drawable.ic_editor_wallet,
+                        label = stringResource(R.string.finance_editor_account),
+                        value = account?.label.orEmpty(),
+                        onClick = {
+                            clearPrimaryFocus()
+                            nested = TransactionNestedSheet.Account
+                        },
+                    )
+                    EditorRow(
+                        icon = R.drawable.ic_editor_comment,
+                        label = stringResource(R.string.finance_editor_comment),
+                        value = comment.ifBlank { stringResource(R.string.finance_editor_not_specified) },
+                        onClick = {
+                            clearPrimaryFocus()
+                            nested = TransactionNestedSheet.Comment
+                        },
+                    )
+                }
+            }
         }
+    }
 
-        TransactionNestedSheet.Time -> {
-            EditorTimeSheet(
-                time = time,
-                onConfirm = {
-                    onTimeChange(it)
-                    nested = null
-                },
-                onDismiss = { nested = null },
-            )
-        }
-
-        null -> {
-        }
+    if (nested == TransactionNestedSheet.Date) {
+        EditorDateDialog(
+            date = date,
+            onConfirm = {
+                onDateChange(it)
+                nested = null
+            },
+            onDismiss = { nested = null },
+        )
+    }
+    if (nested == TransactionNestedSheet.Time) {
+        EditorTimeDialog(
+            time = time,
+            onConfirm = {
+                onTimeChange(it)
+                nested = null
+            },
+            onDismiss = { nested = null },
+        )
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun FinanceEditorSheet(
+internal fun EditorModalSheet(
+    sheetState: SheetState,
+    onDismiss: () -> Unit,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        dragHandle = { EditorSheetHandle() },
+        sheetState = sheetState,
+        content = content,
+    )
+}
+
+@Composable
+internal fun FinanceEditorContent(
     amount: String,
     currency: String,
     isSaving: Boolean,
@@ -278,70 +323,66 @@ internal fun FinanceEditorSheet(
     error: String?,
     onAmountChange: (String) -> Unit,
     onSave: () -> Unit,
-    onDismiss: () -> Unit,
-    sheetState: SheetState,
     title: String? = null,
+    requestAmountFocus: Boolean,
+    onAmountFocusRequested: () -> Unit,
     rows: @Composable ColumnScope.(clearPrimaryFocus: () -> Unit) -> Unit,
 ) {
     val amountFocusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
-    LaunchedEffect(sheetState) {
+    LaunchedEffect(requestAmountFocus) {
+        if (!requestAmountFocus) return@LaunchedEffect
         awaitFrame()
         amountFocusRequester.requestFocus()
+        onAmountFocusRequested()
     }
 
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        dragHandle = { EditorSheetHandle() },
-        sheetState = sheetState,
+    Column(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .imePadding(),
     ) {
+        title?.let {
+            Text(
+                text = it,
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.align(Alignment.CenterHorizontally).padding(bottom = 14.dp),
+            )
+        }
+        EditorAmountField(
+            amount = amount,
+            currency = currency,
+            onAmountChange = onAmountChange,
+            modifier = Modifier.padding(horizontal = 20.dp),
+            focusRequester = amountFocusRequester,
+        )
+        Spacer(Modifier.height(18.dp))
         Column(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .imePadding(),
+                    .heightIn(max = 340.dp)
+                    .verticalScroll(rememberScrollState()),
+            content = { rows { focusManager.clearFocus(force = true) } },
+        )
+        error?.let {
+            Text(
+                text = it,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+            )
+        }
+        Box(
+            modifier = Modifier.fillMaxWidth().padding(end = 16.dp, bottom = 9.dp),
+            contentAlignment = Alignment.CenterEnd,
         ) {
-            title?.let {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.align(Alignment.CenterHorizontally).padding(bottom = 14.dp),
-                )
-            }
-            EditorAmountField(
-                amount = amount,
-                currency = currency,
-                onAmountChange = onAmountChange,
-                modifier = Modifier.padding(horizontal = 20.dp),
-                focusRequester = amountFocusRequester,
+            EditorConfirmFab(
+                enabled = isSaveEnabled && !isSaving,
+                isSaving = isSaving,
+                onClick = onSave,
             )
-            Spacer(Modifier.height(18.dp))
-            Column(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 340.dp)
-                        .verticalScroll(rememberScrollState()),
-                content = { rows { focusManager.clearFocus(force = true) } },
-            )
-            error?.let {
-                Text(
-                    text = it,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
-                )
-            }
-            Box(
-                modifier = Modifier.fillMaxWidth().padding(end = 16.dp, bottom = 9.dp),
-                contentAlignment = Alignment.CenterEnd,
-            ) {
-                EditorConfirmFab(
-                    enabled = isSaveEnabled && !isSaving,
-                    isSaving = isSaving,
-                    onClick = onSave,
-                )
-            }
         }
     }
 }
@@ -675,22 +716,31 @@ internal fun EditorRow(
             Text(
                 text = label,
                 style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.weight(1f).padding(start = 16.dp),
+                modifier = Modifier.padding(start = 16.dp),
             )
-            ValuePill(value)
+            Spacer(modifier = Modifier.weight(1f))
+            ValuePill(
+                value = value,
+                modifier = Modifier.padding(start = 12.dp),
+//                modifier = Modifier.weight(0.45f, fill = false),
+            )
         }
         if (showDivider) HorizontalDivider()
     }
 }
 
 @Composable
-private fun ValuePill(value: String) {
+private fun ValuePill(
+    value: String,
+    modifier: Modifier = Modifier,
+) {
     Text(
         text = value,
         style = MaterialTheme.typography.labelLarge,
         maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
         modifier =
-            Modifier
+            modifier
                 .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
                 .padding(horizontal = 12.dp, vertical = 6.dp),
     )
@@ -720,56 +770,47 @@ private fun EditorConfirmFab(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun EditorOptionSheet(
+private fun EditorOptionContent(
     title: String,
     options: List<EditorOption>,
     selectedId: Int?,
     searchable: Boolean,
     onSelect: (EditorOption) -> Unit,
-    onDismiss: () -> Unit,
 ) {
     var query by remember { mutableStateOf("") }
     val visibleOptions = remember(options, query) { options.filter { it.label.contains(query, ignoreCase = true) } }
-    ModalBottomSheet(onDismissRequest = onDismiss, dragHandle = { EditorSheetHandle() }) {
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxWidth(),
-        ) {
-            EditorSheetTitle(title)
-            if (searchable) {
-                OutlinedTextField(
-                    value = query,
-                    onValueChange = { query = it },
-                    placeholder = { Text(stringResource(R.string.finance_editor_find_category)) },
-                    leadingIcon = {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_editor_search),
-                            contentDescription = null,
-                        )
-                    },
-                    singleLine = true,
-                    shape = RoundedCornerShape(28.dp),
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp, start = 20.dp, end = 20.dp),
+    Column(modifier = Modifier.fillMaxWidth()) {
+        EditorSheetTitle(title)
+        if (searchable) {
+            OutlinedTextField(
+                value = query,
+                onValueChange = { query = it },
+                placeholder = { Text(stringResource(R.string.finance_editor_find_category)) },
+                leadingIcon = {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_editor_search),
+                        contentDescription = null,
+                    )
+                },
+                singleLine = true,
+                shape = RoundedCornerShape(28.dp),
+                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp, start = 20.dp, end = 20.dp),
+            )
+        }
+        LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = 480.dp)) {
+            itemsIndexed(visibleOptions, key = { _, option -> option.id }) { index, option ->
+                EditorSelectionRow(
+                    emoji = option.emoji,
+                    title = option.label,
+                    subtitle = null,
+                    selected = option.id == selectedId,
+                    isLast = index == visibleOptions.lastIndex,
+                    onClick = { onSelect(option) },
                 )
             }
-            LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = 480.dp)) {
-                itemsIndexed(visibleOptions, key = { _, option -> option.id }) { index, option ->
-
-                    EditorSelectionRow(
-                        emoji = option.emoji,
-                        title = option.label,
-                        subtitle = null,
-                        selected = option.id == selectedId,
-                        isLast = index == visibleOptions.lastIndex,
-                        onClick = { onSelect(option) },
-                    )
-                }
-            }
-            Spacer(Modifier.height(20.dp))
         }
+        Spacer(Modifier.height(20.dp))
     }
 }
 
@@ -812,7 +853,7 @@ internal fun EditorSelectionRow(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun EditorDateSheet(
+private fun EditorDateDialog(
     date: LocalDate,
     onConfirm: (LocalDate) -> Unit,
     onDismiss: () -> Unit,
@@ -839,165 +880,84 @@ private fun EditorDateSheet(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun EditorTimeSheet(
+private fun EditorTimeDialog(
     time: LocalTime,
     onConfirm: (LocalTime) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    var hours by remember(time) { mutableStateOf(time.hour.toString().padStart(2, '0')) }
-    var minutes by remember(time) { mutableStateOf(time.minute.toString().padStart(2, '0')) }
-    val hoursRequester = remember { FocusRequester() }
-    val minutesRequester = remember { FocusRequester() }
-    LaunchedEffect(Unit) { hoursRequester.requestFocus() }
-
-    ModalBottomSheet(onDismissRequest = onDismiss, dragHandle = { EditorSheetHandle() }) {
-        Column(Modifier.fillMaxWidth().imePadding()) {
-            Text(
-                stringResource(R.string.finance_editor_enter_time),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 24.dp),
-            )
-            Spacer(Modifier.height(20.dp))
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.padding(horizontal = 24.dp),
-            ) {
-                TimePartField(
-                    value = hours,
-                    onValueChange = {
-                        hours = it.filter(Char::isDigit).take(2)
-                        if (hours.length == 2) minutesRequester.requestFocus()
-                    },
-                    focusRequester = hoursRequester,
-                    label = stringResource(R.string.finance_editor_hours),
-                    modifier = Modifier.weight(1f).alignBy(FirstBaseline),
-                )
-                Text(
-                    ":",
-                    style = MaterialTheme.typography.displayLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.alignBy(FirstBaseline),
-                )
-                TimePartField(
-                    value = minutes,
-                    onValueChange = { minutes = it.filter(Char::isDigit).take(2) },
-                    focusRequester = minutesRequester,
-                    label = stringResource(R.string.finance_editor_minutes),
-                    modifier = Modifier.weight(1f).alignBy(FirstBaseline),
-                )
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp, horizontal = 24.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_editor_time),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(modifier = Modifier.weight(1f))
-                TextButton(onClick = onDismiss) { Text(stringResource(R.string.finance_editor_cancel)) }
-                Spacer(Modifier.height(8.dp))
-                TextButton(onClick = {
-                    val newTime =
-                        LocalTime.of(
-                            hours.toIntOrNull()?.takeIf { it in 0..23 } ?: time.hour,
-                            minutes.toIntOrNull()?.takeIf { it in 0..59 } ?: time.minute,
-                        )
-                    onConfirm(newTime)
-                }) { Text(stringResource(R.string.finance_editor_apply)) }
-            }
-        }
-    }
-}
-
-@Composable
-private fun TimePartField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    focusRequester: FocusRequester?,
-    label: String,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier,
-    ) {
-        BasicTextField(
-            value = value,
-            onValueChange = onValueChange,
-            modifier =
-                Modifier
-                    .then(if (focusRequester == null) Modifier else Modifier.focusRequester(focusRequester))
-                    .wrapContentHeight()
-                    .then(
-                        if (focusRequester == null) {
-                            Modifier
-                        } else {
-                            Modifier.border(
-                                width = 2.dp,
-                                color = MaterialTheme.colorScheme.primary,
-                                shape = RoundedCornerShape(8.dp),
-                            )
-                        },
-                    ).background(
-                        if (focusRequester ==
-                            null
-                        ) {
-                            MaterialTheme.colorScheme.surfaceContainer
-                        } else {
-                            MaterialTheme.colorScheme.primaryContainer
-                        },
-                    ).padding(vertical = 10.dp),
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            textStyle =
-                MaterialTheme.typography.displayMedium.copy(
-                    textAlign = TextAlign.Center,
-                    color =
-                        if (focusRequester == null) {
-                            MaterialTheme.colorScheme.onSurface
-                        } else {
-                            MaterialTheme.colorScheme.onPrimaryContainer
-                        },
-                ),
+    val pickerState =
+        rememberTimePickerState(
+            initialHour = time.hour,
+            initialMinute = time.minute,
+            is24Hour = true,
         )
-        Text(label, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 7.dp))
-    }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.finance_editor_enter_time)) },
+        text = { TimeInput(state = pickerState) },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(LocalTime.of(pickerState.hour, pickerState.minute)) }) {
+                Text(stringResource(R.string.finance_editor_done))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.finance_editor_cancel))
+            }
+        },
+    )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun EditorTextSheet(
+internal fun EditorTextContent(
     title: String,
     value: String,
+    placeholder: String,
     singleLine: Boolean,
     onConfirm: (String) -> Unit,
     onDismiss: () -> Unit,
 ) {
     var draft by remember(value) { mutableStateOf(value) }
     val focusRequester = remember { FocusRequester() }
-    LaunchedEffect(Unit) { focusRequester.requestFocus() }
-    ModalBottomSheet(onDismissRequest = onDismiss, dragHandle = { EditorSheetHandle() }) {
-        Column(Modifier.fillMaxWidth().imePadding().padding(horizontal = 20.dp, vertical = 12.dp)) {
-            EditorSheetTitle(title)
-            OutlinedTextField(
-                value = draft,
-                onValueChange = { draft = it },
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .focusRequester(
-                            focusRequester,
-                        ).heightIn(min = if (singleLine) 56.dp else 144.dp),
-                singleLine = singleLine,
-                minLines = if (singleLine) 1 else 2,
-            )
-            Box(
-                modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 16.dp),
-                contentAlignment = Alignment.CenterEnd,
+    val focusManager = LocalFocusManager.current
+    LaunchedEffect(Unit) {
+        awaitFrame()
+        focusRequester.requestFocus()
+    }
+    Column(Modifier.fillMaxWidth().imePadding().padding(horizontal = 20.dp, vertical = 12.dp)) {
+        EditorSheetTitle(title)
+        OutlinedTextField(
+            value = draft,
+            onValueChange = { draft = it },
+            placeholder = { Text(placeholder) },
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .focusRequester(focusRequester)
+                    .heightIn(min = if (singleLine) 56.dp else 128.dp),
+            singleLine = singleLine,
+            minLines = if (singleLine) 1 else 4,
+            maxLines = if (singleLine) 1 else 4,
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 8.dp),
+            horizontalArrangement = Arrangement.End,
+        ) {
+            TextButton(
+                onClick = {
+                    focusManager.clearFocus(force = true)
+                    onDismiss()
+                },
             ) {
-                EditorConfirmFab(enabled = true, isSaving = false) { onConfirm(draft) }
+                Text(stringResource(R.string.finance_editor_cancel))
+            }
+            TextButton(
+                onClick = {
+                    focusManager.clearFocus(force = true)
+                    onConfirm(draft)
+                },
+            ) {
+                Text(stringResource(R.string.finance_editor_done))
             }
         }
     }
@@ -1026,3 +986,9 @@ internal fun rememberEditorDateFormatter(): DateTimeFormatter {
 internal val editorTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
 private enum class TransactionNestedSheet { Category, Date, Time, Account, Comment }
+
+private val TransactionNestedSheet?.isSheetContent: Boolean
+    get() =
+        this == TransactionNestedSheet.Category ||
+            this == TransactionNestedSheet.Account ||
+            this == TransactionNestedSheet.Comment
