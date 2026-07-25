@@ -1,0 +1,10 @@
+<resources>
+    <string name="empty_income">Aucun revenu pour cette date</string>
+    <string name="empty_income_description">Choisissez une autre date dans la barre supérieure pour voir les revenus.</string>
+    <string name="income_total">revenus, total</string>
+    <string name="retry">Réessayer</string>
+    <string name="error_network">Vérifiez votre connexion Internet</string>
+    <string name="error_authorization">Échec de l’autorisation</string>
+    <string name="error_server">Le serveur est temporairement indisponible</string>
+    <string name="error_load_income">Impossible de charger les revenus</string>
+</resources>

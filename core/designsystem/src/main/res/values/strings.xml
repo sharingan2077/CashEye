@@ -1,0 +1,10 @@
+<resources>
+    <string name="error_network_title">No internet connection</string>
+    <string name="error_network_description">Check your connection and try again.</string>
+    <string name="error_server_title">Server is unavailable</string>
+    <string name="error_server_description">Please try again a little later.</string>
+    <string name="error_authorization_title">Authorization failed</string>
+    <string name="error_authorization_description">Sign in again and try once more.</string>
+    <string name="error_unknown_title">Could not load data</string>
+    <string name="error_unknown_description">Something went wrong. Please try again later.</string>
+</resources>

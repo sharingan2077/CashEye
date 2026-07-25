@@ -1,0 +1,31 @@
+<resources>
+    <string name="total_for_period">Total del período</string>
+    <string name="period_selected">Seleccionado</string>
+    <string name="retry">Reintentar</string>
+    <string name="done">Listo</string>
+    <string name="apply">Aplicar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="filter_type">Tipo</string>
+    <string name="filter_period">Período</string>
+    <string name="filter_categories">Categorías</string>
+    <string name="filter_account">Cuenta</string>
+    <string name="all_accounts">Todas las cuentas</string>
+    <string name="all_categories">Todas las categorías</string>
+    <string name="selected_count">Seleccionado: %1$d</string>
+    <string name="transactions">Transacciones</string>
+    <string name="empty_period">No hay operaciones para el período seleccionado</string>
+    <string name="empty_period_description">Cambia los filtros de arriba para encontrar las operaciones que necesitas.</string>
+    <string name="details">Detalles</string>
+    <string name="type_expenses">Gastos</string>
+    <string name="type_income">Ingresos</string>
+    <string name="type_all">Todo</string>
+    <string name="period_custom">Personalizado</string>
+    <string name="period_week">Última semana</string>
+    <string name="period_month">Último mes</string>
+    <string name="period_quarter">Último trimestre</string>
+    <string name="period_year">Último año</string>
+    <string name="error_network">Comprueba tu conexión a Internet</string>
+    <string name="error_authorization">Error de autorización</string>
+    <string name="error_server">El servidor no está disponible temporalmente</string>
+    <string name="error_load_analytics">No se pudo cargar la analítica</string>
+</resources>

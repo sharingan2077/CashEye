@@ -1,0 +1,31 @@
+<resources>
+    <string name="total_for_period">Total for period</string>
+    <string name="period_selected">Selected</string>
+    <string name="retry">Retry</string>
+    <string name="done">Done</string>
+    <string name="apply">Apply</string>
+    <string name="cancel">Cancel</string>
+    <string name="filter_type">Type</string>
+    <string name="filter_period">Period</string>
+    <string name="filter_categories">Categories</string>
+    <string name="filter_account">Account</string>
+    <string name="all_accounts">All accounts</string>
+    <string name="all_categories">All categories</string>
+    <string name="selected_count">Selected: %1$d</string>
+    <string name="transactions">Transactions</string>
+    <string name="empty_period">No transactions for the selected period</string>
+    <string name="empty_period_description">Change the filters above to find the transactions you need.</string>
+    <string name="details">Details</string>
+    <string name="type_expenses">Expenses</string>
+    <string name="type_income">Income</string>
+    <string name="type_all">All</string>
+    <string name="period_custom">Custom</string>
+    <string name="period_week">Last week</string>
+    <string name="period_month">Last month</string>
+    <string name="period_quarter">Last quarter</string>
+    <string name="period_year">Last year</string>
+    <string name="error_network">Check your internet connection</string>
+    <string name="error_authorization">Authorization failed</string>
+    <string name="error_server">Server is temporarily unavailable</string>
+    <string name="error_load_analytics">Failed to load analytics</string>
+</resources>

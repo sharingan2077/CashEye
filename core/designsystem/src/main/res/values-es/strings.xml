@@ -1,0 +1,10 @@
+<resources>
+    <string name="error_network_title">Sin conexión a Internet</string>
+    <string name="error_network_description">Comprueba tu conexión e inténtalo de nuevo.</string>
+    <string name="error_server_title">El servidor no está disponible</string>
+    <string name="error_server_description">Inténtalo de nuevo un poco más tarde.</string>
+    <string name="error_authorization_title">Error de autorización</string>
+    <string name="error_authorization_description">Inicia sesión de nuevo e inténtalo otra vez.</string>
+    <string name="error_unknown_title">No se pudieron cargar los datos</string>
+    <string name="error_unknown_description">Algo salió mal. Inténtalo de nuevo más tarde.</string>
+</resources>

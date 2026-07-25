@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -6,9 +8,7 @@ plugins {
 
     alias(libs.plugins.ksp)
 
-    alias(libs.plugins.hilt.android)
-    alias(libs.plugins.ktlint)
-    alias(libs.plugins.detekt)
+    alias(libs.plugins.metro)
 }
 
 android {
@@ -25,6 +25,17 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        val apiKey =
+            rootProject
+                .file("local/api_key.txt")
+                .takeIf { it.isFile }
+                ?.readText()
+                ?.trim()
+                .orEmpty()
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+        buildConfigField("String", "API_KEY", "\"$apiKey\"")
     }
 
     buildTypes {
@@ -35,15 +46,30 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
     buildFeatures {
+        buildConfig = true
         compose = true
     }
 }
 
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_21)
+    }
+}
+
 dependencies {
+    implementation(project(":core:designsystem"))
+    implementation(project(":data:finance"))
+    implementation(project(":feature:accounts"))
+    implementation(project(":feature:analytics"))
+    implementation(project(":feature:expenses"))
+    implementation(project(":feature:income"))
+    implementation(project(":feature:splash"))
+
     implementation(libs.androidx.navigation3.ui)
     implementation(libs.androidx.navigation3.runtime)
     implementation(libs.androidx.lifecycle.viewmodel.navigation3)
@@ -58,11 +84,16 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
+    androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
+
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
 
     implementation(libs.kotlinx.serialization.core)
 
@@ -70,23 +101,10 @@ dependencies {
 
     implementation(libs.androidx.core.splashscreen)
 
-    implementation(libs.hilt.android)
-    ksp(libs.hilt.compiler)
-    ktlintRuleset(libs.compose.rules.ktlint)
-}
+    implementation(libs.vico.compose)
+    implementation(libs.vico.compose.m3)
 
-ktlint {
-    version.set(libs.versions.ktlintEngine.get())
-    android.set(true)
-    outputToConsole.set(true)
-    ignoreFailures.set(false)
+    implementation(libs.kotlinx.coroutines.android)
 
-    filter {
-        exclude("**/generated/**")
-    }
-}
-
-detekt {
-    config.setFrom(rootProject.files("config/detekt/detekt.yml"))
-    buildUponDefaultConfig = true
+    implementation(libs.metro.viewmodel.compose)
 }

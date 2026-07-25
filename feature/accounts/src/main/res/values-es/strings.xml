@@ -1,0 +1,10 @@
+<resources>
+    <string name="empty_accounts">Aún no hay cuentas</string>
+    <string name="empty_accounts_description">Añade tu primera cuenta para seguir tu saldo.</string>
+    <string name="balance_total">saldo, total</string>
+    <string name="retry">Reintentar</string>
+    <string name="error_network">Comprueba tu conexión a Internet</string>
+    <string name="error_authorization">Error de autorización</string>
+    <string name="error_server">El servidor no está disponible temporalmente</string>
+    <string name="error_load_accounts">No se pudieron cargar las cuentas</string>
+</resources>

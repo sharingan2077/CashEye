@@ -1,0 +1,31 @@
+<resources>
+    <string name="total_for_period">Всего за период</string>
+    <string name="period_selected">Выбрано</string>
+    <string name="retry">Повторить</string>
+    <string name="done">Готово</string>
+    <string name="apply">Применить</string>
+    <string name="cancel">Отмена</string>
+    <string name="filter_type">Тип</string>
+    <string name="filter_period">Период</string>
+    <string name="filter_categories">Статьи</string>
+    <string name="filter_account">Счёт</string>
+    <string name="all_accounts">Все счета</string>
+    <string name="all_categories">Все статьи</string>
+    <string name="selected_count">Выбрано: %1$d</string>
+    <string name="transactions">Транзакции</string>
+    <string name="empty_period">За выбранный период операций нет</string>
+    <string name="empty_period_description">Измените фильтры выше, чтобы найти нужные операции.</string>
+    <string name="details">Детализация</string>
+    <string name="type_expenses">Расходы</string>
+    <string name="type_income">Доходы</string>
+    <string name="type_all">Всё</string>
+    <string name="period_custom">Произвольный период</string>
+    <string name="period_week">За неделю</string>
+    <string name="period_month">За месяц</string>
+    <string name="period_quarter">За квартал</string>
+    <string name="period_year">За год</string>
+    <string name="error_network">Проверьте подключение к интернету</string>
+    <string name="error_authorization">Не удалось авторизоваться</string>
+    <string name="error_server">Сервер временно недоступен</string>
+    <string name="error_load_analytics">Не удалось загрузить аналитику</string>
+</resources>

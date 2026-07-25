@@ -1,0 +1,10 @@
+<resources>
+    <string name="nav_expenses">Dépenses</string>
+    <string name="nav_income">Revenus</string>
+    <string name="nav_accounts">Comptes</string>
+    <string name="content_description_analytics">Analyses</string>
+    <string name="content_description_filters">Filtres</string>
+    <string name="content_description_back">Retour</string>
+    <string name="content_description_add">Ajouter</string>
+    <string name="analytics_title">Analyses</string>
+</resources>

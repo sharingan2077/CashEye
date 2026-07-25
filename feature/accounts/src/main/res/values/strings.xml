@@ -1,0 +1,10 @@
+<resources>
+    <string name="empty_accounts">No accounts yet</string>
+    <string name="empty_accounts_description">Add your first account to track your balance.</string>
+    <string name="balance_total">balance, total</string>
+    <string name="retry">Retry</string>
+    <string name="error_network">Check your internet connection</string>
+    <string name="error_authorization">Authorization failed</string>
+    <string name="error_server">Server is temporarily unavailable</string>
+    <string name="error_load_accounts">Failed to load accounts</string>
+</resources>
