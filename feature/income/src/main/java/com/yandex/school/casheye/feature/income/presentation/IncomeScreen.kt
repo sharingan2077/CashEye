@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -109,6 +110,7 @@ private fun IncomeContent(
                 Modifier
                     .fillMaxWidth()
                     .weight(1f),
+            contentPadding = PaddingValues(bottom = 60.dp),
         ) {
             items(
                 items = state.transactions,
