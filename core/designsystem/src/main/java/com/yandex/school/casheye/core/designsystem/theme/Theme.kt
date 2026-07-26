@@ -8,6 +8,7 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme =
@@ -26,9 +27,21 @@ private val DarkColorScheme =
         onSurface = TextPrimaryDark,
         surfaceVariant = SurfaceVariantDark,
         onSurfaceVariant = TextSecondaryDark,
+        surfaceDim = SurfaceDimDark,
+        surfaceBright = SurfaceBrightDark,
+        surfaceContainerLowest = SurfaceContainerLowestDark,
+        surfaceContainerLow = SurfaceContainerLowDark,
+        surfaceContainer = SurfaceContainerDark,
+        surfaceContainerHigh = SurfaceContainerHighDark,
+        surfaceContainerHighest = SurfaceContainerHighestDark,
         outline = BorderDefaultDark,
+        outlineVariant = BorderVariantDark,
         error = ErrorDark,
         onError = OnErrorDark,
+        errorContainer = ErrorContainerDark,
+        onErrorContainer = OnErrorContainerDark,
+        inverseSurface = InverseSurfaceDark,
+        inverseOnSurface = InverseOnSurfaceDark,
     )
 
 private val LightColorScheme =
@@ -47,9 +60,21 @@ private val LightColorScheme =
         onSurface = TextPrimary,
         surfaceVariant = SurfaceVariant,
         onSurfaceVariant = TextSecondary,
+        surfaceDim = SurfaceDim,
+        surfaceBright = SurfaceBright,
+        surfaceContainerLowest = SurfaceContainerLowest,
+        surfaceContainerLow = SurfaceContainerLow,
+        surfaceContainer = SurfaceContainer,
+        surfaceContainerHigh = SurfaceContainerHigh,
+        surfaceContainerHighest = SurfaceContainerHighest,
         outline = BorderDefault,
+        outlineVariant = BorderVariant,
         error = Error,
         onError = OnError,
+        errorContainer = ErrorContainer,
+        onErrorContainer = OnErrorContainer,
+        inverseSurface = InverseSurface,
+        inverseOnSurface = InverseOnSurface,
     )
 
 @Composable
@@ -74,9 +99,13 @@ fun CashEyeTheme(
             }
         }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content,
-    )
+    val extendedColors = if (darkTheme) DarkExtendedColors else LightExtendedColors
+
+    CompositionLocalProvider(LocalCashEyeExtendedColors provides extendedColors) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = Typography,
+            content = content,
+        )
+    }
 }
