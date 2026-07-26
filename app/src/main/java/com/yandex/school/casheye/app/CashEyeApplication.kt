@@ -13,12 +13,15 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
-class CashEyeApplication : Application(), Configuration.Provider {
+class CashEyeApplication :
+    Application(),
+    Configuration.Provider {
     lateinit var appGraph: AppGraph
         private set
 
     override val workManagerConfiguration: Configuration by lazy {
-        Configuration.Builder()
+        Configuration
+            .Builder()
             .setWorkerFactory(FinanceSyncWorkerFactory { appGraph.financeSyncer })
             .build()
     }

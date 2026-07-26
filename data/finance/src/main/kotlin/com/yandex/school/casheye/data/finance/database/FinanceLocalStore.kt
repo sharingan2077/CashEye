@@ -15,7 +15,6 @@ import com.yandex.school.casheye.data.finance.dto.AccountResponseDto
 import com.yandex.school.casheye.data.finance.dto.CategoryDto
 import com.yandex.school.casheye.data.finance.dto.TransactionDto
 import com.yandex.school.casheye.data.finance.dto.TransactionResponseDto
-import com.yandex.school.casheye.data.finance.mapper.toDomain as toNetworkDomain
 import com.yandex.school.casheye.domain.finance.SaveAccountCommand
 import com.yandex.school.casheye.domain.finance.SaveTransactionCommand
 import dev.zacsweers.metro.AppScope
@@ -25,6 +24,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import java.time.Instant
+import com.yandex.school.casheye.data.finance.mapper.toDomain as toNetworkDomain
 
 interface FinanceLocalStore {
     fun observeAccounts(): Flow<List<Account>> = flow { emit(getAccounts()) }
@@ -70,15 +70,27 @@ interface FinanceLocalStore {
 
     suspend fun cacheTransaction(transaction: TransactionResponseDto)
 
-    suspend fun saveAccount(command: SaveAccountCommand, now: Instant)
+    suspend fun saveAccount(
+        command: SaveAccountCommand,
+        now: Instant,
+    )
 
-    suspend fun saveTransaction(command: SaveTransactionCommand, now: Instant)
+    suspend fun saveTransaction(
+        command: SaveTransactionCommand,
+        now: Instant,
+    )
 
     suspend fun getAccountTransactionCount(id: Int): Int
 
-    suspend fun deleteTransaction(id: Int, now: Instant)
+    suspend fun deleteTransaction(
+        id: Int,
+        now: Instant,
+    )
 
-    suspend fun deleteAccount(id: Int, now: Instant): Int
+    suspend fun deleteAccount(
+        id: Int,
+        now: Instant,
+    ): Int
 }
 
 internal interface FinanceSyncStore {
@@ -121,11 +133,12 @@ class RoomFinanceLocalStore(
     context: Context,
 ) : FinanceLocalStore {
     private val database =
-        Room.databaseBuilder(
-            context.applicationContext,
-            FinanceDatabase::class.java,
-            DATABASE_NAME,
-        ).build()
+        Room
+            .databaseBuilder(
+                context.applicationContext,
+                FinanceDatabase::class.java,
+                DATABASE_NAME,
+            ).build()
 
     override fun observeAccounts(): Flow<List<Account>> =
         database.accountDao().observeAll().map { accounts -> accounts.map { it.toDomain() } }
@@ -135,7 +148,8 @@ class RoomFinanceLocalStore(
         startInclusive: Instant,
         endInclusive: Instant,
     ): Flow<List<Transaction>> =
-        database.transactionDao()
+        database
+            .transactionDao()
             .observeForPeriod(accountId, startInclusive.toEpochMilli(), endInclusive.toEpochMilli())
             .map { transactions -> transactions.map { it.toDomain() } }
 
@@ -155,7 +169,8 @@ class RoomFinanceLocalStore(
         startInclusive: Instant,
         endInclusive: Instant,
     ): List<Transaction> =
-        database.transactionDao()
+        database
+            .transactionDao()
             .getForPeriod(accountId, startInclusive.toEpochMilli(), endInclusive.toEpochMilli())
             .map { it.toDomain() }
 
@@ -223,7 +238,10 @@ class RoomFinanceLocalStore(
             getPendingEntityIds(PendingEntityType.ACCOUNT).toSet() + getPendingRelatedAccountIds().filterNotNull()
         }
 
-    override suspend fun saveAccount(command: SaveAccountCommand, now: Instant) {
+    override suspend fun saveAccount(
+        command: SaveAccountCommand,
+        now: Instant,
+    ) {
         if (command.id == null) {
             database.offlineWriteDao().createAccount(command, now)
         } else {
@@ -231,7 +249,10 @@ class RoomFinanceLocalStore(
         }
     }
 
-    override suspend fun saveTransaction(command: SaveTransactionCommand, now: Instant) {
+    override suspend fun saveTransaction(
+        command: SaveTransactionCommand,
+        now: Instant,
+    ) {
         if (command.id == null) {
             database.offlineWriteDao().createTransaction(command, now)
         } else {
@@ -239,18 +260,21 @@ class RoomFinanceLocalStore(
         }
     }
 
-    override suspend fun getAccountTransactionCount(id: Int): Int =
-        database.transactionDao().countByAccountId(id)
+    override suspend fun getAccountTransactionCount(id: Int): Int = database.transactionDao().countByAccountId(id)
 
-    override suspend fun deleteTransaction(id: Int, now: Instant) {
+    override suspend fun deleteTransaction(
+        id: Int,
+        now: Instant,
+    ) {
         database.offlineWriteDao().deleteTransaction(id, now)
     }
 
-    override suspend fun deleteAccount(id: Int, now: Instant): Int =
-        database.offlineWriteDao().deleteAccount(id, now)
+    override suspend fun deleteAccount(
+        id: Int,
+        now: Instant,
+    ): Int = database.offlineWriteDao().deleteAccount(id, now)
 
-    internal suspend fun getPendingOperations(): List<PendingOperationEntity> =
-        database.pendingOperationDao().getAll()
+    internal suspend fun getPendingOperations(): List<PendingOperationEntity> = database.pendingOperationDao().getAll()
 
     internal suspend fun completeAccountCreate(
         sentOperations: List<PendingOperationEntity>,
@@ -307,8 +331,7 @@ class RoomFinanceLocalStore(
 internal class RoomFinanceSyncStore(
     private val localStore: RoomFinanceLocalStore,
 ) : FinanceSyncStore {
-    override suspend fun getPendingOperations(): List<PendingOperationEntity> =
-        localStore.getPendingOperations()
+    override suspend fun getPendingOperations(): List<PendingOperationEntity> = localStore.getPendingOperations()
 
     override suspend fun completeAccountCreate(
         sentOperations: List<PendingOperationEntity>,

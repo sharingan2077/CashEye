@@ -314,9 +314,9 @@ internal fun FinanceEditorContent(
     error: String?,
     onAmountChange: (String) -> Unit,
     onSave: () -> Unit,
-    title: String? = null,
     requestAmountFocus: Boolean,
     onAmountFocusRequested: () -> Unit,
+    title: String? = null,
     rows: @Composable ColumnScope.(clearPrimaryFocus: () -> Unit) -> Unit,
 ) {
     val amountFocusRequester = remember { FocusRequester() }

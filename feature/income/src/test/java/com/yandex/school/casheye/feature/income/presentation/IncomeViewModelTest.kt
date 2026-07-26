@@ -326,7 +326,11 @@ private class FakeIncomeFinanceRepository(
     private val firstSummary = (results.firstOrNull() as? FinanceLoadResult.Success)?.summary
     private val accounts =
         MutableStateFlow(
-            firstSummary?.transactions.orEmpty().map { it.account }.distinctBy { it.id },
+            firstSummary
+                ?.transactions
+                .orEmpty()
+                .map { it.account }
+                .distinctBy { it.id },
         )
     private val transactions = MutableStateFlow(firstSummary?.transactions.orEmpty())
     val requestedDates = mutableListOf<LocalDate>()
@@ -343,13 +347,17 @@ private class FakeIncomeFinanceRepository(
         requestedDates += startDate
         return when (val result = results.removeFirst()) {
             is FinanceLoadResult.Success -> {
-                accounts.value = result.summary.transactions.map { it.account }.distinctBy { it.id }
+                accounts.value =
+                    result.summary.transactions
+                        .map { it.account }
+                        .distinctBy { it.id }
                 transactions.value = result.summary.transactions
                 FinanceRefreshResult.Success
             }
 
-            is FinanceLoadResult.Failure ->
+            is FinanceLoadResult.Failure -> {
                 FinanceRefreshResult.Failure(result.reason, hasUsableCache = false)
+            }
         }
     }
 

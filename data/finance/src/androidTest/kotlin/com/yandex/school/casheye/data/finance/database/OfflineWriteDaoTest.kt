@@ -33,7 +33,8 @@ class OfflineWriteDaoTest {
     fun setUp() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         database =
-            Room.inMemoryDatabaseBuilder(context, FinanceDatabase::class.java)
+            Room
+                .inMemoryDatabaseBuilder(context, FinanceDatabase::class.java)
                 .allowMainThreadQueries()
                 .build()
     }

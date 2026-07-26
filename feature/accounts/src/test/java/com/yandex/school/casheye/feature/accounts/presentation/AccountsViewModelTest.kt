@@ -284,13 +284,13 @@ private class FakeAccountsRepository(
                 FinanceRefreshResult.Success
             }
 
-            is AccountsLoadResult.Failure ->
+            is AccountsLoadResult.Failure -> {
                 FinanceRefreshResult.Failure(result.reason, hasUsableCache = false)
+            }
         }
     }
 
-    override suspend fun getAccountTransactionCount(id: Int): EditorResult<Int> =
-        EditorResult.Success(transactionCount)
+    override suspend fun getAccountTransactionCount(id: Int): EditorResult<Int> = EditorResult.Success(transactionCount)
 
     override suspend fun deleteAccount(id: Int): EditorResult<Int> {
         deletedAccountIds += id

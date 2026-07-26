@@ -4,12 +4,14 @@ import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.Category
 import com.yandex.school.casheye.core.model.Transaction
 import com.yandex.school.casheye.domain.finance.EditorResult
+import com.yandex.school.casheye.domain.finance.FinanceDataLoadResult
 import com.yandex.school.casheye.domain.finance.FinanceRepository
 import com.yandex.school.casheye.domain.finance.GetEditorAccountsUseCase
 import com.yandex.school.casheye.domain.finance.GetEditorCategoriesUseCase
 import com.yandex.school.casheye.domain.finance.GetTransactionUseCase
 import com.yandex.school.casheye.domain.finance.SaveTransactionCommand
 import com.yandex.school.casheye.domain.finance.SaveTransactionUseCase
+import com.yandex.school.casheye.domain.finance.TransactionsQuery
 import com.yandex.school.casheye.feature.expenses.R
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
@@ -106,6 +108,10 @@ private class EditorRepository(
 
     override suspend fun getAccounts() = EditorResult.Success(accounts)
 
+    override suspend fun getTransactions(query: TransactionsQuery): FinanceDataLoadResult<List<Transaction>> {
+        TODO("Not yet implemented")
+    }
+
     override suspend fun getCategories(isIncome: Boolean) =
         EditorResult.Success(listOf(Category(2, "Еда", "🍔", false)))
 
@@ -116,16 +122,16 @@ private class EditorRepository(
         return EditorResult.Success(Unit)
     }
 
-    override suspend fun getDailySummary(
-        date: LocalDate,
-        currencyCode: String,
-        transactionKind: com.yandex.school.casheye.domain.finance.TransactionKind,
-    ) = error("Not used")
-
-    override suspend fun getAccountsSummary(currencyCode: String) = error("Not used")
-
-    override suspend fun getAnalytics(query: com.yandex.school.casheye.domain.finance.AnalyticsQuery) =
-        error("Not used")
+//    override suspend fun getDailySummary(
+//        date: LocalDate,
+//        currencyCode: String,
+//        transactionKind: com.yandex.school.casheye.domain.finance.TransactionKind,
+//    ) = error("Not used")
+//
+//    override suspend fun getAccountsSummary(currencyCode: String) = error("Not used")
+//
+//    override suspend fun getAnalytics(query: com.yandex.school.casheye.domain.finance.AnalyticsQuery) =
+//        error("Not used")
 }
 
 private fun account(balance: String) = Account(1, "Основной", "💵", BigDecimal(balance), "RUB")

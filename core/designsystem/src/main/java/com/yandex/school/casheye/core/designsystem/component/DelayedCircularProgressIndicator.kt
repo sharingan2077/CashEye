@@ -11,9 +11,7 @@ import androidx.compose.ui.Modifier
 import kotlinx.coroutines.delay
 
 @Composable
-fun DelayedCircularProgressIndicator(
-    modifier: Modifier = Modifier,
-) {
+fun DelayedCircularProgressIndicator(modifier: Modifier = Modifier) {
     var isVisible by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {

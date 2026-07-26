@@ -50,8 +50,8 @@ import com.yandex.school.casheye.feature.expenses.presentation.ExpensesDatePicke
 import com.yandex.school.casheye.feature.expenses.presentation.ExpensesRoute
 import com.yandex.school.casheye.feature.income.presentation.AddIncomeRoute
 import com.yandex.school.casheye.feature.income.presentation.IncomeRoute
-import java.time.LocalDate
 import kotlinx.coroutines.flow.StateFlow
+import java.time.LocalDate
 
 @Composable
 fun NavigationRoot(

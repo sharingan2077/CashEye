@@ -66,7 +66,8 @@ class WorkManagerFinanceSyncScheduler(
         const val BACKOFF_DELAY_SECONDS = 30L
 
         val networkConstraints =
-            Constraints.Builder()
+            Constraints
+                .Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)
                 .build()
     }
@@ -96,13 +97,16 @@ class FinanceSyncWorkerFactory(
         workerParameters: WorkerParameters,
     ): CoroutineWorker? =
         when (workerClassName) {
-            FinanceSyncWorker::class.java.name ->
+            FinanceSyncWorker::class.java.name -> {
                 FinanceSyncWorker(
                     appContext = appContext,
                     workerParameters = workerParameters,
                     financeSyncer = financeSyncerProvider(),
                 )
+            }
 
-            else -> null
+            else -> {
+                null
+            }
         }
 }

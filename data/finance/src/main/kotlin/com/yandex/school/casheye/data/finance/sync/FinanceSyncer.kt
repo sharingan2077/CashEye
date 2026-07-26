@@ -25,9 +25,13 @@ import java.time.LocalDate
 sealed interface FinanceSyncResult {
     data object Success : FinanceSyncResult
 
-    data class TemporaryFailure(val cause: Throwable) : FinanceSyncResult
+    data class TemporaryFailure(
+        val cause: Throwable,
+    ) : FinanceSyncResult
 
-    data class PermanentFailure(val cause: Throwable) : FinanceSyncResult
+    data class PermanentFailure(
+        val cause: Throwable,
+    ) : FinanceSyncResult
 }
 
 /**
@@ -140,7 +144,11 @@ class FinanceSyncer internal constructor(
                 retryPolicy.execute { api.getCategories(false) }
         val transactions =
             accounts.flatMap { account ->
-                val startDate = account.createdAt.atZone(clock.zone).toLocalDate().coerceAtMost(today)
+                val startDate =
+                    account.createdAt
+                        .atZone(clock.zone)
+                        .toLocalDate()
+                        .coerceAtMost(today)
                 retryPolicy.execute {
                     api.getTransactions(account.id, startDate.toString(), today.toString())
                 }
@@ -148,14 +156,22 @@ class FinanceSyncer internal constructor(
         val zone = clock.zone
         val startDate =
             accounts.minOfOrNull { account ->
-                account.createdAt.atZone(zone).toLocalDate().coerceAtMost(today)
+                account.createdAt
+                    .atZone(zone)
+                    .toLocalDate()
+                    .coerceAtMost(today)
             } ?: today
         store.refreshAfterSync(
             accounts = accounts,
             categories = categories,
             transactions = transactions,
             startInclusive = startDate.atStartOfDay(zone).toInstant(),
-            endInclusive = today.plusDays(1).atStartOfDay(zone).toInstant().minusMillis(1),
+            endInclusive =
+                today
+                    .plusDays(1)
+                    .atStartOfDay(zone)
+                    .toInstant()
+                    .minusMillis(1),
         )
     }
 
@@ -191,11 +207,21 @@ class FinanceSyncer internal constructor(
     private val PendingBatch.priority: Int
         get() =
             when {
-                operationType == PendingOperationType.DELETE && entityType == PendingEntityType.TRANSACTION ->
+                operationType == PendingOperationType.DELETE && entityType == PendingEntityType.TRANSACTION -> {
                     TRANSACTION_DELETE_PRIORITY
-                operationType == PendingOperationType.DELETE -> ACCOUNT_DELETE_PRIORITY
-                entityType == PendingEntityType.ACCOUNT -> ACCOUNT_WRITE_PRIORITY
-                else -> TRANSACTION_WRITE_PRIORITY
+                }
+
+                operationType == PendingOperationType.DELETE -> {
+                    ACCOUNT_DELETE_PRIORITY
+                }
+
+                entityType == PendingEntityType.ACCOUNT -> {
+                    ACCOUNT_WRITE_PRIORITY
+                }
+
+                else -> {
+                    TRANSACTION_WRITE_PRIORITY
+                }
             }
 
     private companion object {

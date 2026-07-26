@@ -27,6 +27,7 @@
     <string name="finance_editor_name">Nombre</string>
     <string name="finance_editor_account_name">Nombre de la cuenta</string>
     <string name="finance_editor_account_name_placeholder">Introduce el nombre de la cuenta</string>
+    <string name="finance_editor_account_icon">Icono de la cuenta</string>
     <string name="finance_editor_add_account">Añadir cuenta</string>
     <string name="finance_editor_balance_adjustment">Ajuste de saldo</string>
     <string name="finance_editor_save">Guardar</string>

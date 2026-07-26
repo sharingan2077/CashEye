@@ -33,8 +33,7 @@ interface FinanceRepository {
     suspend fun saveTransaction(command: SaveTransactionCommand): EditorResult<Unit> =
         EditorResult.Failure(FinanceFailureReason.Unknown)
 
-    suspend fun deleteTransaction(id: Int): EditorResult<Unit> =
-        EditorResult.Failure(FinanceFailureReason.Unknown)
+    suspend fun deleteTransaction(id: Int): EditorResult<Unit> = EditorResult.Failure(FinanceFailureReason.Unknown)
 
     suspend fun getAccount(id: Int): EditorResult<Account> = EditorResult.Failure(FinanceFailureReason.Unknown)
 
@@ -44,8 +43,7 @@ interface FinanceRepository {
     suspend fun getAccountTransactionCount(id: Int): EditorResult<Int> =
         EditorResult.Failure(FinanceFailureReason.Unknown)
 
-    suspend fun deleteAccount(id: Int): EditorResult<Int> =
-        EditorResult.Failure(FinanceFailureReason.Unknown)
+    suspend fun deleteAccount(id: Int): EditorResult<Int> = EditorResult.Failure(FinanceFailureReason.Unknown)
 }
 
 data class TransactionsQuery(

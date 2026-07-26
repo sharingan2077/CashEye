@@ -27,6 +27,7 @@
     <string name="finance_editor_name">Name</string>
     <string name="finance_editor_account_name">Account name</string>
     <string name="finance_editor_account_name_placeholder">Enter an account name</string>
+    <string name="finance_editor_account_icon">Account icon</string>
     <string name="finance_editor_add_account">Add account</string>
     <string name="finance_editor_balance_adjustment">Balance adjustment</string>
     <string name="finance_editor_save">Save</string>

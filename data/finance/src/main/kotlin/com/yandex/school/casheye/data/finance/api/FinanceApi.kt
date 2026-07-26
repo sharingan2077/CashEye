@@ -4,8 +4,8 @@ import com.yandex.school.casheye.data.finance.dto.AccountDto
 import com.yandex.school.casheye.data.finance.dto.AccountRequestDto
 import com.yandex.school.casheye.data.finance.dto.AccountResponseDto
 import com.yandex.school.casheye.data.finance.dto.CategoryDto
-import com.yandex.school.casheye.data.finance.dto.TransactionRequestDto
 import com.yandex.school.casheye.data.finance.dto.TransactionDto
+import com.yandex.school.casheye.data.finance.dto.TransactionRequestDto
 import com.yandex.school.casheye.data.finance.dto.TransactionResponseDto
 import retrofit2.http.Body
 import retrofit2.http.DELETE

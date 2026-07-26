@@ -418,18 +418,26 @@ private class FakeFinanceLocalStore(
         savedAccount = command
     }
 
-    override suspend fun saveTransaction(command: SaveTransactionCommand, now: Instant) {
+    override suspend fun saveTransaction(
+        command: SaveTransactionCommand,
+        now: Instant,
+    ) {
         savedTransaction = command
     }
 
-    override suspend fun getAccountTransactionCount(id: Int): Int =
-        transactions.value.count { it.account.id == id }
+    override suspend fun getAccountTransactionCount(id: Int): Int = transactions.value.count { it.account.id == id }
 
-    override suspend fun deleteTransaction(id: Int, now: Instant) {
+    override suspend fun deleteTransaction(
+        id: Int,
+        now: Instant,
+    ) {
         transactions.value = transactions.value.filterNot { it.id == id }
     }
 
-    override suspend fun deleteAccount(id: Int, now: Instant): Int {
+    override suspend fun deleteAccount(
+        id: Int,
+        now: Instant,
+    ): Int {
         val transactionCount = transactions.value.count { it.account.id == id }
         transactions.value = transactions.value.filterNot { it.account.id == id }
         accounts.value = accounts.value.filterNot { it.id == id }
@@ -459,6 +467,7 @@ private class FakeFinanceApi(
     private val failingAccountId: Int? = null,
 ) : FinanceApi {
     val requests: MutableList<PeriodRequest> = Collections.synchronizedList(mutableListOf())
+
     override suspend fun getAccounts(): List<AccountDto> = accounts
 
     override suspend fun getAccount(id: Int) = error("Unexpected account request")

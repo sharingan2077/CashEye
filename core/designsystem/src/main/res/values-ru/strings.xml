@@ -27,6 +27,7 @@
     <string name="finance_editor_name">Название</string>
     <string name="finance_editor_account_name">Название счёта</string>
     <string name="finance_editor_account_name_placeholder">Введите название счёта</string>
+    <string name="finance_editor_account_icon">Иконка счёта</string>
     <string name="finance_editor_add_account">Добавление счёта</string>
     <string name="finance_editor_balance_adjustment">Корректировка баланса</string>
     <string name="finance_editor_save">Сохранить</string>

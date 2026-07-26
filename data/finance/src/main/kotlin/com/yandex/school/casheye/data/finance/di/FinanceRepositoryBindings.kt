@@ -8,11 +8,11 @@ import com.yandex.school.casheye.data.finance.repository.FinanceRepositoryImpl
 import com.yandex.school.casheye.data.finance.sync.FinanceSyncScheduler
 import com.yandex.school.casheye.data.finance.sync.FinanceSyncer
 import com.yandex.school.casheye.data.finance.sync.WorkManagerFinanceSyncScheduler
-import com.yandex.school.casheye.domain.finance.FinanceRepository
 import com.yandex.school.casheye.domain.finance.DeleteAccountUseCase
 import com.yandex.school.casheye.domain.finance.DeleteTransactionUseCase
-import com.yandex.school.casheye.domain.finance.GetAccountUseCase
+import com.yandex.school.casheye.domain.finance.FinanceRepository
 import com.yandex.school.casheye.domain.finance.GetAccountTransactionCountUseCase
+import com.yandex.school.casheye.domain.finance.GetAccountUseCase
 import com.yandex.school.casheye.domain.finance.GetAccountsUseCase
 import com.yandex.school.casheye.domain.finance.GetAnalyticsUseCase
 import com.yandex.school.casheye.domain.finance.GetDailySummaryUseCase

@@ -268,7 +268,9 @@ class AnalyticsViewModel(
                         renderSummary(isRefreshing = false)
                     }
 
-                    is FinanceRefreshResult.Failure -> handleRefreshFailure(result, observationReady)
+                    is FinanceRefreshResult.Failure -> {
+                        handleRefreshFailure(result, observationReady)
+                    }
                 }
             }
     }

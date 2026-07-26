@@ -43,10 +43,30 @@ class AccountEditorViewModelTest {
             advanceUntilIdle()
             viewModel.onIntent(AccountEditorIntent.NameChanged("Резерв"))
             viewModel.onIntent(AccountEditorIntent.CurrencyChanged("USD"))
+            viewModel.onIntent(AccountEditorIntent.EmojiChanged("🏦"))
             viewModel.onIntent(AccountEditorIntent.Save)
             advanceUntilIdle()
 
-            assertEquals(SaveAccountCommand(5, "Резерв", "💳", BigDecimal("100.00"), "USD"), repository.saved)
+            assertEquals(SaveAccountCommand(5, "Резерв", "🏦", BigDecimal("100.00"), "USD"), repository.saved)
+        }
+
+    @Test
+    fun `creating saves default emoji`() =
+        runTest {
+            val repository = AccountEditorRepository()
+            val viewModel =
+                AccountEditorViewModel(
+                    GetAccountUseCase(repository),
+                    SaveAccountUseCase(repository),
+                )
+            viewModel.onIntent(AccountEditorIntent.Open(null))
+            advanceUntilIdle()
+            viewModel.onIntent(AccountEditorIntent.NameChanged("Основной"))
+            viewModel.onIntent(AccountEditorIntent.BalanceChanged("100.00"))
+            viewModel.onIntent(AccountEditorIntent.Save)
+            advanceUntilIdle()
+
+            assertEquals(SaveAccountCommand(null, "Основной", "💵", BigDecimal("100.00"), "RUB"), repository.saved)
         }
 }
 

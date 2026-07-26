@@ -10,9 +10,7 @@ import java.time.ZoneOffset
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun rememberPastOrPresentSelectableDates(
-    currentDate: LocalDate = LocalDate.now(),
-): SelectableDates =
+fun rememberPastOrPresentSelectableDates(currentDate: LocalDate = LocalDate.now()): SelectableDates =
     remember(currentDate) {
         object : SelectableDates {
             override fun isSelectableDate(utcTimeMillis: Long): Boolean =

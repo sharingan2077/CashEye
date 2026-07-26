@@ -453,8 +453,9 @@ private class QueueAnalyticsRepository(
                 FinanceRefreshResult.Success
             }
 
-            is AnalyticsLoadResult.Failure ->
+            is AnalyticsLoadResult.Failure -> {
                 FinanceRefreshResult.Failure(result.reason, hasUsableCache = false)
+            }
         }
     }
 
@@ -492,8 +493,9 @@ private class LambdaAnalyticsRepository(
                 FinanceRefreshResult.Success
             }
 
-            is AnalyticsLoadResult.Failure ->
+            is AnalyticsLoadResult.Failure -> {
                 FinanceRefreshResult.Failure(result.reason, hasUsableCache = false)
+            }
         }
     }
 }

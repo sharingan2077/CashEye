@@ -31,6 +31,7 @@ class AccountEditorViewModel(
             is AccountEditorIntent.NameChanged -> _state.value = _state.value.copy(name = intent.value, error = null)
             is AccountEditorIntent.BalanceChanged -> updateBalance(intent.value)
             is AccountEditorIntent.CurrencyChanged -> _state.value = _state.value.copy(currency = intent.value)
+            is AccountEditorIntent.EmojiChanged -> _state.value = _state.value.copy(emoji = intent.value)
             AccountEditorIntent.Save -> save()
         }
     }

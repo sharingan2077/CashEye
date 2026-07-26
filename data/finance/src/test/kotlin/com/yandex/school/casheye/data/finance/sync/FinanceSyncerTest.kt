@@ -340,8 +340,7 @@ class FinanceSyncerTest {
             response: TransactionResponseDto,
         ) = complete(sentOperations)
 
-        override suspend fun completeDelete(sentOperations: List<PendingOperationEntity>) =
-            complete(sentOperations)
+        override suspend fun completeDelete(sentOperations: List<PendingOperationEntity>) = complete(sentOperations)
 
         override suspend fun refreshAfterSync(
             accounts: List<AccountDto>,

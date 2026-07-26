@@ -141,13 +141,14 @@ class FinanceRepositoryImpl(
         editorRequest(ioDispatcher) {
             if (id > 0) {
                 try {
-                    retryPolicy.execute {
-                        api.getTransactions(
-                            accountId = id,
-                            startDate = EARLIEST_TRANSACTION_DATE,
-                            endDate = LocalDate.now().toString(),
-                        )
-                    }.forEach { localStore.cacheTransaction(it) }
+                    retryPolicy
+                        .execute {
+                            api.getTransactions(
+                                accountId = id,
+                                startDate = EARLIEST_TRANSACTION_DATE,
+                                endDate = LocalDate.now().toString(),
+                            )
+                        }.forEach { localStore.cacheTransaction(it) }
                 } catch (error: CancellationException) {
                     throw error
                 } catch (_: Exception) {

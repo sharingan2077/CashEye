@@ -30,6 +30,10 @@ sealed interface AccountEditorIntent {
         val value: String,
     ) : AccountEditorIntent
 
+    data class EmojiChanged(
+        val value: String,
+    ) : AccountEditorIntent
+
     data object Save : AccountEditorIntent
 }
 

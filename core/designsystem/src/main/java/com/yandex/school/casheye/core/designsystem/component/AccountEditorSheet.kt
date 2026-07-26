@@ -1,15 +1,26 @@
 package com.yandex.school.casheye.core.designsystem.component
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetValue
+import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -17,9 +28,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.yandex.school.casheye.core.designsystem.R
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -28,12 +43,14 @@ fun AccountEditorSheet(
     name: String,
     balance: String,
     currency: String,
+    emoji: String,
     isEditing: Boolean,
     isSaving: Boolean,
     error: String?,
     onNameChange: (String) -> Unit,
     onBalanceChange: (String) -> Unit,
     onCurrencyChange: (String) -> Unit,
+    onEmojiChange: (String) -> Unit,
     onSave: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -64,7 +81,7 @@ fun AccountEditorSheet(
     ) {
         BackHandler(enabled = nested != null) { nested = null }
         when (nested) {
-            AccountNestedSheet.Name ->
+            AccountNestedSheet.Name -> {
                 EditorTextContent(
                     title = stringResource(R.string.finance_editor_account_name),
                     value = name,
@@ -76,8 +93,19 @@ fun AccountEditorSheet(
                     },
                     onDismiss = { nested = null },
                 )
+            }
 
-            AccountNestedSheet.Currency ->
+            AccountNestedSheet.Emoji -> {
+                EmojiContent(
+                    selectedEmoji = emoji,
+                    onSelect = {
+                        onEmojiChange(it)
+                        nested = null
+                    },
+                )
+            }
+
+            AccountNestedSheet.Currency -> {
                 CurrencyContent(
                     selectedCurrency = currency,
                     onSelect = {
@@ -85,8 +113,9 @@ fun AccountEditorSheet(
                         nested = null
                     },
                 )
+            }
 
-            null ->
+            null -> {
                 FinanceEditorContent(
                     title =
                         stringResource(
@@ -116,6 +145,15 @@ fun AccountEditorSheet(
                         },
                     )
                     EditorRow(
+                        icon = R.drawable.ic_editor_wallet,
+                        label = stringResource(R.string.finance_editor_account_icon),
+                        value = emoji,
+                        onClick = {
+                            clearPrimaryFocus()
+                            nested = AccountNestedSheet.Emoji
+                        },
+                    )
+                    EditorRow(
                         icon = R.drawable.ic_editor_currency,
                         label = stringResource(R.string.finance_editor_currency),
                         value = currencyShortLabel(currency),
@@ -126,6 +164,67 @@ fun AccountEditorSheet(
                         showDivider = false,
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun EmojiContent(
+    selectedEmoji: String,
+    onSelect: (String) -> Unit,
+) {
+    Column(Modifier.fillMaxWidth()) {
+        EditorSheetTitle(stringResource(R.string.finance_editor_account_icon))
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(4),
+            modifier = Modifier.fillMaxWidth().height(248.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            items(accountEmojis, key = { it }) { emoji ->
+                EmojiOption(
+                    emoji = emoji,
+                    selected = emoji == selectedEmoji,
+                    onClick = { onSelect(emoji) },
+                )
+            }
+        }
+        Spacer(Modifier.height(20.dp))
+    }
+}
+
+@Composable
+private fun EmojiOption(
+    emoji: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    val borderWidth = if (selected) 2.dp else 1.dp
+    val borderColor =
+        if (selected) {
+            MaterialTheme.colorScheme.primary
+        } else {
+            MaterialTheme.colorScheme.outline
+        }
+    Box(
+        modifier = Modifier.fillMaxWidth().height(56.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(
+            modifier =
+                Modifier
+                    .size(56.dp)
+                    .clip(CircleShape)
+                    .border(borderWidth, borderColor, CircleShape)
+                    .selectable(
+                        selected = selected,
+                        role = Role.RadioButton,
+                        onClick = onClick,
+                    ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(text = emoji, fontSize = 28.sp)
         }
     }
 }
@@ -175,4 +274,24 @@ private fun CurrencyContent(
     }
 }
 
-private enum class AccountNestedSheet { Name, Currency }
+private val accountEmojis =
+    listOf(
+        "💵",
+        "💳",
+        "💰",
+        "🏦",
+        "👛",
+        "🪙",
+        "💎",
+        "📈",
+        "🏠",
+        "🚗",
+        "✈️",
+        "🎓",
+        "🎁",
+        "🐷",
+        "🧾",
+        "💼",
+    )
+
+private enum class AccountNestedSheet { Name, Emoji, Currency }
