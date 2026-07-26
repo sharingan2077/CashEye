@@ -72,12 +72,18 @@ class WorkManagerExchangeRateRefreshScheduler(
     }
 }
 
+class ExchangeRateRefresher internal constructor(
+    private val repository: ExchangeRateRepository,
+) {
+    internal suspend fun refresh(): ExchangeRateRefreshResult = repository.refreshLatest()
+}
+
 class ExchangeRateRefreshWorker(
     appContext: Context,
     workerParameters: WorkerParameters,
-    private val repository: ExchangeRateRepository,
+    private val refresher: ExchangeRateRefresher,
 ) : CoroutineWorker(appContext, workerParameters) {
-    override suspend fun doWork(): Result = repository.refreshLatest().toWorkerResult()
+    override suspend fun doWork(): Result = refresher.refresh().toWorkerResult()
 }
 
 internal fun ExchangeRateRefreshResult.toWorkerResult(): ListenableWorker.Result =

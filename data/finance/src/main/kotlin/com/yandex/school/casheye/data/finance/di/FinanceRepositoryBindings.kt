@@ -12,6 +12,7 @@ import com.yandex.school.casheye.data.finance.database.RoomFinanceSyncStore
 import com.yandex.school.casheye.data.finance.repository.FinanceRepositoryImpl
 import com.yandex.school.casheye.data.finance.repository.PreferencesReportingCurrencyRepository
 import com.yandex.school.casheye.data.finance.repository.RoomExchangeRateRepository
+import com.yandex.school.casheye.data.finance.sync.ExchangeRateRefresher
 import com.yandex.school.casheye.data.finance.sync.ExchangeRateRefreshScheduler
 import com.yandex.school.casheye.data.finance.sync.FinanceSyncScheduler
 import com.yandex.school.casheye.data.finance.sync.FinanceSyncer
@@ -69,6 +70,11 @@ object FinanceRepositoryBindings {
         api: ExchangeRateApi,
         databaseProvider: FinanceDatabaseProvider,
     ): ExchangeRateRepository = RoomExchangeRateRepository(api, databaseProvider)
+
+    @Provides
+    @SingleIn(AppScope::class)
+    fun provideExchangeRateRefresher(repository: ExchangeRateRepository): ExchangeRateRefresher =
+        ExchangeRateRefresher(repository)
 
     @Provides
     @SingleIn(AppScope::class)

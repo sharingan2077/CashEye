@@ -25,7 +25,7 @@ class CashEyeApplication :
             .setWorkerFactory(
                 FinanceSyncWorkerFactory(
                     financeSyncerProvider = { appGraph.financeSyncer },
-                    exchangeRateRepositoryProvider = { appGraph.exchangeRateRepository },
+                    exchangeRateRefresherProvider = { appGraph.exchangeRateRefresher },
                 ),
             )
             .build()
