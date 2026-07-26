@@ -16,9 +16,9 @@ internal val DarkSecondary = Color(0xFFCCC2DC)
 internal val LightOnSecondary = Color.White
 internal val DarkOnSecondary = Color(0xFF1D1B20)
 internal val LightSecondaryContainer = Color(0xFFE8DEF8)
-internal val DarkSecondaryContainer = Color(0xFF49454F)
+internal val DarkSecondaryContainer = Color(0xFF4A4458)
 internal val LightOnSecondaryContainer = Color(0xFF1D192B)
-internal val DarkOnSecondaryContainer = Color(0xFFE6E0E9)
+internal val DarkOnSecondaryContainer = Color(0xFFE8DEF8)
 
 internal val LightBackground = Color(0xFFFEF7FF)
 internal val DarkBackground = Color(0xFF141218)
