@@ -15,16 +15,16 @@ data class CashEyeExtendedColors(
 
 internal val LightExtendedColors =
     CashEyeExtendedColors(
-        chartExpense = ChartExpense,
-        chartIncome = ChartIncome,
-        chartOther = ChartOther,
+        chartExpense = LightChartExpense,
+        chartIncome = LightChartIncome,
+        chartOther = LightChartOther,
     )
 
 internal val DarkExtendedColors =
     CashEyeExtendedColors(
-        chartExpense = ChartExpenseDark,
-        chartIncome = ChartIncomeDark,
-        chartOther = ChartOtherDark,
+        chartExpense = DarkChartExpense,
+        chartIncome = DarkChartIncome,
+        chartOther = DarkChartOther,
     )
 
 internal val LocalCashEyeExtendedColors =

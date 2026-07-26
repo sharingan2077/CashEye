@@ -19,14 +19,14 @@ class ExtendedColorsTest {
 
     @Test
     fun `chart colors meet non text contrast in both themes`() {
-        assertPaletteContrast(LightExtendedColors, SurfacePrimary)
-        assertPaletteContrast(DarkExtendedColors, SurfacePrimaryDark)
+        assertPaletteContrast(LightExtendedColors, LightSurface)
+        assertPaletteContrast(DarkExtendedColors, DarkSurface)
     }
 
     @Test
     fun `inverse surface pairs keep readable confirm content`() {
-        assertTrue(contrastRatio(InverseOnSurface, InverseSurface) >= MIN_CONTENT_CONTRAST)
-        assertTrue(contrastRatio(InverseOnSurfaceDark, InverseSurfaceDark) >= MIN_CONTENT_CONTRAST)
+        assertTrue(contrastRatio(LightInverseOnSurface, LightInverseSurface) >= MIN_CONTENT_CONTRAST)
+        assertTrue(contrastRatio(DarkInverseOnSurface, DarkInverseSurface) >= MIN_CONTENT_CONTRAST)
     }
 
     private fun assertPaletteContrast(
