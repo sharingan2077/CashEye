@@ -80,7 +80,7 @@ internal class RoomExchangeRateRepository(
         for (range in missingRanges) {
             val response =
                 try {
-                    api.getRates(from = range.first.toString(), to = range.last.toString())
+                    api.getRates(from = range.start.toString(), to = range.endInclusive.toString())
                 } catch (error: Throwable) {
                     return error.toRefreshFailure(cachedRangeIsComplete(requestedStart, endDate))
                 }
@@ -92,8 +92,8 @@ internal class RoomExchangeRateRepository(
             storeRates(response)
             cache.upsertCoverage(
                 ExchangeRateCoverageEntity(
-                    startDate = range.first.toString(),
-                    endDate = range.last.toString(),
+                    startDate = range.start.toString(),
+                    endDate = range.endInclusive.toString(),
                     fetchedAt = clock.millis(),
                 ),
             )
@@ -167,8 +167,7 @@ internal class RoomExchangeRateRepository(
         missingRanges(startDate, endDate).isEmpty() &&
             cache.getRange(startDate.toString(), endDate.toString()).hasAllQuotes()
 
-    private fun isFresh(fetchedAt: Long): Boolean =
-        Duration.ofMillis(clock.millis() - fetchedAt) < LATEST_CACHE_TTL
+    private fun isFresh(fetchedAt: Long): Boolean = Duration.ofMillis(clock.millis() - fetchedAt) < LATEST_CACHE_TTL
 
     private fun missingQuotes(rates: List<ExchangeRateDto>): Set<CurrencyCode> {
         val available =
@@ -185,7 +184,7 @@ internal class RoomExchangeRateRepository(
         requestedTo: LocalDate?,
     ): ExchangeRateSnapshot =
         ExchangeRateSnapshot(
-            rates = map(ExchangeRateEntity::toDomain),
+            rates = map { entity -> entity.toDomain() },
             requestedFrom = requestedFrom,
             requestedTo = requestedTo,
             missingCurrencies =
@@ -198,11 +197,21 @@ internal class RoomExchangeRateRepository(
 
     private fun Throwable.toRefreshFailure(cachedDataAvailable: Boolean): ExchangeRateRefreshResult =
         when {
-            this is CancellationException -> throw this
-            this is IOException -> ExchangeRateRefreshResult.TemporaryFailure(cachedDataAvailable, this)
-            this is HttpException && code() in 500..599 ->
+            this is CancellationException -> {
+                throw this
+            }
+
+            this is IOException -> {
                 ExchangeRateRefreshResult.TemporaryFailure(cachedDataAvailable, this)
-            else -> ExchangeRateRefreshResult.PermanentFailure(cachedDataAvailable, this)
+            }
+
+            this is HttpException && code() in 500..599 -> {
+                ExchangeRateRefreshResult.TemporaryFailure(cachedDataAvailable, this)
+            }
+
+            else -> {
+                ExchangeRateRefreshResult.PermanentFailure(cachedDataAvailable, this)
+            }
         }
 
     private fun ExchangeRateDto.toEntity(fetchedAt: Long): ExchangeRateEntity =
