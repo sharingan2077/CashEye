@@ -2,11 +2,11 @@ package com.yandex.school.casheye.feature.expenses.presentation
 
 import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.Category
+import com.yandex.school.casheye.core.model.CurrencyCode
 import com.yandex.school.casheye.core.model.Transaction
 import java.math.BigDecimal
 import java.time.Instant
 
-private const val CURRENCY_RUB = "RUB"
 private val MockDate: Instant = Instant.parse("2026-06-12T12:00:00Z")
 private val MockAccount =
     Account(
@@ -14,13 +14,13 @@ private val MockAccount =
         name = "Основной счёт",
         emoji = "\uD83D\uDCB5",
         balance = BigDecimal("1322444"),
-        currency = CURRENCY_RUB,
+        currency = CurrencyCode.RUB,
     )
 
 internal val expensesUiStateMock =
     ExpensesUiState.Content(
         total = BigDecimal("323524"),
-        currencyCode = CURRENCY_RUB,
+        currencyCode = CurrencyCode.RUB.isoCode,
         transactions =
             listOf(
                 expenseTransaction(1, 101, "Покупка канцтоваров", "✏️", "1200"),

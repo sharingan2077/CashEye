@@ -3,6 +3,7 @@ package com.yandex.school.casheye.feature.accounts.presentation
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.yandex.school.casheye.core.designsystem.component.AccountEditorSheet
+import com.yandex.school.casheye.core.model.CurrencyCode
 
 @Composable
 fun AccountEditorScreen(
@@ -13,14 +14,16 @@ fun AccountEditorScreen(
     AccountEditorSheet(
         name = state.name,
         balance = state.balance,
-        currency = state.currency,
+        currency = state.currency.isoCode,
         emoji = state.emoji,
         isEditing = state.editingId != null,
         isSaving = state.isSaving || state.isLoading,
         error = state.error?.let { stringResource(it) },
         onNameChange = { onIntent(AccountEditorIntent.NameChanged(it)) },
         onBalanceChange = { onIntent(AccountEditorIntent.BalanceChanged(it)) },
-        onCurrencyChange = { onIntent(AccountEditorIntent.CurrencyChanged(it)) },
+        onCurrencyChange = {
+            onIntent(AccountEditorIntent.CurrencyChanged(CurrencyCode.fromIsoCode(it)))
+        },
         onEmojiChange = { onIntent(AccountEditorIntent.EmojiChanged(it)) },
         onSave = { onIntent(AccountEditorIntent.Save) },
         onDismiss = onDismiss,

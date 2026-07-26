@@ -65,7 +65,7 @@ class IncomeViewModelTest {
             advanceUntilIdle()
 
             assertEquals(
-                IncomeUiState.Content(summary.total, summary.currencyCode, summary.transactions),
+                IncomeUiState.Content(summary.total, summary.currencyCode.isoCode, summary.transactions),
                 viewModel.state.value,
             )
         }
@@ -119,7 +119,7 @@ class IncomeViewModelTest {
             advanceUntilIdle()
 
             assertEquals(
-                IncomeUiState.Content(summary.total, summary.currencyCode, summary.transactions),
+                IncomeUiState.Content(summary.total, summary.currencyCode.isoCode, summary.transactions),
                 viewModel.state.value,
             )
             assertEquals(IncomeEffect.ShowError(FinanceFailureReason.Server), effect.await())

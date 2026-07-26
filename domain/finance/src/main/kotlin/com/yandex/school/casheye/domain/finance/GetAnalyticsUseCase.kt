@@ -7,6 +7,7 @@ import java.math.BigDecimal
 
 class GetAnalyticsUseCase(
     private val repository: FinanceRepository,
+    private val reportingCurrencyRepository: ReportingCurrencyRepository = DefaultReportingCurrencyRepository,
 ) {
     operator fun invoke(query: AnalyticsQuery): Flow<AnalyticsLoadResult> =
         combine(
@@ -18,7 +19,8 @@ class GetAnalyticsUseCase(
                     endDate = query.endDate,
                 ),
             ),
-        ) { accounts, transactions ->
+            reportingCurrencyRepository.observe(),
+        ) { accounts, transactions, reportingCurrency ->
             val kindFiltered =
                 transactions.filter { transaction ->
                     when (query.transactionKind) {
@@ -38,7 +40,7 @@ class GetAnalyticsUseCase(
                 AnalyticsLoadResult.Success(
                     AnalyticsSummary(
                         total = filtered.fold(BigDecimal.ZERO) { total, transaction -> total + transaction.amount },
-                        currencyCode = query.currencyCode,
+                        currencyCode = reportingCurrency,
                         transactions = filtered,
                         accounts = accounts,
                         availableCategories = availableCategories,

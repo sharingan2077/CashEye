@@ -127,7 +127,7 @@ private fun IncomeContent(
                         amount =
                             formatAmount(
                                 amount = transaction.amount,
-                                currencyCode = transaction.account.currency,
+                                currencyCode = transaction.currency.isoCode,
                             ),
                     )
                 }

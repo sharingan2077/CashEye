@@ -2,6 +2,7 @@ package com.yandex.school.casheye.data.finance.database.mapper
 
 import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.Category
+import com.yandex.school.casheye.core.model.CurrencyCode
 import com.yandex.school.casheye.core.model.Transaction
 import com.yandex.school.casheye.data.finance.database.entity.AccountEntity
 import com.yandex.school.casheye.data.finance.database.entity.CategoryEntity
@@ -16,7 +17,7 @@ internal fun AccountEntity.toDomain(): Account =
         name = name,
         emoji = emoji,
         balance = BigDecimal(balance),
-        currency = currency,
+        currency = CurrencyCode.fromIsoCode(currency),
     )
 
 internal fun Account.toEntity(): AccountEntity =
@@ -25,7 +26,7 @@ internal fun Account.toEntity(): AccountEntity =
         name = name,
         emoji = emoji,
         balance = balance.toPlainString(),
-        currency = currency,
+        currency = currency.isoCode,
     )
 
 internal fun CategoryEntity.toDomain(): Category =
@@ -50,6 +51,7 @@ internal fun TransactionWithRelations.toDomain(): Transaction =
         account = account.toDomain(),
         category = category.toDomain(),
         amount = BigDecimal(transaction.amount),
+        currency = CurrencyCode.fromIsoCode(account.currency),
         transactionDate = Instant.ofEpochMilli(transaction.transactionDate),
         comment = transaction.comment,
         createdAt = Instant.ofEpochMilli(transaction.createdAt),

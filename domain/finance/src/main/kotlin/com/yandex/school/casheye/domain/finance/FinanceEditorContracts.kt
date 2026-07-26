@@ -1,5 +1,6 @@
 package com.yandex.school.casheye.domain.finance
 
+import com.yandex.school.casheye.core.model.CurrencyCode
 import java.math.BigDecimal
 import java.time.Instant
 
@@ -27,5 +28,13 @@ data class SaveAccountCommand(
     val name: String,
     val emoji: String,
     val balance: BigDecimal,
-    val currency: String,
-)
+    val currency: CurrencyCode,
+) {
+    constructor(
+        id: Int?,
+        name: String,
+        emoji: String,
+        balance: BigDecimal,
+        currency: String,
+    ) : this(id, name, emoji, balance, CurrencyCode.fromIsoCode(currency))
+}

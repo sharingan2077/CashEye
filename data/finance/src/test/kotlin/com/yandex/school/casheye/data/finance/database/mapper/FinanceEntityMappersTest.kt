@@ -2,6 +2,7 @@ package com.yandex.school.casheye.data.finance.database.mapper
 
 import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.Category
+import com.yandex.school.casheye.core.model.CurrencyCode
 import com.yandex.school.casheye.core.model.Transaction
 import com.yandex.school.casheye.data.finance.database.entity.TransactionWithRelations
 import org.junit.Assert.assertEquals
@@ -56,5 +57,32 @@ class FinanceEntityMappersTest {
         assertEquals(transaction.transactionDate.toEpochMilli(), entity.transactionDate)
         assertEquals(account.id, entity.accountId)
         assertEquals(category.id, entity.categoryId)
+    }
+
+    @Test
+    fun `transaction relation uses the newly selected account currency`() {
+        val rubAccount = Account(7, "Roubles", "💳", BigDecimal.ZERO, CurrencyCode.RUB)
+        val usdAccount = Account(8, "Dollars", "💵", BigDecimal.ZERO, CurrencyCode.USD)
+        val category = Category(9, "Food", "🍜", false)
+        val transaction =
+            Transaction(
+                id = 11,
+                account = rubAccount,
+                category = category,
+                amount = BigDecimal.TEN,
+                transactionDate = Instant.EPOCH,
+                comment = null,
+                createdAt = Instant.EPOCH,
+                updatedAt = Instant.EPOCH,
+            )
+
+        val restored =
+            TransactionWithRelations(
+                transaction = transaction.toEntity().copy(accountId = usdAccount.id),
+                account = usdAccount.toEntity(),
+                category = category.toEntity(),
+            ).toDomain()
+
+        assertEquals(CurrencyCode.USD, restored.currency)
     }
 }

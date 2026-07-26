@@ -58,7 +58,7 @@ class AccountsViewModelTest {
             advanceUntilIdle()
 
             assertEquals(
-                AccountsUiState.Content(summary.total, summary.currencyCode, summary.accounts),
+                AccountsUiState.Content(summary.total, summary.currencyCode.isoCode, summary.accounts),
                 viewModel.state.value,
             )
             assertEquals(listOf("RUB"), repository.requestedCurrencies)
@@ -118,7 +118,7 @@ class AccountsViewModelTest {
             advanceUntilIdle()
 
             assertEquals(
-                AccountsUiState.Content(summary.total, summary.currencyCode, summary.accounts),
+                AccountsUiState.Content(summary.total, summary.currencyCode.isoCode, summary.accounts),
                 viewModel.state.value,
             )
             assertEquals(AccountsEffect.ShowError(FinanceFailureReason.Server), effect.await())

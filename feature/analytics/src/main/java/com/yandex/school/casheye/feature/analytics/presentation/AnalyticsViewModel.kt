@@ -218,7 +218,6 @@ class AnalyticsViewModel(
         return AnalyticsQuery(
             startDate = filters.period.startDate,
             endDate = filters.period.endDate,
-            currencyCode = CURRENCY_RUB,
             transactionKind = filters.type.toDomain(),
             accountId = filters.accountId,
             categoryIds = filters.categoryIds,
@@ -286,13 +285,13 @@ class AnalyticsViewModel(
             )
         _state.value =
             if (transactions.isEmpty()) {
-                AnalyticsUiState.Empty(screenData, summary.currencyCode, isRefreshing)
+                AnalyticsUiState.Empty(screenData, summary.currencyCode.isoCode, isRefreshing)
             } else {
                 val typeSummaries = transactions.toTypeSummaries()
                 AnalyticsUiState.Content(
                     data = screenData,
                     total = transactions.presentationTotal(screenData.filters.type),
-                    currencyCode = summary.currencyCode,
+                    currencyCode = summary.currencyCode.isoCode,
                     transactions = transactions,
                     categorySummaries = transactions.toCategorySummaries(),
                     typeSummaries = typeSummaries,
@@ -387,6 +386,4 @@ private fun AnalyticsUiState.withRefreshing(isRefreshing: Boolean): AnalyticsUiS
         is AnalyticsUiState.Loading,
         is AnalyticsUiState.Error,
         -> this
-    }
-
-private const val CURRENCY_RUB = "RUB"
+}

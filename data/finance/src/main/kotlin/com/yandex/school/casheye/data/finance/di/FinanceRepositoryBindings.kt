@@ -1,10 +1,14 @@
 package com.yandex.school.casheye.data.finance.di
 
+import android.content.Context
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.preferencesDataStoreFile
 import com.yandex.school.casheye.data.finance.api.FinanceApi
 import com.yandex.school.casheye.data.finance.database.FinanceLocalStore
 import com.yandex.school.casheye.data.finance.database.RoomFinanceLocalStore
 import com.yandex.school.casheye.data.finance.database.RoomFinanceSyncStore
 import com.yandex.school.casheye.data.finance.repository.FinanceRepositoryImpl
+import com.yandex.school.casheye.data.finance.repository.PreferencesReportingCurrencyRepository
 import com.yandex.school.casheye.data.finance.sync.FinanceSyncScheduler
 import com.yandex.school.casheye.data.finance.sync.FinanceSyncer
 import com.yandex.school.casheye.data.finance.sync.WorkManagerFinanceSyncScheduler
@@ -19,8 +23,11 @@ import com.yandex.school.casheye.domain.finance.GetDailySummaryUseCase
 import com.yandex.school.casheye.domain.finance.GetEditorAccountsUseCase
 import com.yandex.school.casheye.domain.finance.GetEditorCategoriesUseCase
 import com.yandex.school.casheye.domain.finance.GetTransactionUseCase
+import com.yandex.school.casheye.domain.finance.ObserveReportingCurrencyUseCase
+import com.yandex.school.casheye.domain.finance.ReportingCurrencyRepository
 import com.yandex.school.casheye.domain.finance.SaveAccountUseCase
 import com.yandex.school.casheye.domain.finance.SaveTransactionUseCase
+import com.yandex.school.casheye.domain.finance.SetReportingCurrencyUseCase
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.Provides
@@ -29,6 +36,15 @@ import kotlinx.coroutines.Dispatchers
 
 @BindingContainer
 object FinanceRepositoryBindings {
+    @Provides
+    @SingleIn(AppScope::class)
+    fun provideReportingCurrencyRepository(context: Context): ReportingCurrencyRepository =
+        PreferencesReportingCurrencyRepository(
+            PreferenceDataStoreFactory.create(
+                produceFile = { context.preferencesDataStoreFile("reporting_currency.preferences_pb") },
+            ),
+        )
+
     @Provides
     fun provideLocalStore(localStore: RoomFinanceLocalStore): FinanceLocalStore = localStore
 
@@ -57,14 +73,31 @@ object FinanceSyncBindings {
 @BindingContainer
 object FinanceUseCaseBindings {
     @Provides
-    fun provideGetDailySummaryUseCase(repository: FinanceRepository): GetDailySummaryUseCase =
-        GetDailySummaryUseCase(repository)
+    fun provideGetDailySummaryUseCase(
+        repository: FinanceRepository,
+        reportingCurrencyRepository: ReportingCurrencyRepository,
+    ): GetDailySummaryUseCase = GetDailySummaryUseCase(repository, reportingCurrencyRepository)
 
     @Provides
-    fun provideGetAccountsUseCase(repository: FinanceRepository): GetAccountsUseCase = GetAccountsUseCase(repository)
+    fun provideGetAccountsUseCase(
+        repository: FinanceRepository,
+        reportingCurrencyRepository: ReportingCurrencyRepository,
+    ): GetAccountsUseCase = GetAccountsUseCase(repository, reportingCurrencyRepository)
 
     @Provides
-    fun provideGetAnalyticsUseCase(repository: FinanceRepository): GetAnalyticsUseCase = GetAnalyticsUseCase(repository)
+    fun provideGetAnalyticsUseCase(
+        repository: FinanceRepository,
+        reportingCurrencyRepository: ReportingCurrencyRepository,
+    ): GetAnalyticsUseCase = GetAnalyticsUseCase(repository, reportingCurrencyRepository)
+
+    @Provides
+    fun provideObserveReportingCurrencyUseCase(
+        repository: ReportingCurrencyRepository,
+    ): ObserveReportingCurrencyUseCase = ObserveReportingCurrencyUseCase(repository)
+
+    @Provides
+    fun provideSetReportingCurrencyUseCase(repository: ReportingCurrencyRepository): SetReportingCurrencyUseCase =
+        SetReportingCurrencyUseCase(repository)
 
     @Provides
     fun provideGetEditorAccountsUseCase(repository: FinanceRepository): GetEditorAccountsUseCase =

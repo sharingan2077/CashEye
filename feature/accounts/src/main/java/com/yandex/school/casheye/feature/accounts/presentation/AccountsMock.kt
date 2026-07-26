@@ -1,14 +1,13 @@
 package com.yandex.school.casheye.feature.accounts.presentation
 
 import com.yandex.school.casheye.core.model.Account
+import com.yandex.school.casheye.core.model.CurrencyCode
 import java.math.BigDecimal
-
-private const val CURRENCY_RUB = "RUB"
 
 internal val accountsUiStateMock =
     AccountsUiState.Content(
         total = BigDecimal("1322444"),
-        currencyCode = CURRENCY_RUB,
+        currencyCode = CurrencyCode.RUB.isoCode,
         accounts =
             listOf(
                 accountItem(1, "Яндекс Pay", "💳", "123322"),
@@ -28,5 +27,5 @@ private fun accountItem(
         name = name,
         emoji = emoji,
         balance = BigDecimal(balance),
-        currency = CURRENCY_RUB,
+        currency = CurrencyCode.RUB,
     )

@@ -121,7 +121,7 @@ class AccountsViewModel(
         val observationReady = localObservationReady
         observeJob =
             viewModelScope.launch {
-                getAccounts(currencyCode = CURRENCY_RUB).collectLatest { result ->
+                getAccounts().collectLatest { result ->
                     observationReady.complete(Unit)
                     when (result) {
                         is AccountsLoadResult.Success -> {
@@ -188,7 +188,7 @@ class AccountsViewModel(
             } else {
                 AccountsUiState.Content(
                     total = summary.total,
-                    currencyCode = summary.currencyCode,
+                    currencyCode = summary.currencyCode.isoCode,
                     accounts = summary.accounts,
                     deleteConfirmation = deleteConfirmation,
                     isRefreshing = isRefreshing,
@@ -208,6 +208,4 @@ private fun AccountsUiState.withRefreshing(isRefreshing: Boolean): AccountsUiSta
         AccountsUiState.Loading,
         is AccountsUiState.Error,
         -> this
-    }
-
-private const val CURRENCY_RUB = "RUB"
+}

@@ -1,6 +1,7 @@
 package com.yandex.school.casheye.feature.accounts.presentation
 
 import com.yandex.school.casheye.core.model.Account
+import com.yandex.school.casheye.core.model.CurrencyCode
 import com.yandex.school.casheye.domain.finance.AnalyticsQuery
 import com.yandex.school.casheye.domain.finance.EditorResult
 import com.yandex.school.casheye.domain.finance.FinanceRepository
@@ -42,7 +43,7 @@ class AccountEditorViewModelTest {
             viewModel.onIntent(AccountEditorIntent.Open(5))
             advanceUntilIdle()
             viewModel.onIntent(AccountEditorIntent.NameChanged("Резерв"))
-            viewModel.onIntent(AccountEditorIntent.CurrencyChanged("USD"))
+            viewModel.onIntent(AccountEditorIntent.CurrencyChanged(CurrencyCode.USD))
             viewModel.onIntent(AccountEditorIntent.EmojiChanged("🏦"))
             viewModel.onIntent(AccountEditorIntent.Save)
             advanceUntilIdle()

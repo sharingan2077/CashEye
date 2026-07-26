@@ -108,7 +108,6 @@ class ExpensesViewModel(
             viewModelScope.launch {
                 getDailySummary(
                     date = date,
-                    currencyCode = CURRENCY_RUB,
                     transactionKind = TransactionKind.Expense,
                 ).collectLatest { result ->
                     observationReady.complete(Unit)
@@ -173,7 +172,7 @@ class ExpensesViewModel(
             } else {
                 ExpensesUiState.Content(
                     total = summary.total,
-                    currencyCode = summary.currencyCode,
+                    currencyCode = summary.currencyCode.isoCode,
                     transactions = summary.transactions,
                     isRefreshing = isRefreshing,
                 )
@@ -192,6 +191,4 @@ private fun ExpensesUiState.withRefreshing(isRefreshing: Boolean): ExpensesUiSta
         ExpensesUiState.Loading,
         is ExpensesUiState.Error,
         -> this
-    }
-
-private const val CURRENCY_RUB = "RUB"
+}

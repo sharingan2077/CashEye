@@ -2,6 +2,7 @@ package com.yandex.school.casheye.domain.finance
 
 import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.Category
+import com.yandex.school.casheye.core.model.CurrencyCode
 import com.yandex.school.casheye.core.model.Transaction
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
@@ -74,7 +75,6 @@ sealed interface FinanceRefreshResult {
 data class AnalyticsQuery(
     val startDate: LocalDate,
     val endDate: LocalDate,
-    val currencyCode: String,
     val transactionKind: AnalyticsTransactionKind,
     val accountId: Int?,
     val categoryIds: Set<Int>,
@@ -88,11 +88,19 @@ enum class AnalyticsTransactionKind {
 
 data class AnalyticsSummary(
     val total: BigDecimal,
-    val currencyCode: String,
+    val currencyCode: CurrencyCode,
     val transactions: List<Transaction>,
     val accounts: List<Account>,
     val availableCategories: List<Category>,
-)
+) {
+    constructor(
+        total: BigDecimal,
+        currencyCode: String,
+        transactions: List<Transaction>,
+        accounts: List<Account>,
+        availableCategories: List<Category>,
+    ) : this(total, CurrencyCode.fromIsoCode(currencyCode), transactions, accounts, availableCategories)
+}
 
 sealed interface AnalyticsLoadResult {
     data class Success(
@@ -106,9 +114,15 @@ sealed interface AnalyticsLoadResult {
 
 data class AccountsSummary(
     val total: BigDecimal,
-    val currencyCode: String,
+    val currencyCode: CurrencyCode,
     val accounts: List<Account>,
-)
+) {
+    constructor(
+        total: BigDecimal,
+        currencyCode: String,
+        accounts: List<Account>,
+    ) : this(total, CurrencyCode.fromIsoCode(currencyCode), accounts)
+}
 
 sealed interface AccountsLoadResult {
     data class Success(
@@ -127,9 +141,15 @@ enum class TransactionKind {
 
 data class FinanceSummary(
     val total: BigDecimal,
-    val currencyCode: String,
+    val currencyCode: CurrencyCode,
     val transactions: List<Transaction>,
-)
+) {
+    constructor(
+        total: BigDecimal,
+        currencyCode: String,
+        transactions: List<Transaction>,
+    ) : this(total, CurrencyCode.fromIsoCode(currencyCode), transactions)
+}
 
 sealed interface FinanceLoadResult {
     data class Success(

@@ -10,6 +10,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
 import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.Category
+import com.yandex.school.casheye.core.model.CurrencyCode
 import com.yandex.school.casheye.core.model.Transaction
 import java.math.BigDecimal
 import java.time.Instant
@@ -49,8 +50,8 @@ private fun AnalyticsPreview(activeSheet: AnalyticsSheet? = null) {
 private fun analyticsPreviewState(activeSheet: AnalyticsSheet?): AnalyticsUiState.Content {
     val accounts =
         listOf(
-            Account(1, "Основной счёт", "💳", BigDecimal("75240"), PREVIEW_CURRENCY),
-            Account(2, "Накопительный", "🏦", BigDecimal("124000"), PREVIEW_CURRENCY),
+            Account(1, "Основной счёт", "💳", BigDecimal("75240"), CurrencyCode.RUB),
+            Account(2, "Накопительный", "🏦", BigDecimal("124000"), CurrencyCode.RUB),
         )
     val categories =
         listOf(
@@ -81,7 +82,7 @@ private fun analyticsPreviewState(activeSheet: AnalyticsSheet?): AnalyticsUiStat
     return AnalyticsUiState.Content(
         data = data,
         total = BigDecimal("18750"),
-        currencyCode = PREVIEW_CURRENCY,
+        currencyCode = CurrencyCode.RUB.isoCode,
         transactions =
             listOf(
                 previewTransaction(1, accounts.first(), categories[0], "5420", "Пятёрочка"),
@@ -116,5 +117,4 @@ private fun previewTransaction(
         updatedAt = PREVIEW_INSTANT,
     )
 
-private const val PREVIEW_CURRENCY = "RUB"
 private val PREVIEW_INSTANT: Instant = Instant.parse("2026-07-20T12:00:00Z")

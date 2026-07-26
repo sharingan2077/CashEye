@@ -110,7 +110,6 @@ class IncomeViewModel(
             viewModelScope.launch {
                 getIncome(
                     date = date,
-                    currencyCode = CURRENCY_CODE,
                     transactionKind = TransactionKind.Income,
                 ).collectLatest { result ->
                     observationReady.complete(Unit)
@@ -175,7 +174,7 @@ class IncomeViewModel(
             } else {
                 IncomeUiState.Content(
                     total = summary.total,
-                    currencyCode = summary.currencyCode,
+                    currencyCode = summary.currencyCode.isoCode,
                     transactions = summary.transactions,
                     isRefreshing = isRefreshing,
                 )
@@ -194,6 +193,4 @@ private fun IncomeUiState.withRefreshing(isRefreshing: Boolean): IncomeUiState =
         IncomeUiState.Loading,
         is IncomeUiState.Error,
         -> this
-    }
-
-private const val CURRENCY_CODE = "RUB"
+}

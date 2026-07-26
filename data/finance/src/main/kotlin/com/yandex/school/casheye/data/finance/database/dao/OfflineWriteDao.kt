@@ -39,7 +39,7 @@ internal abstract class OfflineWriteDao {
                 name = command.name,
                 emoji = command.emoji,
                 balance = command.balance.toPlainString(),
-                currency = command.currency,
+                currency = command.currency.isoCode,
             ),
         )
         val snapshot =
@@ -48,7 +48,7 @@ internal abstract class OfflineWriteDao {
                 name = command.name,
                 emoji = command.emoji,
                 balance = command.balance.toPlainString(),
-                currency = command.currency,
+                currency = command.currency.isoCode,
             )
         val operationId =
             insertOperation(
@@ -126,7 +126,7 @@ internal abstract class OfflineWriteDao {
                 name = command.name,
                 emoji = command.emoji,
                 balance = command.balance.toPlainString(),
-                currency = command.currency,
+                currency = command.currency.isoCode,
             ),
         )
         val payload =
@@ -136,7 +136,7 @@ internal abstract class OfflineWriteDao {
                     name = command.name,
                     emoji = command.emoji,
                     balance = command.balance.toPlainString(),
-                    currency = command.currency,
+                    currency = command.currency.isoCode,
                 ),
             )
         val createOperation = findCreateOperation(PendingEntityType.ACCOUNT, localId)

@@ -21,9 +21,9 @@ fun AddIncomeScreen(
         categories = state.categories.map { EditorOption(it.id, it.name, it.emoji) },
         account =
             state.accounts.firstOrNull { it.id == state.selectedAccountId }?.let {
-                EditorOption(it.id, it.name, it.emoji, it.currency)
+                EditorOption(it.id, it.name, it.emoji, it.currency.isoCode)
             },
-        accounts = state.accounts.map { EditorOption(it.id, it.name, it.emoji, it.currency) },
+        accounts = state.accounts.map { EditorOption(it.id, it.name, it.emoji, it.currency.isoCode) },
         date = state.date,
         time = state.time,
         comment = state.comment,

@@ -153,7 +153,7 @@ private fun AccountsContent(
                         amount =
                             formatAmount(
                                 amount = accountItem.balance,
-                                currencyCode = accountItem.currency,
+                                currencyCode = accountItem.currency.isoCode,
                             ),
                     )
                 }

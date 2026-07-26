@@ -85,7 +85,6 @@ class AccountEditorViewModel(
             when {
                 state.name.isBlank() -> R.string.error_account_name_required
                 balance == null || balance.signum() < 0 -> R.string.error_invalid_balance
-                state.currency !in SUPPORTED_CURRENCIES -> R.string.error_select_currency
                 else -> null
             }
         if (validation != null) {
@@ -118,8 +117,6 @@ class AccountEditorViewModel(
         }
     }
 }
-
-private val SUPPORTED_CURRENCIES = setOf("RUB", "USD", "EUR", "GBP", "CNY")
 
 private fun FinanceFailureReason.editorMessage(): Int =
     when (this) {

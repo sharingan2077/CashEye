@@ -8,10 +8,10 @@ import java.time.LocalDate
 
 class GetDailySummaryUseCase(
     private val repository: FinanceRepository,
+    private val reportingCurrencyRepository: ReportingCurrencyRepository = DefaultReportingCurrencyRepository,
 ) {
     operator fun invoke(
         date: LocalDate,
-        currencyCode: String,
         transactionKind: TransactionKind,
     ): Flow<FinanceLoadResult> =
         combine(
@@ -23,7 +23,8 @@ class GetDailySummaryUseCase(
                     endDate = date,
                 ),
             ),
-        ) { accounts, transactions ->
+            reportingCurrencyRepository.observe(),
+        ) { accounts, transactions, reportingCurrency ->
             val accountIds = accounts.mapTo(mutableSetOf()) { it.id }
             val finance =
                 transactions
@@ -39,7 +40,7 @@ class GetDailySummaryUseCase(
                 FinanceLoadResult.Success(
                     FinanceSummary(
                         total = finance.fold(BigDecimal.ZERO) { total, transaction -> total + transaction.amount },
-                        currencyCode = currencyCode,
+                        currencyCode = reportingCurrency,
                         transactions = finance,
                     ),
                 )

@@ -1,6 +1,7 @@
 package com.yandex.school.casheye.feature.accounts.presentation
 
 import androidx.annotation.StringRes
+import com.yandex.school.casheye.core.model.CurrencyCode
 
 data class AccountEditorUiState(
     val isLoading: Boolean = true,
@@ -8,7 +9,7 @@ data class AccountEditorUiState(
     val editingId: Int? = null,
     val name: String = "",
     val balance: String = "",
-    val currency: String = "RUB",
+    val currency: CurrencyCode = CurrencyCode.RUB,
     val emoji: String = "💵",
     @StringRes val error: Int? = null,
 )
@@ -27,7 +28,7 @@ sealed interface AccountEditorIntent {
     ) : AccountEditorIntent
 
     data class CurrencyChanged(
-        val value: String,
+        val value: CurrencyCode,
     ) : AccountEditorIntent
 
     data class EmojiChanged(

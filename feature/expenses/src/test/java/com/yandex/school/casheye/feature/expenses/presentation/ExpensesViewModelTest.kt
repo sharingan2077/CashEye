@@ -65,7 +65,7 @@ class ExpensesViewModelTest {
             advanceUntilIdle()
 
             assertEquals(
-                ExpensesUiState.Content(summary.total, summary.currencyCode, summary.transactions),
+                ExpensesUiState.Content(summary.total, summary.currencyCode.isoCode, summary.transactions),
                 viewModel.state.value,
             )
         }
@@ -119,7 +119,7 @@ class ExpensesViewModelTest {
             advanceUntilIdle()
 
             assertEquals(
-                ExpensesUiState.Content(summary.total, summary.currencyCode, summary.transactions),
+                ExpensesUiState.Content(summary.total, summary.currencyCode.isoCode, summary.transactions),
                 viewModel.state.value,
             )
             assertEquals(ExpensesEffect.ShowError(FinanceFailureReason.Server), effect.await())

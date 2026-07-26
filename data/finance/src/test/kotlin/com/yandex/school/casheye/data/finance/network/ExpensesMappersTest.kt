@@ -1,5 +1,6 @@
 package com.yandex.school.casheye.data.finance.network
 
+import com.yandex.school.casheye.core.model.CurrencyCode
 import com.yandex.school.casheye.data.finance.dto.AccountBriefDto
 import com.yandex.school.casheye.data.finance.dto.AccountDto
 import com.yandex.school.casheye.data.finance.dto.AccountResponseDto
@@ -20,7 +21,7 @@ class ExpensesMappersTest {
 
         assertEquals(3, account.id)
         assertEquals(BigDecimal("99.50"), account.balance)
-        assertEquals("USD", account.currency)
+        assertEquals(CurrencyCode.USD, account.currency)
     }
 
     @Test
@@ -40,7 +41,7 @@ class ExpensesMappersTest {
         assertEquals(7, account.id)
         assertEquals("Основной счёт", account.name)
         assertEquals(BigDecimal("1250.75"), account.balance)
-        assertEquals("RUB", account.currency)
+        assertEquals(CurrencyCode.RUB, account.currency)
     }
 
     @Test
@@ -54,6 +55,7 @@ class ExpensesMappersTest {
         assertNull(transaction.comment)
         assertEquals("Основной счёт", transaction.account.name)
         assertEquals(BigDecimal("1250.75"), transaction.account.balance)
+        assertEquals(CurrencyCode.RUB, transaction.currency)
         assertEquals("Продукты", transaction.category.name)
         assertFalse(transaction.category.isIncome)
     }

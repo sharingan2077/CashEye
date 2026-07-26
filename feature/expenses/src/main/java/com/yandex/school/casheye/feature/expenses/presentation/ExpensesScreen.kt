@@ -123,7 +123,7 @@ private fun ExpensesContent(
                         amount =
                             formatAmount(
                                 amount = transaction.amount,
-                                currencyCode = transaction.account.currency,
+                                currencyCode = transaction.currency.isoCode,
                             ),
                     )
                 }
