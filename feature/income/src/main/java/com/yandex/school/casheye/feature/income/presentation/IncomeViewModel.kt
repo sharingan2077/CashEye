@@ -207,4 +207,4 @@ private fun IncomeUiState.withRefreshing(isRefreshing: Boolean): IncomeUiState =
         IncomeUiState.Loading,
         is IncomeUiState.Error,
         -> this
-}
+    }

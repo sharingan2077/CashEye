@@ -102,16 +102,14 @@ class ExchangeRateRepositoryImplTest {
         override suspend fun getRange(
             startDate: String,
             endDate: String,
-        ): List<ExchangeRateEntity> =
-            rates.value.filter { it.rateDate in startDate..endDate }
+        ): List<ExchangeRateEntity> = rates.value.filter { it.rateDate in startDate..endDate }
 
         override suspend fun latestFetchedAt(): Long? = rates.value.maxOfOrNull(ExchangeRateEntity::fetchedAt)
 
         override suspend fun getCoverages(
             startDate: String,
             endDate: String,
-        ): List<ExchangeRateCoverageEntity> =
-            coverages.filter { it.endDate >= startDate && it.startDate <= endDate }
+        ): List<ExchangeRateCoverageEntity> = coverages.filter { it.endDate >= startDate && it.startDate <= endDate }
 
         override suspend fun upsertRates(rates: List<ExchangeRateEntity>) {
             val keyed =

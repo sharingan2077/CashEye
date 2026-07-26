@@ -43,7 +43,12 @@ class CurrencyConverterTest {
     @Test
     fun `identity conversion does not require provider rate`() {
         val result =
-            converter.convert(MoneyAmount(BigDecimal("42.50"), CurrencyCode.CNY), CurrencyCode.CNY, saturday, emptyList())
+            converter.convert(
+                MoneyAmount(BigDecimal("42.50"), CurrencyCode.CNY),
+                CurrencyCode.CNY,
+                saturday,
+                emptyList(),
+            )
 
         assertEquals(BigDecimal("42.50"), (result as CurrencyConversionResult.Complete).money.amount)
     }
@@ -59,7 +64,13 @@ class CurrencyConverterTest {
 
     @Test
     fun `missing rate is explicit`() {
-        val result = converter.convert(MoneyAmount(BigDecimal.ONE, CurrencyCode.USD), CurrencyCode.GBP, friday, emptyList())
+        val result =
+            converter.convert(
+                MoneyAmount(BigDecimal.ONE, CurrencyCode.USD),
+                CurrencyCode.GBP,
+                friday,
+                emptyList(),
+            )
 
         assertTrue(result is CurrencyConversionResult.Incomplete)
         assertEquals(

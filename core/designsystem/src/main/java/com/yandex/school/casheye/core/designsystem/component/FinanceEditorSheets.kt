@@ -216,7 +216,7 @@ fun TransactionEditorSheet(
                     onAmountChange = onAmountChange,
                     onSave = onSave,
                     requestAmountFocus = shouldRequestAmountFocus,
-                    onAmountFocusRequested = { shouldRequestAmountFocus = false },
+                    onAmountFocusRequest = { shouldRequestAmountFocus = false },
                 ) { clearPrimaryFocus ->
                     EditorRow(
                         icon = R.drawable.ic_editor_category,
@@ -315,17 +315,18 @@ internal fun FinanceEditorContent(
     onAmountChange: (String) -> Unit,
     onSave: () -> Unit,
     requestAmountFocus: Boolean,
-    onAmountFocusRequested: () -> Unit,
+    onAmountFocusRequest: () -> Unit,
     title: String? = null,
     rows: @Composable ColumnScope.(clearPrimaryFocus: () -> Unit) -> Unit,
 ) {
     val amountFocusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
+    val currentOnAmountFocusRequest by rememberUpdatedState(onAmountFocusRequest)
     LaunchedEffect(requestAmountFocus) {
         if (!requestAmountFocus) return@LaunchedEffect
         awaitFrame()
         amountFocusRequester.requestFocus()
-        onAmountFocusRequested()
+        currentOnAmountFocusRequest()
     }
 
     Column(

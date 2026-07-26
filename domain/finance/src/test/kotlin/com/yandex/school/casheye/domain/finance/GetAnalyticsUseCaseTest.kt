@@ -43,7 +43,12 @@ class GetAnalyticsUseCaseTest {
             val useCase = useCase(finance, reporting, rates)
 
             val initial = useCase(query).first().successSummary()
-            assertEquals(BigDecimal("9000"), initial.transactions.single().reportingAmount.amount)
+            assertEquals(
+                BigDecimal("9000"),
+                initial.transactions
+                    .single()
+                    .reportingAmount.amount,
+            )
             assertEquals(transactionDate, initial.transactions.single().rateDate)
 
             rates.emit(
@@ -56,7 +61,12 @@ class GetAnalyticsUseCaseTest {
             )
 
             val afterLatest = useCase(query).first().successSummary()
-            assertEquals(BigDecimal("9000"), afterLatest.transactions.single().reportingAmount.amount)
+            assertEquals(
+                BigDecimal("9000"),
+                afterLatest.transactions
+                    .single()
+                    .reportingAmount.amount,
+            )
 
             val accounts =
                 GetAccountsUseCase(finance, reporting, rates)
@@ -64,12 +74,19 @@ class GetAnalyticsUseCaseTest {
                     .first() as AccountsLoadResult.Success
             assertEquals(
                 BigDecimal("10000"),
-                accounts.summary.currentValuation?.includedTotal?.amount,
+                accounts.summary.currentValuation
+                    ?.includedTotal
+                    ?.amount,
             )
 
             reporting.set(CurrencyCode.USD)
             val inUsd = useCase(query).first().successSummary()
-            assertEquals(BigDecimal("100"), inUsd.transactions.single().reportingAmount.amount)
+            assertEquals(
+                BigDecimal("100"),
+                inUsd.transactions
+                    .single()
+                    .reportingAmount.amount,
+            )
         }
 
     @Test
@@ -99,7 +116,12 @@ class GetAnalyticsUseCaseTest {
                     .first()
                     .successSummary()
 
-            assertEquals(BigDecimal("1.0"), summary.transactions.single().reportingAmount.amount)
+            assertEquals(
+                BigDecimal("1.0"),
+                summary.transactions
+                    .single()
+                    .reportingAmount.amount,
+            )
             assertEquals(friday, summary.transactions.single().rateDate)
         }
 
@@ -123,7 +145,12 @@ class GetAnalyticsUseCaseTest {
 
             assertEquals(BigDecimal.ZERO, summary.total)
             assertTrue(summary.transactions.isEmpty())
-            assertEquals(CurrencyCode.USD, summary.unconvertedTransactions.single().originalAmount.currency)
+            assertEquals(
+                CurrencyCode.USD,
+                summary.unconvertedTransactions
+                    .single()
+                    .originalAmount.currency,
+            )
             assertEquals(
                 setOf(CurrencyCode.USD),
                 summary.unconvertedTransactions.single().missingCurrencies,
@@ -266,8 +293,7 @@ class GetAnalyticsUseCaseTest {
         )
 }
 
-private fun AnalyticsLoadResult.successSummary(): AnalyticsSummary =
-    (this as AnalyticsLoadResult.Success).summary
+private fun AnalyticsLoadResult.successSummary(): AnalyticsSummary = (this as AnalyticsLoadResult.Success).summary
 
 private class AnalyticsFinanceRepository(
     transactions: List<Transaction>,
@@ -328,8 +354,7 @@ private class AnalyticsExchangeRateRepository(
         endDate: LocalDate,
     ): Flow<ExchangeRateSnapshot> = snapshot
 
-    override suspend fun refreshLatest(force: Boolean): ExchangeRateRefreshResult =
-        ExchangeRateRefreshResult.Fresh
+    override suspend fun refreshLatest(force: Boolean): ExchangeRateRefreshResult = ExchangeRateRefreshResult.Fresh
 
     override suspend fun refreshRange(
         startDate: LocalDate,

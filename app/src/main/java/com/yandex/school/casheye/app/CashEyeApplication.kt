@@ -27,8 +27,7 @@ class CashEyeApplication :
                     financeSyncerProvider = { appGraph.financeSyncer },
                     exchangeRateRefresherProvider = { appGraph.exchangeRateRefresher },
                 ),
-            )
-            .build()
+            ).build()
     }
 
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)

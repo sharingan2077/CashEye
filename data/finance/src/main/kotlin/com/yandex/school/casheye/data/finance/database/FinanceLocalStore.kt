@@ -358,7 +358,6 @@ class RoomFinanceLocalStore(
     internal suspend fun completeDelete(sentOperations: List<PendingOperationEntity>) {
         database.offlineWriteDao().completeDelete(sentOperations)
     }
-
 }
 
 internal class RoomFinanceSyncStore(

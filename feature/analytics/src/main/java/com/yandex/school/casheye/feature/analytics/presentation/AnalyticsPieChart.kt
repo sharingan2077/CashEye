@@ -121,9 +121,7 @@ private fun PieChartWithTotal(
 }
 
 @Composable
-private fun AnalyticsLegend(
-    items: List<AnalyticsPieChartItem>,
-) {
+private fun AnalyticsLegend(items: List<AnalyticsPieChartItem>) {
     FlowRow(
         modifier =
             Modifier

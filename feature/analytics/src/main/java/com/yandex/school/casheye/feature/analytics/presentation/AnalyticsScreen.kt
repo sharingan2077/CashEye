@@ -365,8 +365,8 @@ internal fun TransactionItem(
     title: String,
     comment: String?,
     amount: String,
-    amountSubtitle: String? = null,
     modifier: Modifier = Modifier,
+    amountSubtitle: String? = null,
 ) {
     ListItem(
         modifier = modifier,

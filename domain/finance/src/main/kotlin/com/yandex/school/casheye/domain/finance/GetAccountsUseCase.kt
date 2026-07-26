@@ -74,7 +74,9 @@ class GetAccountsUseCase(
                     conversion.targetRateDate?.let(rateDates::add)
                 }
 
-                is CurrencyConversionResult.Incomplete -> excluded += nativeTotal
+                is CurrencyConversionResult.Incomplete -> {
+                    excluded += nativeTotal
+                }
             }
         }
 

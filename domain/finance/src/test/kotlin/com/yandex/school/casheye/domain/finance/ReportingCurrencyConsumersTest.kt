@@ -62,8 +62,7 @@ private class FakeReportingCurrencyRepository(
 private class EmptyFinanceRepository : FinanceRepository {
     override fun observeAccounts() = MutableStateFlow(emptyList<Account>())
 
-    override fun observeTransactions(query: TransactionsQuery) =
-        MutableStateFlow(emptyList<Transaction>())
+    override fun observeTransactions(query: TransactionsQuery) = MutableStateFlow(emptyList<Transaction>())
 
     override suspend fun getAccounts() = FinanceDataLoadResult.Success(emptyList<Account>())
 

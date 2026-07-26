@@ -133,7 +133,7 @@ fun AccountEditorSheet(
                     onAmountChange = onBalanceChange,
                     onSave = onSave,
                     requestAmountFocus = shouldRequestAmountFocus,
-                    onAmountFocusRequested = { shouldRequestAmountFocus = false },
+                    onAmountFocusRequest = { shouldRequestAmountFocus = false },
                 ) { clearPrimaryFocus ->
                     EditorRow(
                         icon = R.drawable.ic_editor_name,

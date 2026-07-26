@@ -177,7 +177,14 @@ class OfflineWriteDaoTest {
 
             assertEquals("100.00", database.accountDao().getById(5)?.balance)
             assertEquals("30.00", database.accountDao().getById(6)?.balance)
-            assertEquals("USD", database.transactionDao().getById(write.localId)?.transaction?.currency)
+            assertEquals(
+                "USD",
+                database
+                    .transactionDao()
+                    .getById(write.localId)
+                    ?.transaction
+                    ?.currency,
+            )
             assertEquals(1, database.pendingOperationDao().getAll().size)
         }
 
@@ -194,7 +201,14 @@ class OfflineWriteDaoTest {
             )
 
             assertEquals("USD", database.accountDao().getById(5)?.currency)
-            assertEquals("RUB", database.transactionDao().getById(write.localId)?.transaction?.currency)
+            assertEquals(
+                "RUB",
+                database
+                    .transactionDao()
+                    .getById(write.localId)
+                    ?.transaction
+                    ?.currency,
+            )
         }
 
     @Test
@@ -206,10 +220,10 @@ class OfflineWriteDaoTest {
                 TransactionEntity(
                     id = 15,
                     accountId = 5,
-                categoryId = category.id,
-                amount = "4.00",
-                currency = "RUB",
-                transactionDate = NOW.toEpochMilli(),
+                    categoryId = category.id,
+                    amount = "4.00",
+                    currency = "RUB",
+                    transactionDate = NOW.toEpochMilli(),
                     comment = null,
                     createdAt = NOW.toEpochMilli(),
                     updatedAt = NOW.toEpochMilli(),
@@ -239,10 +253,10 @@ class OfflineWriteDaoTest {
                 TransactionEntity(
                     id = 15,
                     accountId = 5,
-                categoryId = category.id,
-                amount = "25.00",
-                currency = "RUB",
-                transactionDate = NOW.toEpochMilli(),
+                    categoryId = category.id,
+                    amount = "25.00",
+                    currency = "RUB",
+                    transactionDate = NOW.toEpochMilli(),
                     comment = null,
                     createdAt = NOW.toEpochMilli(),
                     updatedAt = NOW.toEpochMilli(),
@@ -296,10 +310,10 @@ class OfflineWriteDaoTest {
                     TransactionEntity(
                         id = 50,
                         accountId = 5,
-                    categoryId = category.id,
-                    amount = "12.3400",
-                    currency = "RUB",
-                    transactionDate = NOW.plusSeconds(30).toEpochMilli(),
+                        categoryId = category.id,
+                        amount = "12.3400",
+                        currency = "RUB",
+                        transactionDate = NOW.plusSeconds(30).toEpochMilli(),
                         comment = "Offline",
                         createdAt = NOW.toEpochMilli(),
                         updatedAt = NOW.toEpochMilli(),

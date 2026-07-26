@@ -93,6 +93,7 @@ internal fun ExchangeRateRefreshResult.toWorkerResult(): ListenableWorker.Result
         -> ListenableWorker.Result.success()
 
         is ExchangeRateRefreshResult.TemporaryFailure -> ListenableWorker.Result.retry()
+
         is ExchangeRateRefreshResult.PermanentFailure,
         is ExchangeRateRefreshResult.Incomplete,
         -> ListenableWorker.Result.failure()

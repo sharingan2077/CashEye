@@ -54,9 +54,8 @@ class PreferencesReportingCurrencyRepositoryTest {
             assertEquals(DEFAULT_REPORTING_CURRENCY, repository.observe().first())
         }
 
-    private fun repository(scope: TestScope): PreferencesReportingCurrencyRepository {
-        return PreferencesReportingCurrencyRepository(dataStore(scope))
-    }
+    private fun repository(scope: TestScope): PreferencesReportingCurrencyRepository =
+        PreferencesReportingCurrencyRepository(dataStore(scope))
 
     private fun dataStore(scope: TestScope) =
         PreferenceDataStoreFactory.create(

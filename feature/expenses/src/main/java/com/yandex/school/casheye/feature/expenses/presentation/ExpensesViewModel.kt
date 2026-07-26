@@ -205,4 +205,4 @@ private fun ExpensesUiState.withRefreshing(isRefreshing: Boolean): ExpensesUiSta
         ExpensesUiState.Loading,
         is ExpensesUiState.Error,
         -> this
-}
+    }

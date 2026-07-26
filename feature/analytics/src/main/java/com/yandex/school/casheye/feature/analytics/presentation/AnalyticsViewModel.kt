@@ -336,8 +336,7 @@ private fun AnalyticsType.toDomain(): AnalyticsTransactionKind =
         AnalyticsType.All -> AnalyticsTransactionKind.All
     }
 
-private fun List<AnalyticsTransaction>.toCategorySummaries():
-    List<AnalyticsCategorySummary> =
+private fun List<AnalyticsTransaction>.toCategorySummaries(): List<AnalyticsCategorySummary> =
     groupBy { it.category.id }
         .values
         .map { transactions ->
@@ -350,8 +349,7 @@ private fun List<AnalyticsTransaction>.toCategorySummaries():
             )
         }.sortedByDescending { it.amount }
 
-internal fun List<AnalyticsTransaction>.toTypeSummaries():
-    List<AnalyticsTypeSummary> =
+internal fun List<AnalyticsTransaction>.toTypeSummaries(): List<AnalyticsTypeSummary> =
     listOf(
         AnalyticsType.Expenses to filterNot { it.category.isIncome },
         AnalyticsType.Income to filter { it.category.isIncome },
@@ -383,4 +381,4 @@ private fun AnalyticsUiState.withRefreshing(isRefreshing: Boolean): AnalyticsUiS
         is AnalyticsUiState.Loading,
         is AnalyticsUiState.Error,
         -> this
-}
+    }

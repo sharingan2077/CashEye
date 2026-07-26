@@ -203,17 +203,21 @@ private fun AccountsHero(state: AccountsUiState.Content) {
     val valuationText =
         included?.let {
             when {
-                valuation?.isComplete == true && date != null ->
+                valuation?.isComplete == true && date != null -> {
                     stringResource(R.string.balance_valuation_dated, it, date)
+                }
 
-                valuation?.isComplete == true ->
+                valuation?.isComplete == true -> {
                     stringResource(R.string.balance_valuation, it)
+                }
 
-                date != null ->
+                date != null -> {
                     stringResource(R.string.balance_valuation_partial_dated, it, date)
+                }
 
-                else ->
+                else -> {
                     stringResource(R.string.balance_valuation_partial, it)
+                }
             }
         }
     val excluded =
@@ -222,8 +226,7 @@ private fun AccountsHero(state: AccountsUiState.Content) {
             ?.takeIf { it.isNotEmpty() }
             ?.joinToString(separator = " · ") {
                 formatAmount(it.amount, it.currency.isoCode)
-            }
-            ?.let { stringResource(R.string.balance_not_included, it) }
+            }?.let { stringResource(R.string.balance_not_included, it) }
 
     NativeMoneySummary(
         title = stringResource(R.string.balance_total),

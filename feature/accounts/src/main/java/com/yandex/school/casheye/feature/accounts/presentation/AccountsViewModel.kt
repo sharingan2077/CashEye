@@ -224,4 +224,4 @@ private fun AccountsUiState.withRefreshing(isRefreshing: Boolean): AccountsUiSta
         AccountsUiState.Loading,
         is AccountsUiState.Error,
         -> this
-}
+    }

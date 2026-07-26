@@ -91,7 +91,9 @@ class GetAnalyticsUseCase(
 
                                     AnalyticsTransactionKind.Income,
                                     AnalyticsTransactionKind.Expense,
-                                    -> total + amount
+                                    -> {
+                                        total + amount
+                                    }
                                 }
                             },
                         currencyCode = reportingCurrency,
@@ -116,7 +118,9 @@ class GetAnalyticsUseCase(
             ExchangeRateRefreshResult.Fresh,
             ExchangeRateRefreshResult.Updated,
             is ExchangeRateRefreshResult.Incomplete,
-            -> FinanceRefreshResult.Success
+            -> {
+                FinanceRefreshResult.Success
+            }
 
             is ExchangeRateRefreshResult.TemporaryFailure -> {
                 if (cachedDataAvailable) {

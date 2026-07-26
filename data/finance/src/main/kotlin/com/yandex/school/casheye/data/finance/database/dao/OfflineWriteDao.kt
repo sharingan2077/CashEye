@@ -169,7 +169,8 @@ internal abstract class OfflineWriteDao {
     ): LocalWriteResult {
         val localId = requireNotNull(command.id) { "Offline transaction update requires an id" }
         val existing = checkNotNull(transactionById(localId)) { "Transaction $localId was not found" }
-        val targetAccount = checkNotNull(accountById(command.accountId)) { "Account ${command.accountId} was not found" }
+        val targetAccount =
+            checkNotNull(accountById(command.accountId)) { "Account ${command.accountId} was not found" }
         adjustAccountBalance(
             accountId = existing.accountId,
             categoryId = existing.categoryId,
