@@ -3,9 +3,12 @@ package com.yandex.school.casheye.feature.analytics.presentation
 import com.yandex.school.casheye.core.format.formatAmount
 import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.Category
+import com.yandex.school.casheye.core.model.CurrencyCode
+import com.yandex.school.casheye.core.model.MoneyAmount
 import com.yandex.school.casheye.core.model.Transaction
 import com.yandex.school.casheye.domain.finance.AnalyticsLoadResult
 import com.yandex.school.casheye.domain.finance.AnalyticsSummary
+import com.yandex.school.casheye.domain.finance.AnalyticsTransaction
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import com.yandex.school.casheye.domain.finance.FinanceRefreshResult
 import com.yandex.school.casheye.domain.finance.FinanceRepository
@@ -209,9 +212,8 @@ class AnalyticsViewModelTest {
                 AnalyticsTypeSummary(AnalyticsType.Income, BigDecimal("60")),
                 AnalyticsTypeSummary(AnalyticsType.Expenses, BigDecimal("40")),
             ),
-            transactions.toTypeSummaries(),
+            transactions.map { it.toAnalyticsTransaction() }.toTypeSummaries(),
         )
-        assertEquals(BigDecimal("20"), transactions.presentationTotal(AnalyticsType.All))
     }
 
     @Test
@@ -219,21 +221,31 @@ class AnalyticsViewModelTest {
         val expenses = listOf(transaction(id = 1, categoryId = 10, amount = "40"))
         val income = listOf(transaction(id = 2, categoryId = 20, amount = "60", isIncome = true))
 
-        assertEquals(listOf(AnalyticsType.Expenses), expenses.toTypeSummaries().map { it.type })
-        assertEquals(listOf(AnalyticsType.Income), income.toTypeSummaries().map { it.type })
-        assertEquals(BigDecimal("40"), expenses.presentationTotal(AnalyticsType.Expenses))
-        assertEquals(BigDecimal("60"), income.presentationTotal(AnalyticsType.Income))
-        assertEquals(BigDecimal("-40"), expenses.presentationTotal(AnalyticsType.All))
-        assertEquals(BigDecimal("60"), income.presentationTotal(AnalyticsType.All))
+        val analyticsExpenses = expenses.map { it.toAnalyticsTransaction() }
+        val analyticsIncome = income.map { it.toAnalyticsTransaction() }
+        assertEquals(listOf(AnalyticsType.Expenses), analyticsExpenses.toTypeSummaries().map { it.type })
+        assertEquals(listOf(AnalyticsType.Income), analyticsIncome.toTypeSummaries().map { it.type })
         assertTrue(
             listOf(transaction(id = 3, categoryId = 30, amount = "0"))
+                .map { it.toAnalyticsTransaction() }
                 .toTypeSummaries()
                 .isEmpty(),
         )
     }
 
     @Test
-    fun `amount signs are shown only for all filter`() {
+    fun `aggregations use reporting amount instead of original amount`() {
+        val transaction =
+            transaction(id = 1, categoryId = 10, amount = "10")
+                .toAnalyticsTransaction()
+                .copy(reportingAmount = MoneyAmount(BigDecimal("900"), CurrencyCode.RUB))
+        val transactions = listOf(transaction)
+
+        assertEquals(BigDecimal("900"), transactions.toTypeSummaries().single().amount)
+    }
+
+    @Test
+    fun `amount signs follow transaction type for every filter`() {
         assertEquals(BigDecimal("-15"), signedAnalyticsAmount(BigDecimal("15"), AnalyticsType.Expenses))
         assertEquals(BigDecimal("15"), signedAnalyticsAmount(BigDecimal("15"), AnalyticsType.Income))
         assertEquals(BigDecimal("-5"), signedAnalyticsAmount(BigDecimal("-5"), AnalyticsType.All))
@@ -256,7 +268,7 @@ class AnalyticsViewModelTest {
             ),
         )
         assertEquals(
-            formatAmount(BigDecimal("15"), "RUB"),
+            formatAmount(BigDecimal("-15"), "RUB"),
             formatAnalyticsDisplayAmount(
                 BigDecimal("15"),
                 AnalyticsType.Expenses,
@@ -265,7 +277,7 @@ class AnalyticsViewModelTest {
             ),
         )
         assertEquals(
-            formatAmount(BigDecimal("15"), "RUB"),
+            "+${formatAmount(BigDecimal("15"), "RUB")}",
             formatAnalyticsDisplayAmount(
                 BigDecimal("15"),
                 AnalyticsType.Income,
@@ -508,7 +520,8 @@ private class QueueAnalyticsRepository(
     private val results = ArrayDeque(results.toList())
     private val firstSummary = (results.firstOrNull() as? AnalyticsLoadResult.Success)?.summary
     private val accounts = MutableStateFlow(firstSummary?.accounts.orEmpty())
-    private val transactions = MutableStateFlow(firstSummary?.transactions.orEmpty())
+    private val transactions =
+        MutableStateFlow(firstSummary?.transactions.orEmpty().map { it.transaction })
     private var observedQuery = TransactionsQuery(emptySet(), LocalDate.MIN, LocalDate.MIN)
     val queries = mutableListOf<TransactionsQuery>()
     var accountRequests = 0
@@ -529,7 +542,7 @@ private class QueueAnalyticsRepository(
         return when (val result = results.removeFirst()) {
             is AnalyticsLoadResult.Success -> {
                 accounts.value = result.summary.accounts
-                transactions.value = result.summary.transactions
+                transactions.value = result.summary.transactions.map { it.transaction }
                 FinanceRefreshResult.Success
             }
 
@@ -541,7 +554,7 @@ private class QueueAnalyticsRepository(
 
     fun emit(result: AnalyticsLoadResult.Success) {
         accounts.value = result.summary.accounts
-        transactions.value = result.summary.transactions
+        transactions.value = result.summary.transactions.map { it.transaction }
     }
 }
 
@@ -569,7 +582,7 @@ private class LambdaAnalyticsRepository(
         return when (val result = block(observedQuery, index)) {
             is AnalyticsLoadResult.Success -> {
                 accounts.value = result.summary.accounts
-                transactions.value = result.summary.transactions
+                transactions.value = result.summary.transactions.map { it.transaction }
                 FinanceRefreshResult.Success
             }
 
@@ -580,24 +593,32 @@ private class LambdaAnalyticsRepository(
     }
 }
 
-private fun success(transactions: List<Transaction> = emptyList()): AnalyticsLoadResult =
-    AnalyticsLoadResult.Success(
+private fun success(transactions: List<Transaction> = emptyList()): AnalyticsLoadResult {
+    val analyticsTransactions = transactions.map { it.toAnalyticsTransaction() }
+    return AnalyticsLoadResult.Success(
         AnalyticsSummary(
-            total = transactions.fold(BigDecimal.ZERO) { total, transaction -> total + transaction.amount },
-            currencyCode = "RUB",
-            transactions = transactions,
+            total =
+                analyticsTransactions.fold(BigDecimal.ZERO) { total, transaction ->
+                    total + transaction.reportingAmount.amount
+                },
+            currencyCode = CurrencyCode.RUB,
+            transactions = analyticsTransactions,
+            unconvertedTransactions = emptyList(),
             accounts = emptyList(),
             availableCategories = transactions.map { it.category }.distinctBy { it.id },
         ),
     )
+}
 
 private fun successWithOptions(): AnalyticsLoadResult {
     val transaction = transaction(id = 1, categoryId = 10, amount = "3")
+    val analyticsTransaction = transaction.toAnalyticsTransaction()
     return AnalyticsLoadResult.Success(
         AnalyticsSummary(
-            total = transaction.amount,
-            currencyCode = "RUB",
-            transactions = listOf(transaction),
+            total = analyticsTransaction.reportingAmount.amount,
+            currencyCode = CurrencyCode.RUB,
+            transactions = listOf(analyticsTransaction),
+            unconvertedTransactions = emptyList(),
             accounts = listOf(account(1), account(2)),
             availableCategories = listOf(transaction.category),
         ),
@@ -631,4 +652,12 @@ private fun account(id: Int): Account =
         emoji = "💳",
         balance = BigDecimal("100"),
         currency = "RUB",
+    )
+
+private fun Transaction.toAnalyticsTransaction(): AnalyticsTransaction =
+    AnalyticsTransaction(
+        transaction = this,
+        originalAmount = MoneyAmount(amount, currency),
+        reportingAmount = MoneyAmount(amount, CurrencyCode.RUB),
+        rateDate = null,
     )

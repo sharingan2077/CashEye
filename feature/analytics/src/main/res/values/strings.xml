@@ -13,6 +13,10 @@
     <string name="all_categories">All categories</string>
     <string name="selected_count">Selected: %1$d</string>
     <string name="transactions">Transactions</string>
+    <string name="missing_rates_title">Some transactions were not included</string>
+    <string name="missing_rates_description">%1$d transactions: missing historical rates for %2$s.</string>
+    <string name="not_included_missing_rate">Not included: exchange rate unavailable</string>
+    <string name="original_amount_rate">%1$s · rate %2$s</string>
     <string name="empty_period">No transactions for the selected period</string>
     <string name="empty_period_description">Change the filters above to find the transactions you need.</string>
     <string name="details">Details</string>

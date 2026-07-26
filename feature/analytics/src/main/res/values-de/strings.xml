@@ -13,6 +13,10 @@
     <string name="all_categories">Alle Kategorien</string>
     <string name="selected_count">Ausgewählt: %1$d</string>
     <string name="transactions">Transaktionen</string>
+    <string name="missing_rates_title">Einige Transaktionen wurden nicht einbezogen</string>
+    <string name="missing_rates_description">%1$d Transaktionen: historische Kurse für %2$s fehlen.</string>
+    <string name="not_included_missing_rate">Nicht einbezogen: Wechselkurs nicht verfügbar</string>
+    <string name="original_amount_rate">%1$s · Kurs %2$s</string>
     <string name="empty_period">Keine Vorgänge im ausgewählten Zeitraum</string>
     <string name="empty_period_description">Ändern Sie oben die Filter, um die gewünschten Vorgänge zu finden.</string>
     <string name="details">Details</string>

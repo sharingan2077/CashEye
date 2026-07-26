@@ -417,19 +417,30 @@ private fun DetailsSheet(
             flingBehavior = gestureCoordinator,
             overscrollEffect = null,
         ) {
-            item {
-                AnalyticsPieChart(
-                    total =
-                        formatAnalyticsDisplayAmount(
-                            amount = state.total,
-                            amountType = AnalyticsType.All,
-                            selectedType = state.data.filters.type,
-                            currencyCode = state.currencyCode,
-                        ),
-                    items = chartItems,
-                    paddingValues = PaddingValues(bottom = 32.dp),
-                    showLegend = false,
-                )
+            if (state.transactions.isNotEmpty()) {
+                item {
+                    AnalyticsPieChart(
+                        total =
+                            formatAnalyticsDisplayAmount(
+                                amount = state.total,
+                                amountType = AnalyticsType.All,
+                                selectedType = state.data.filters.type,
+                                currencyCode = state.currencyCode,
+                            ),
+                        items = chartItems,
+                        paddingValues = PaddingValues(bottom = 32.dp),
+                        showLegend = false,
+                    )
+                }
+            }
+            if (state.unconvertedTransactions.isNotEmpty()) {
+                item {
+                    MissingRatesNotice(
+                        transactions = state.unconvertedTransactions,
+                        onRetry = { onIntent(AnalyticsIntent.Retry) },
+                        modifier = Modifier.padding(bottom = 24.dp),
+                    )
+                }
             }
             if (isAllTypes) {
                 items(state.typeSummaries, key = { it.type }) { summary ->

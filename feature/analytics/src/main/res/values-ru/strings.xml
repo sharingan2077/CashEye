@@ -13,6 +13,10 @@
     <string name="all_categories">Все статьи</string>
     <string name="selected_count">Выбрано: %1$d</string>
     <string name="transactions">Транзакции</string>
+    <string name="missing_rates_title">Часть операций не вошла в итог</string>
+    <string name="missing_rates_description">Операций: %1$d. Нет исторических курсов для %2$s.</string>
+    <string name="not_included_missing_rate">Не включено: курс недоступен</string>
+    <string name="original_amount_rate">%1$s · курс %2$s</string>
     <string name="empty_period">За выбранный период операций нет</string>
     <string name="empty_period_description">Измените фильтры выше, чтобы найти нужные операции.</string>
     <string name="details">Детализация</string>

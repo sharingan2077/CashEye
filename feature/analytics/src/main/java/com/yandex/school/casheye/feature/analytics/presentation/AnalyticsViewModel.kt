@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.yandex.school.casheye.domain.finance.AnalyticsLoadResult
 import com.yandex.school.casheye.domain.finance.AnalyticsQuery
 import com.yandex.school.casheye.domain.finance.AnalyticsSummary
+import com.yandex.school.casheye.domain.finance.AnalyticsTransaction
 import com.yandex.school.casheye.domain.finance.AnalyticsTransactionKind
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import com.yandex.school.casheye.domain.finance.FinanceRefreshResult
@@ -277,22 +278,25 @@ class AnalyticsViewModel(
     private fun renderSummary(isRefreshing: Boolean = refreshJob?.isActive == true) {
         val summary = latestSummary ?: return
         val transactions = summary.transactions.sortedByDescending { it.transactionDate }
-        if (transactions.isEmpty() && !initialRefreshCompleted) return
+        val unconvertedTransactions =
+            summary.unconvertedTransactions.sortedByDescending { it.transaction.transactionDate }
+        if (transactions.isEmpty() && unconvertedTransactions.isEmpty() && !initialRefreshCompleted) return
         screenData =
             screenData.copy(
                 accounts = summary.accounts,
                 categories = summary.availableCategories,
             )
         _state.value =
-            if (transactions.isEmpty()) {
+            if (transactions.isEmpty() && unconvertedTransactions.isEmpty()) {
                 AnalyticsUiState.Empty(screenData, summary.currencyCode.isoCode, isRefreshing)
             } else {
                 val typeSummaries = transactions.toTypeSummaries()
                 AnalyticsUiState.Content(
                     data = screenData,
-                    total = transactions.presentationTotal(screenData.filters.type),
+                    total = summary.total,
                     currencyCode = summary.currencyCode.isoCode,
                     transactions = transactions,
+                    unconvertedTransactions = unconvertedTransactions,
                     categorySummaries = transactions.toCategorySummaries(),
                     typeSummaries = typeSummaries,
                     isRefreshing = isRefreshing,
@@ -306,7 +310,10 @@ class AnalyticsViewModel(
     ) {
         observationReady.await()
         initialRefreshCompleted = true
-        val hasVisibleCache = _state.value.isRefreshable() || latestSummary?.transactions?.isNotEmpty() == true
+        val hasVisibleCache =
+            _state.value.isRefreshable() ||
+                latestSummary?.transactions?.isNotEmpty() == true ||
+                latestSummary?.unconvertedTransactions?.isNotEmpty() == true
         if (
             failure.reason == FinanceFailureReason.Network &&
             failure.hasUsableCache &&
@@ -329,42 +336,32 @@ private fun AnalyticsType.toDomain(): AnalyticsTransactionKind =
         AnalyticsType.All -> AnalyticsTransactionKind.All
     }
 
-private fun List<com.yandex.school.casheye.core.model.Transaction>.toCategorySummaries():
+private fun List<AnalyticsTransaction>.toCategorySummaries():
     List<AnalyticsCategorySummary> =
     groupBy { it.category.id }
         .values
         .map { transactions ->
             AnalyticsCategorySummary(
                 category = transactions.first().category,
-                amount = transactions.fold(BigDecimal.ZERO) { total, transaction -> total + transaction.amount },
+                amount =
+                    transactions.fold(BigDecimal.ZERO) { total, transaction ->
+                        total + transaction.reportingAmount.amount
+                    },
             )
         }.sortedByDescending { it.amount }
 
-internal fun List<com.yandex.school.casheye.core.model.Transaction>.toTypeSummaries():
+internal fun List<AnalyticsTransaction>.toTypeSummaries():
     List<AnalyticsTypeSummary> =
     listOf(
         AnalyticsType.Expenses to filterNot { it.category.isIncome },
         AnalyticsType.Income to filter { it.category.isIncome },
     ).mapNotNull { (type, transactions) ->
-        val amount = transactions.fold(BigDecimal.ZERO) { total, transaction -> total + transaction.amount.abs() }
+        val amount =
+            transactions.fold(BigDecimal.ZERO) { total, transaction ->
+                total + transaction.reportingAmount.amount.abs()
+            }
         amount.takeIf { it.signum() != 0 }?.let { AnalyticsTypeSummary(type, it) }
     }.sortedByDescending { it.amount.abs() }
-
-internal fun List<com.yandex.school.casheye.core.model.Transaction>.presentationTotal(
-    type: AnalyticsType,
-): BigDecimal {
-    val expenses =
-        filterNot { it.category.isIncome }
-            .fold(BigDecimal.ZERO) { total, transaction -> total + transaction.amount.abs() }
-    val income =
-        filter { it.category.isIncome }
-            .fold(BigDecimal.ZERO) { total, transaction -> total + transaction.amount.abs() }
-    return when (type) {
-        AnalyticsType.Expenses -> expenses
-        AnalyticsType.Income -> income
-        AnalyticsType.All -> income - expenses
-    }
-}
 
 private fun AnalyticsUiState.withData(data: AnalyticsScreenData): AnalyticsUiState =
     when (this) {

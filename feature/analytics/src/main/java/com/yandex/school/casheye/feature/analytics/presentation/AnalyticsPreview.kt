@@ -11,7 +11,9 @@ import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
 import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.Category
 import com.yandex.school.casheye.core.model.CurrencyCode
+import com.yandex.school.casheye.core.model.MoneyAmount
 import com.yandex.school.casheye.core.model.Transaction
+import com.yandex.school.casheye.domain.finance.AnalyticsTransaction
 import java.math.BigDecimal
 import java.time.Instant
 import java.time.LocalDate
@@ -88,7 +90,8 @@ private fun analyticsPreviewState(activeSheet: AnalyticsSheet?): AnalyticsUiStat
                 previewTransaction(1, accounts.first(), categories[0], "5420", "Пятёрочка"),
                 previewTransaction(2, accounts.first(), categories[1], "890", "Обед"),
                 previewTransaction(3, accounts.first(), categories[2], "1240", null),
-            ),
+            ).map { it.toAnalyticsTransaction() },
+        unconvertedTransactions = emptyList(),
         categorySummaries =
             listOf(
                 AnalyticsCategorySummary(categories[0], BigDecimal("10420")),
@@ -118,3 +121,11 @@ private fun previewTransaction(
     )
 
 private val PREVIEW_INSTANT: Instant = Instant.parse("2026-07-20T12:00:00Z")
+
+private fun Transaction.toAnalyticsTransaction(): AnalyticsTransaction =
+    AnalyticsTransaction(
+        transaction = this,
+        originalAmount = MoneyAmount(amount, currency),
+        reportingAmount = MoneyAmount(amount, currency),
+        rateDate = null,
+    )
