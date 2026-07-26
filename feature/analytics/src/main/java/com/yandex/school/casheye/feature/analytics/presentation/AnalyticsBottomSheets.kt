@@ -68,7 +68,6 @@ import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import com.yandex.school.casheye.core.designsystem.component.EmojiCircle
 import com.yandex.school.casheye.core.designsystem.component.ListItem
-import com.yandex.school.casheye.core.format.formatAmount
 import com.yandex.school.casheye.core.model.Category
 import com.yandex.school.casheye.feature.analytics.R
 import java.math.BigDecimal
@@ -387,6 +386,21 @@ private fun DetailsSheet(
 ) {
     val listState = rememberLazyListState()
     val gestureCoordinator = rememberSheetListGestureCoordinator(listState)
+    val expensesLabel = stringResource(R.string.type_expenses)
+    val incomeLabel = stringResource(R.string.type_income)
+    val isAllTypes = state.data.filters.type == AnalyticsType.All
+    val chartItems =
+        if (isAllTypes) {
+            analyticsTypePieChartItems(state.typeSummaries, expensesLabel, incomeLabel)
+        } else {
+            analyticsPieChartItems(state.categorySummaries)
+        }
+    val chartTotal =
+        if (isAllTypes) {
+            state.typeSummaries.fold(BigDecimal.ZERO) { total, summary -> total + summary.amount }
+        } else {
+            state.total.abs()
+        }
     AnalyticsModalBottomSheet(onDismissRequest = { onIntent(AnalyticsIntent.DismissSheet) }) {
         SheetTitle(
             title = stringResource(R.string.details),
@@ -405,14 +419,50 @@ private fun DetailsSheet(
         ) {
             item {
                 AnalyticsPieChart(
-                    total = formatAmount(state.total, state.currencyCode),
-                    items = analyticsPieChartItems(state.categorySummaries),
+                    total =
+                        formatAnalyticsDisplayAmount(
+                            amount = state.total,
+                            amountType = AnalyticsType.All,
+                            selectedType = state.data.filters.type,
+                            currencyCode = state.currencyCode,
+                        ),
+                    items = chartItems,
                     paddingValues = PaddingValues(bottom = 32.dp),
                     showLegend = false,
                 )
             }
-            items(state.categorySummaries, key = { it.category.id }) { summary ->
-                DetailsCategoryRow(summary = summary, total = state.total, currencyCode = state.currencyCode)
+            if (isAllTypes) {
+                items(state.typeSummaries, key = { it.type }) { summary ->
+                    DetailsSummaryRow(
+                        label = if (summary.type == AnalyticsType.Expenses) expensesLabel else incomeLabel,
+                        amount = summary.amount,
+                        formattedAmount =
+                            formatAnalyticsDisplayAmount(
+                                amount = summary.amount,
+                                amountType = summary.type,
+                                selectedType = AnalyticsType.All,
+                                currencyCode = state.currencyCode,
+                            ),
+                        total = chartTotal,
+                        color = analyticsColorForType(summary.type),
+                    )
+                }
+            } else {
+                items(state.categorySummaries, key = { it.category.id }) { summary ->
+                    DetailsSummaryRow(
+                        label = summary.category.name,
+                        amount = summary.amount,
+                        formattedAmount =
+                            formatAnalyticsDisplayAmount(
+                                amount = summary.amount,
+                                amountType = state.data.filters.type,
+                                selectedType = state.data.filters.type,
+                                currencyCode = state.currencyCode,
+                            ),
+                        total = chartTotal,
+                        color = analyticsColorForCategory(summary.category.id),
+                    )
+                }
             }
         }
         Spacer(modifier = Modifier.height(24.dp))
@@ -420,16 +470,18 @@ private fun DetailsSheet(
 }
 
 @Composable
-private fun DetailsCategoryRow(
-    summary: AnalyticsCategorySummary,
+private fun DetailsSummaryRow(
+    label: String,
+    amount: BigDecimal,
+    formattedAmount: String,
     total: BigDecimal,
-    currencyCode: String,
+    color: Color,
 ) {
     val fraction =
         if (total.signum() == 0) {
             BigDecimal.ZERO
         } else {
-            summary.amount.divide(total, 4, RoundingMode.HALF_UP)
+            amount.divide(total, 4, RoundingMode.HALF_UP)
         }
     val percentage = fraction.movePointRight(2).setScale(1, RoundingMode.HALF_UP)
     Column(
@@ -444,14 +496,14 @@ private fun DetailsCategoryRow(
                 modifier =
                     Modifier
                         .size(12.dp)
-                        .background(analyticsColorForCategory(summary.category.id), CircleShape),
+                        .background(color, CircleShape),
             )
             Text(
-                text = summary.category.name,
+                text = label,
                 modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.titleMedium,
             )
-            Text(text = formatAmount(summary.amount, currencyCode), style = MaterialTheme.typography.titleMedium)
+            Text(text = formattedAmount, style = MaterialTheme.typography.titleMedium)
             Text(
                 text = "(${percentage.toPlainString()}%)",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -466,7 +518,7 @@ private fun DetailsCategoryRow(
                     .height(6.dp)
                     .clip(progressShape),
             progress = { fraction.toFloat() },
-            color = analyticsColorForCategory(summary.category.id),
+            color = color,
             trackColor = MaterialTheme.colorScheme.outline,
             strokeCap = StrokeCap.Butt,
             gapSize = 0.dp,

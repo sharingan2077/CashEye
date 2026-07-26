@@ -94,6 +94,7 @@ private fun analyticsPreviewState(activeSheet: AnalyticsSheet?): AnalyticsUiStat
                 AnalyticsCategorySummary(categories[1], BigDecimal("3430")),
                 AnalyticsCategorySummary(categories[2], BigDecimal("4900")),
             ),
+        typeSummaries = listOf(AnalyticsTypeSummary(AnalyticsType.Expenses, BigDecimal("18750"))),
     )
 }
 

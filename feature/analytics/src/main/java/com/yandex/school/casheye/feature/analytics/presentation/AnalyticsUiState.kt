@@ -81,6 +81,11 @@ data class AnalyticsCategorySummary(
     val amount: BigDecimal,
 )
 
+data class AnalyticsTypeSummary(
+    val type: AnalyticsType,
+    val amount: BigDecimal,
+)
+
 sealed interface AnalyticsUiState {
     val data: AnalyticsScreenData
 
@@ -103,6 +108,7 @@ sealed interface AnalyticsUiState {
         val currencyCode: String,
         val transactions: List<Transaction>,
         val categorySummaries: List<AnalyticsCategorySummary>,
+        val typeSummaries: List<AnalyticsTypeSummary>,
         override val isRefreshing: Boolean = false,
     ) : AnalyticsUiState
 

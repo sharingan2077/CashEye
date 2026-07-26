@@ -1,5 +1,6 @@
 package com.yandex.school.casheye.feature.analytics.presentation
 
+import androidx.compose.ui.graphics.Color
 import com.yandex.school.casheye.core.model.Category
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
@@ -87,6 +88,41 @@ class AnalyticsPieChartTest {
         items.dropLast(1).forEach { item -> assertNotEquals(item.color, items.last().color) }
     }
 
+    @Test
+    fun `other uses soft pink color`() {
+        assertEquals(Color(0xFFFFB3C7), otherCategoryColor)
+    }
+
+    @Test
+    fun `type chart keeps only existing positive groups`() {
+        val items =
+            analyticsTypePieChartItems(
+                summaries =
+                    listOf(
+                        AnalyticsTypeSummary(AnalyticsType.Expenses, BigDecimal("40")),
+                        AnalyticsTypeSummary(AnalyticsType.Income, BigDecimal("60")),
+                    ),
+                expensesLabel = EXPENSES_LABEL,
+                incomeLabel = INCOME_LABEL,
+            )
+
+        assertEquals(listOf(INCOME_LABEL, EXPENSES_LABEL), items.map { it.label })
+        assertEquals(listOf(BigDecimal("60"), BigDecimal("40")), items.map { it.amount })
+    }
+
+    @Test
+    fun `type chart keeps a single existing group`() {
+        val items =
+            analyticsTypePieChartItems(
+                summaries = listOf(AnalyticsTypeSummary(AnalyticsType.Income, BigDecimal("60"))),
+                expensesLabel = EXPENSES_LABEL,
+                incomeLabel = INCOME_LABEL,
+            )
+
+        assertEquals(listOf(INCOME_LABEL), items.map { it.label })
+        assertEquals(listOf(BigDecimal("60")), items.map { it.amount })
+    }
+
     private fun categorySummaries(vararg amounts: String): List<AnalyticsCategorySummary> =
         amounts.mapIndexed { index, amount ->
             AnalyticsCategorySummary(
@@ -103,5 +139,7 @@ class AnalyticsPieChartTest {
 
     private companion object {
         const val OTHER_LABEL = "Other"
+        const val EXPENSES_LABEL = "Expenses"
+        const val INCOME_LABEL = "Income"
     }
 }

@@ -288,12 +288,14 @@ class AnalyticsViewModel(
             if (transactions.isEmpty()) {
                 AnalyticsUiState.Empty(screenData, summary.currencyCode, isRefreshing)
             } else {
+                val typeSummaries = transactions.toTypeSummaries()
                 AnalyticsUiState.Content(
                     data = screenData,
-                    total = summary.total,
+                    total = transactions.presentationTotal(screenData.filters.type),
                     currencyCode = summary.currencyCode,
                     transactions = transactions,
                     categorySummaries = transactions.toCategorySummaries(),
+                    typeSummaries = typeSummaries,
                     isRefreshing = isRefreshing,
                 )
             }
@@ -338,6 +340,32 @@ private fun List<com.yandex.school.casheye.core.model.Transaction>.toCategorySum
                 amount = transactions.fold(BigDecimal.ZERO) { total, transaction -> total + transaction.amount },
             )
         }.sortedByDescending { it.amount }
+
+internal fun List<com.yandex.school.casheye.core.model.Transaction>.toTypeSummaries():
+    List<AnalyticsTypeSummary> =
+    listOf(
+        AnalyticsType.Expenses to filterNot { it.category.isIncome },
+        AnalyticsType.Income to filter { it.category.isIncome },
+    ).mapNotNull { (type, transactions) ->
+        val amount = transactions.fold(BigDecimal.ZERO) { total, transaction -> total + transaction.amount.abs() }
+        amount.takeIf { it.signum() != 0 }?.let { AnalyticsTypeSummary(type, it) }
+    }.sortedByDescending { it.amount.abs() }
+
+internal fun List<com.yandex.school.casheye.core.model.Transaction>.presentationTotal(
+    type: AnalyticsType,
+): BigDecimal {
+    val expenses =
+        filterNot { it.category.isIncome }
+            .fold(BigDecimal.ZERO) { total, transaction -> total + transaction.amount.abs() }
+    val income =
+        filter { it.category.isIncome }
+            .fold(BigDecimal.ZERO) { total, transaction -> total + transaction.amount.abs() }
+    return when (type) {
+        AnalyticsType.Expenses -> expenses
+        AnalyticsType.Income -> income
+        AnalyticsType.All -> income - expenses
+    }
+}
 
 private fun AnalyticsUiState.withData(data: AnalyticsScreenData): AnalyticsUiState =
     when (this) {

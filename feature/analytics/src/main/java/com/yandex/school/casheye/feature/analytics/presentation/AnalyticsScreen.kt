@@ -47,6 +47,7 @@ import com.yandex.school.casheye.core.model.Category
 import com.yandex.school.casheye.core.model.Transaction
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import com.yandex.school.casheye.feature.analytics.R
+import java.math.BigDecimal
 
 @Composable
 fun AnalyticsScreen(
@@ -94,9 +95,22 @@ private fun AnalyticsContent(
     val chartModelProducer = remember { PieChartModelProducer() }
     var animateChartIn by remember { mutableStateOf(true) }
     val otherLabel = stringResource(R.string.other)
+    val expensesLabel = stringResource(R.string.type_expenses)
+    val incomeLabel = stringResource(R.string.type_income)
     val chartItems =
-        remember(state.categorySummaries, otherLabel) {
-            analyticsOverviewPieChartItems(state.categorySummaries, otherLabel)
+        remember(
+            state.data.filters.type,
+            state.categorySummaries,
+            state.typeSummaries,
+            otherLabel,
+            expensesLabel,
+            incomeLabel,
+        ) {
+            if (state.data.filters.type == AnalyticsType.All) {
+                analyticsTypePieChartItems(state.typeSummaries, expensesLabel, incomeLabel)
+            } else {
+                analyticsOverviewPieChartItems(state.categorySummaries, otherLabel)
+            }
         }
     LaunchedEffect(chartItems) {
         chartModelProducer.runTransaction {
@@ -107,7 +121,13 @@ private fun AnalyticsContent(
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         item {
             AnalyticsPieChart(
-                total = formatAmount(state.total, state.currencyCode),
+                total =
+                    formatAnalyticsDisplayAmount(
+                        amount = state.total,
+                        amountType = AnalyticsType.All,
+                        selectedType = state.data.filters.type,
+                        currencyCode = state.currencyCode,
+                    ),
                 items = chartItems,
                 modelProducer = chartModelProducer,
                 animateIn = animateChartIn,
@@ -129,7 +149,18 @@ private fun AnalyticsContent(
                 emoji = transaction.category.emoji,
                 title = transaction.category.name,
                 comment = transaction.comment,
-                amount = formatAmount(transaction.amount, state.currencyCode),
+                amount =
+                    formatAnalyticsDisplayAmount(
+                        amount = transaction.amount,
+                        amountType =
+                            if (transaction.category.isIncome) {
+                                AnalyticsType.Income
+                            } else {
+                                AnalyticsType.Expenses
+                            },
+                        selectedType = state.data.filters.type,
+                        currencyCode = state.currencyCode,
+                    ),
             )
             if (index != state.transactions.lastIndex) {
                 HorizontalDivider(color = MaterialTheme.colorScheme.outline)
@@ -137,6 +168,38 @@ private fun AnalyticsContent(
         }
     }
 }
+
+internal fun formatAnalyticsDisplayAmount(
+    amount: BigDecimal,
+    amountType: AnalyticsType,
+    selectedType: AnalyticsType,
+    currencyCode: String,
+): String =
+    if (selectedType == AnalyticsType.All) {
+        formatAnalyticsAmount(amount, amountType, currencyCode)
+    } else {
+        formatAmount(amount.abs(), currencyCode)
+    }
+
+internal fun formatAnalyticsAmount(
+    amount: BigDecimal,
+    type: AnalyticsType,
+    currencyCode: String,
+): String {
+    val signedAmount = signedAnalyticsAmount(amount, type)
+    val formatted = formatAmount(signedAmount, currencyCode)
+    return if (signedAmount.signum() >= 0) "+$formatted" else formatted
+}
+
+internal fun signedAnalyticsAmount(
+    amount: BigDecimal,
+    type: AnalyticsType,
+): BigDecimal =
+    when (type) {
+        AnalyticsType.Expenses -> amount.abs().negate()
+        AnalyticsType.Income -> amount.abs()
+        AnalyticsType.All -> amount
+    }
 
 @Composable
 private fun AnalyticsEmpty(

@@ -1,5 +1,6 @@
 package com.yandex.school.casheye.feature.analytics.presentation
 
+import com.yandex.school.casheye.core.format.formatAmount
 import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.Category
 import com.yandex.school.casheye.core.model.Transaction
@@ -194,6 +195,85 @@ class AnalyticsViewModelTest {
             assertEquals(listOf(2, 1), state.transactions.map { it.id })
             assertEquals(BigDecimal("12"), state.categorySummaries.single().amount)
         }
+
+    @Test
+    fun `all type aggregates expenses and income after filtering`() {
+        val transactions =
+            listOf(
+                transaction(id = 1, categoryId = 10, amount = "40"),
+                transaction(id = 2, categoryId = 20, amount = "60", isIncome = true),
+            )
+
+        assertEquals(
+            listOf(
+                AnalyticsTypeSummary(AnalyticsType.Income, BigDecimal("60")),
+                AnalyticsTypeSummary(AnalyticsType.Expenses, BigDecimal("40")),
+            ),
+            transactions.toTypeSummaries(),
+        )
+        assertEquals(BigDecimal("20"), transactions.presentationTotal(AnalyticsType.All))
+    }
+
+    @Test
+    fun `type aggregation hides zero groups and calculates single type totals`() {
+        val expenses = listOf(transaction(id = 1, categoryId = 10, amount = "40"))
+        val income = listOf(transaction(id = 2, categoryId = 20, amount = "60", isIncome = true))
+
+        assertEquals(listOf(AnalyticsType.Expenses), expenses.toTypeSummaries().map { it.type })
+        assertEquals(listOf(AnalyticsType.Income), income.toTypeSummaries().map { it.type })
+        assertEquals(BigDecimal("40"), expenses.presentationTotal(AnalyticsType.Expenses))
+        assertEquals(BigDecimal("60"), income.presentationTotal(AnalyticsType.Income))
+        assertEquals(BigDecimal("-40"), expenses.presentationTotal(AnalyticsType.All))
+        assertEquals(BigDecimal("60"), income.presentationTotal(AnalyticsType.All))
+        assertTrue(
+            listOf(transaction(id = 3, categoryId = 30, amount = "0"))
+                .toTypeSummaries()
+                .isEmpty(),
+        )
+    }
+
+    @Test
+    fun `amount signs are shown only for all filter`() {
+        assertEquals(BigDecimal("-15"), signedAnalyticsAmount(BigDecimal("15"), AnalyticsType.Expenses))
+        assertEquals(BigDecimal("15"), signedAnalyticsAmount(BigDecimal("15"), AnalyticsType.Income))
+        assertEquals(BigDecimal("-5"), signedAnalyticsAmount(BigDecimal("-5"), AnalyticsType.All))
+        assertEquals(
+            "+${formatAmount(BigDecimal("15"), "RUB")}",
+            formatAnalyticsDisplayAmount(
+                BigDecimal("15"),
+                AnalyticsType.Income,
+                AnalyticsType.All,
+                "RUB",
+            ),
+        )
+        assertEquals(
+            formatAmount(BigDecimal("-15"), "RUB"),
+            formatAnalyticsDisplayAmount(
+                BigDecimal("15"),
+                AnalyticsType.Expenses,
+                AnalyticsType.All,
+                "RUB",
+            ),
+        )
+        assertEquals(
+            formatAmount(BigDecimal("15"), "RUB"),
+            formatAnalyticsDisplayAmount(
+                BigDecimal("15"),
+                AnalyticsType.Expenses,
+                AnalyticsType.Expenses,
+                "RUB",
+            ),
+        )
+        assertEquals(
+            formatAmount(BigDecimal("15"), "RUB"),
+            formatAnalyticsDisplayAmount(
+                BigDecimal("15"),
+                AnalyticsType.Income,
+                AnalyticsType.Income,
+                "RUB",
+            ),
+        )
+    }
 
     @Test
     fun `empty result exposes empty state`() =
@@ -529,12 +609,13 @@ private fun transaction(
     categoryId: Int,
     amount: String,
     date: String = "2026-07-17T10:00:00Z",
+    isIncome: Boolean = false,
 ): Transaction {
     val instant = Instant.parse(date)
     return Transaction(
         id = id,
         account = account(1),
-        category = Category(categoryId, "Категория $categoryId", "🛒", false),
+        category = Category(categoryId, "Категория $categoryId", "🛒", isIncome),
         amount = BigDecimal(amount),
         transactionDate = instant,
         comment = null,

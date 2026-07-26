@@ -34,7 +34,9 @@ import com.yandex.school.casheye.feature.analytics.R
 import java.math.BigDecimal
 
 private val singleCategoryPlaceholderRatio = BigDecimal("0.000001")
-private val otherCategoryColor = Color(0xFF8E8E93)
+internal val otherCategoryColor = Color(0xFFFFB3C7)
+private val expensesTypeColor = Color(0xFFFF6B6B)
+private val incomeTypeColor = Color(0xFF5ECF8B)
 
 internal data class AnalyticsPieChartItem(
     val label: String,
@@ -156,6 +158,31 @@ internal fun analyticsColorForCategory(categoryId: Int): Color {
     val hue = (normalizedId.rem(COLOR_SEQUENCE_LENGTH).toFloat() * GOLDEN_ANGLE).rem(FULL_HUE)
     return Color.hsv(hue = hue, saturation = 0.58f, value = 0.94f)
 }
+
+internal fun analyticsColorForType(type: AnalyticsType): Color =
+    when (type) {
+        AnalyticsType.Expenses -> expensesTypeColor
+        AnalyticsType.Income -> incomeTypeColor
+        AnalyticsType.All -> error("All is not a chart group")
+    }
+
+internal fun analyticsTypePieChartItems(
+    summaries: List<AnalyticsTypeSummary>,
+    expensesLabel: String,
+    incomeLabel: String,
+): List<AnalyticsPieChartItem> =
+    summaries.sortedByDescending { it.amount.abs() }.map { summary ->
+        AnalyticsPieChartItem(
+            label =
+                when (summary.type) {
+                    AnalyticsType.Expenses -> expensesLabel
+                    AnalyticsType.Income -> incomeLabel
+                    AnalyticsType.All -> error("All is not a chart group")
+                },
+            amount = summary.amount.abs(),
+            color = analyticsColorForType(summary.type),
+        )
+    }
 
 internal fun analyticsPieChartItems(categories: List<AnalyticsCategorySummary>): List<AnalyticsPieChartItem> =
     categories.map { summary ->
