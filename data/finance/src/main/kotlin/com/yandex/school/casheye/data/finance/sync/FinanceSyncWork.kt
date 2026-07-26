@@ -13,6 +13,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerFactory
 import androidx.work.WorkerParameters
+import com.yandex.school.casheye.domain.finance.ExchangeRateRepository
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
@@ -90,6 +91,7 @@ internal fun FinanceSyncResult.toWorkerResult(): ListenableWorker.Result =
 
 class FinanceSyncWorkerFactory(
     private val financeSyncerProvider: () -> FinanceSyncer,
+    private val exchangeRateRepositoryProvider: () -> ExchangeRateRepository,
 ) : WorkerFactory() {
     override fun createWorker(
         appContext: Context,
@@ -102,6 +104,14 @@ class FinanceSyncWorkerFactory(
                     appContext = appContext,
                     workerParameters = workerParameters,
                     financeSyncer = financeSyncerProvider(),
+                )
+            }
+
+            ExchangeRateRefreshWorker::class.java.name -> {
+                ExchangeRateRefreshWorker(
+                    appContext = appContext,
+                    workerParameters = workerParameters,
+                    repository = exchangeRateRepositoryProvider(),
                 )
             }
 

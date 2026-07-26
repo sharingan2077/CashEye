@@ -62,6 +62,7 @@ class OfflineWriteDaoTest {
             assertEquals(-1, accountWrite.localId)
             assertEquals("87.6610", account?.balance)
             assertEquals("12.3400", transaction?.transaction?.amount)
+            assertEquals("RUB", transaction?.transaction?.currency)
             assertEquals(NOW.plusSeconds(30).toEpochMilli(), transaction?.transaction?.transactionDate)
             assertEquals(accountWrite.localId, transaction?.account?.id)
             assertEquals(category.id, transaction?.category?.id)
@@ -133,7 +134,7 @@ class OfflineWriteDaoTest {
     fun transactionEditsReverseOldBalanceEffectAndApplyLatestValues() =
         runTest {
             database.accountDao().upsert(AccountEntity(5, "Main", "💳", "100.00", "RUB"))
-            database.accountDao().upsert(AccountEntity(6, "Reserve", "💳", "50.00", "RUB"))
+            database.accountDao().upsert(AccountEntity(6, "Reserve", "💳", "50.00", "USD"))
             database.categoryDao().upsertAll(listOf(category, incomeCategory))
             val write =
                 database.offlineWriteDao().createTransaction(
@@ -176,7 +177,24 @@ class OfflineWriteDaoTest {
 
             assertEquals("100.00", database.accountDao().getById(5)?.balance)
             assertEquals("30.00", database.accountDao().getById(6)?.balance)
+            assertEquals("USD", database.transactionDao().getById(write.localId)?.transaction?.currency)
             assertEquals(1, database.pendingOperationDao().getAll().size)
+        }
+
+    @Test
+    fun changingAccountCurrencyDoesNotRewriteExistingTransactionSnapshot() =
+        runTest {
+            database.accountDao().upsert(AccountEntity(5, "Main", "💳", "100.00", "RUB"))
+            database.categoryDao().upsertAll(listOf(category))
+            val write = database.offlineWriteDao().createTransaction(transactionCommand(accountId = 5), NOW)
+
+            database.offlineWriteDao().updateAccount(
+                accountCommand(id = 5, currency = "USD"),
+                NOW.plusSeconds(1),
+            )
+
+            assertEquals("USD", database.accountDao().getById(5)?.currency)
+            assertEquals("RUB", database.transactionDao().getById(write.localId)?.transaction?.currency)
         }
 
     @Test
@@ -188,9 +206,10 @@ class OfflineWriteDaoTest {
                 TransactionEntity(
                     id = 15,
                     accountId = 5,
-                    categoryId = category.id,
-                    amount = "4.00",
-                    transactionDate = NOW.toEpochMilli(),
+                categoryId = category.id,
+                amount = "4.00",
+                currency = "RUB",
+                transactionDate = NOW.toEpochMilli(),
                     comment = null,
                     createdAt = NOW.toEpochMilli(),
                     updatedAt = NOW.toEpochMilli(),
@@ -220,9 +239,10 @@ class OfflineWriteDaoTest {
                 TransactionEntity(
                     id = 15,
                     accountId = 5,
-                    categoryId = category.id,
-                    amount = "25.00",
-                    transactionDate = NOW.toEpochMilli(),
+                categoryId = category.id,
+                amount = "25.00",
+                currency = "RUB",
+                transactionDate = NOW.toEpochMilli(),
                     comment = null,
                     createdAt = NOW.toEpochMilli(),
                     updatedAt = NOW.toEpochMilli(),
@@ -276,9 +296,10 @@ class OfflineWriteDaoTest {
                     TransactionEntity(
                         id = 50,
                         accountId = 5,
-                        categoryId = category.id,
-                        amount = "12.3400",
-                        transactionDate = NOW.plusSeconds(30).toEpochMilli(),
+                    categoryId = category.id,
+                    amount = "12.3400",
+                    currency = "RUB",
+                    transactionDate = NOW.plusSeconds(30).toEpochMilli(),
                         comment = "Offline",
                         createdAt = NOW.toEpochMilli(),
                         updatedAt = NOW.toEpochMilli(),
@@ -294,12 +315,13 @@ class OfflineWriteDaoTest {
     private fun accountCommand(
         id: Int? = null,
         name: String = "Offline account",
+        currency: String = "RUB",
     ) = SaveAccountCommand(
         id = id,
         name = name,
         emoji = "💳",
         balance = BigDecimal("100.0010"),
-        currency = "RUB",
+        currency = currency,
     )
 
     private fun transactionCommand(accountId: Int) =

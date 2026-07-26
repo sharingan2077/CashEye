@@ -3,17 +3,24 @@ package com.yandex.school.casheye.data.finance.di
 import android.content.Context
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.preferencesDataStoreFile
+import com.yandex.school.casheye.data.finance.api.ExchangeRateApi
 import com.yandex.school.casheye.data.finance.api.FinanceApi
+import com.yandex.school.casheye.data.finance.database.FinanceDatabaseProvider
 import com.yandex.school.casheye.data.finance.database.FinanceLocalStore
 import com.yandex.school.casheye.data.finance.database.RoomFinanceLocalStore
 import com.yandex.school.casheye.data.finance.database.RoomFinanceSyncStore
 import com.yandex.school.casheye.data.finance.repository.FinanceRepositoryImpl
 import com.yandex.school.casheye.data.finance.repository.PreferencesReportingCurrencyRepository
+import com.yandex.school.casheye.data.finance.repository.RoomExchangeRateRepository
+import com.yandex.school.casheye.data.finance.sync.ExchangeRateRefreshScheduler
 import com.yandex.school.casheye.data.finance.sync.FinanceSyncScheduler
 import com.yandex.school.casheye.data.finance.sync.FinanceSyncer
 import com.yandex.school.casheye.data.finance.sync.WorkManagerFinanceSyncScheduler
+import com.yandex.school.casheye.data.finance.sync.WorkManagerExchangeRateRefreshScheduler
+import com.yandex.school.casheye.domain.finance.CurrencyConverter
 import com.yandex.school.casheye.domain.finance.DeleteAccountUseCase
 import com.yandex.school.casheye.domain.finance.DeleteTransactionUseCase
+import com.yandex.school.casheye.domain.finance.ExchangeRateRepository
 import com.yandex.school.casheye.domain.finance.FinanceRepository
 import com.yandex.school.casheye.domain.finance.GetAccountTransactionCountUseCase
 import com.yandex.school.casheye.domain.finance.GetAccountUseCase
@@ -52,6 +59,18 @@ object FinanceRepositoryBindings {
     fun provideSyncScheduler(scheduler: WorkManagerFinanceSyncScheduler): FinanceSyncScheduler = scheduler
 
     @Provides
+    fun provideExchangeRateRefreshScheduler(
+        scheduler: WorkManagerExchangeRateRefreshScheduler,
+    ): ExchangeRateRefreshScheduler = scheduler
+
+    @Provides
+    @SingleIn(AppScope::class)
+    fun provideExchangeRateRepository(
+        api: ExchangeRateApi,
+        databaseProvider: FinanceDatabaseProvider,
+    ): ExchangeRateRepository = RoomExchangeRateRepository(api, databaseProvider)
+
+    @Provides
     @SingleIn(AppScope::class)
     fun provideFinanceRepository(
         api: FinanceApi,
@@ -72,6 +91,9 @@ object FinanceSyncBindings {
 
 @BindingContainer
 object FinanceUseCaseBindings {
+    @Provides
+    fun provideCurrencyConverter(): CurrencyConverter = CurrencyConverter()
+
     @Provides
     fun provideGetDailySummaryUseCase(
         repository: FinanceRepository,

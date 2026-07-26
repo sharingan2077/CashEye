@@ -22,7 +22,12 @@ class CashEyeApplication :
     override val workManagerConfiguration: Configuration by lazy {
         Configuration
             .Builder()
-            .setWorkerFactory(FinanceSyncWorkerFactory { appGraph.financeSyncer })
+            .setWorkerFactory(
+                FinanceSyncWorkerFactory(
+                    financeSyncerProvider = { appGraph.financeSyncer },
+                    exchangeRateRepositoryProvider = { appGraph.exchangeRateRepository },
+                ),
+            )
             .build()
     }
 
@@ -41,6 +46,8 @@ class CashEyeApplication :
             )
         appGraph.financeSyncScheduler.registerPeriodicSync()
         appGraph.financeSyncScheduler.enqueueImmediateSync()
+        appGraph.exchangeRateRefreshScheduler.registerPeriodicRefresh()
+        appGraph.exchangeRateRefreshScheduler.enqueueImmediateRefresh()
         observeNetworkRecovery()
     }
 
@@ -51,6 +58,7 @@ class CashEyeApplication :
             appGraph.networkMonitor.isOnline.collect { isOnline ->
                 if (wasOnline == false && isOnline) {
                     appGraph.financeSyncScheduler.enqueueImmediateSync()
+                    appGraph.exchangeRateRefreshScheduler.enqueueImmediateRefresh()
                 }
                 wasOnline = isOnline
             }

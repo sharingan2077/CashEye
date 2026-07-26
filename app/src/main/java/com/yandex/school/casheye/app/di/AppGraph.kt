@@ -7,8 +7,10 @@ import com.yandex.school.casheye.data.finance.di.FinanceSyncBindings
 import com.yandex.school.casheye.data.finance.di.FinanceUseCaseBindings
 import com.yandex.school.casheye.data.finance.di.NetworkConfig
 import com.yandex.school.casheye.data.finance.network.NetworkMonitor
+import com.yandex.school.casheye.data.finance.sync.ExchangeRateRefreshScheduler
 import com.yandex.school.casheye.data.finance.sync.FinanceSyncScheduler
 import com.yandex.school.casheye.data.finance.sync.FinanceSyncer
+import com.yandex.school.casheye.domain.finance.ExchangeRateRepository
 import com.yandex.school.casheye.feature.accounts.di.AccountsViewModelBindings
 import com.yandex.school.casheye.feature.analytics.di.AnalyticsViewModelBindings
 import com.yandex.school.casheye.feature.expenses.di.ExpensesViewModelBindings
@@ -38,6 +40,10 @@ interface AppGraph : ViewModelGraph {
     val financeSyncer: FinanceSyncer
 
     val financeSyncScheduler: FinanceSyncScheduler
+
+    val exchangeRateRepository: ExchangeRateRepository
+
+    val exchangeRateRefreshScheduler: ExchangeRateRefreshScheduler
 
     @DependencyGraph.Factory
     fun interface Factory {

@@ -72,12 +72,14 @@ internal abstract class OfflineWriteDao {
     ): LocalWriteResult {
         require(command.id == null) { "Offline transaction creation requires a command without an id" }
         val localId = nextTransactionId()
+        val account = checkNotNull(accountById(command.accountId)) { "Account ${command.accountId} was not found" }
         insertTransaction(
             TransactionEntity(
                 id = localId,
                 accountId = command.accountId,
                 categoryId = command.categoryId,
                 amount = command.amount.toPlainString(),
+                currency = account.currency,
                 transactionDate = command.transactionDate.toEpochMilli(),
                 comment = command.comment,
                 createdAt = now.toEpochMilli(),
@@ -167,6 +169,7 @@ internal abstract class OfflineWriteDao {
     ): LocalWriteResult {
         val localId = requireNotNull(command.id) { "Offline transaction update requires an id" }
         val existing = checkNotNull(transactionById(localId)) { "Transaction $localId was not found" }
+        val targetAccount = checkNotNull(accountById(command.accountId)) { "Account ${command.accountId} was not found" }
         adjustAccountBalance(
             accountId = existing.accountId,
             categoryId = existing.categoryId,
@@ -178,6 +181,7 @@ internal abstract class OfflineWriteDao {
                 accountId = command.accountId,
                 categoryId = command.categoryId,
                 amount = command.amount.toPlainString(),
+                currency = if (existing.accountId == command.accountId) existing.currency else targetAccount.currency,
                 transactionDate = command.transactionDate.toEpochMilli(),
                 comment = command.comment,
                 updatedAt = now.toEpochMilli(),
@@ -338,6 +342,7 @@ internal abstract class OfflineWriteDao {
         require(temporaryId < 0) { "Temporary ids must be negative" }
         require(serverId > 0) { "Server ids must be positive" }
         val unchangedOperationIds = unchangedOperationIds(sentOperations)
+        val localCurrency = transactionById(temporaryId)?.currency
 
         if (transactionById(temporaryId) == null) {
             insertOperation(
@@ -371,7 +376,7 @@ internal abstract class OfflineWriteDao {
         }
         unchangedOperationIds.forEach { deleteOperation(it) }
         if (countOperations(PendingEntityType.TRANSACTION, serverId) == 0) {
-            upsertTransaction(serverTransaction)
+            upsertTransaction(serverTransaction.copy(currency = localCurrency ?: serverTransaction.currency))
         }
     }
 
@@ -391,9 +396,10 @@ internal abstract class OfflineWriteDao {
         sentOperations: List<PendingOperationEntity>,
         serverTransaction: TransactionEntity,
     ) {
+        val localCurrency = transactionById(serverTransaction.id)?.currency
         unchangedOperationIds(sentOperations).forEach { deleteOperation(it) }
         if (countOperations(PendingEntityType.TRANSACTION, serverTransaction.id) == 0) {
-            upsertTransaction(serverTransaction)
+            upsertTransaction(serverTransaction.copy(currency = localCurrency ?: serverTransaction.currency))
         }
     }
 

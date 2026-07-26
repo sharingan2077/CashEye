@@ -32,6 +32,9 @@ internal interface TransactionDao {
     @Query("SELECT COUNT(*) FROM transactions WHERE account_id = :accountId")
     suspend fun countByAccountId(accountId: Int): Int
 
+    @Query("SELECT currency FROM transactions WHERE id = :id")
+    suspend fun getCurrencyById(id: Int): String?
+
     @Transaction
     @Query(
         """

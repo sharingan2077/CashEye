@@ -93,6 +93,25 @@ interface FinanceLocalStore {
     ): Int
 }
 
+@Inject
+@SingleIn(AppScope::class)
+class FinanceDatabaseProvider(
+    context: Context,
+) {
+    internal val database: FinanceDatabase =
+        Room
+            .databaseBuilder(
+                context.applicationContext,
+                FinanceDatabase::class.java,
+                DATABASE_NAME,
+            ).addMigrations(MIGRATION_1_2)
+            .build()
+
+    private companion object {
+        const val DATABASE_NAME = "finance.db"
+    }
+}
+
 internal interface FinanceSyncStore {
     suspend fun getPendingOperations(): List<PendingOperationEntity>
 
@@ -130,15 +149,9 @@ internal interface FinanceSyncStore {
 @Inject
 @SingleIn(AppScope::class)
 class RoomFinanceLocalStore(
-    context: Context,
+    databaseProvider: FinanceDatabaseProvider,
 ) : FinanceLocalStore {
-    private val database =
-        Room
-            .databaseBuilder(
-                context.applicationContext,
-                FinanceDatabase::class.java,
-                DATABASE_NAME,
-            ).build()
+    private val database = databaseProvider.database
 
     override fun observeAccounts(): Flow<List<Account>> =
         database.accountDao().observeAll().map { accounts -> accounts.map { it.toDomain() } }
@@ -207,7 +220,18 @@ class RoomFinanceLocalStore(
             // whole period so a recently remapped offline transaction cannot disappear while the period
             // endpoint is still returning a stale snapshot.
             database.transactionDao().upsertAll(
-                transactions.filterNot { it.id in pendingTransactions }.map { it.toNetworkDomain().toEntity() },
+                transactions
+                    .filterNot { it.id in pendingTransactions }
+                    .map { transaction ->
+                        transaction
+                            .toNetworkDomain()
+                            .toEntity()
+                            .copy(
+                                currency =
+                                    database.transactionDao().getCurrencyById(transaction.id)
+                                        ?: transaction.account.currency,
+                            )
+                    },
             )
         }
     }
@@ -228,7 +252,16 @@ class RoomFinanceLocalStore(
             }
             database.categoryDao().upsertAll(listOf(transaction.category.toNetworkDomain().toEntity()))
             if (transaction.id !in pendingTransactions) {
-                database.transactionDao().upsert(transaction.toNetworkDomain().toEntity())
+                database.transactionDao().upsert(
+                    transaction
+                        .toNetworkDomain()
+                        .toEntity()
+                        .copy(
+                            currency =
+                                database.transactionDao().getCurrencyById(transaction.id)
+                                    ?: transaction.account.currency,
+                        ),
+                )
             }
         }
     }
@@ -301,6 +334,9 @@ class RoomFinanceLocalStore(
                 accountId = response.accountId,
                 categoryId = response.categoryId,
                 amount = response.amount,
+                currency =
+                    database.accountDao().getById(response.accountId)?.currency
+                        ?: com.yandex.school.casheye.core.model.CurrencyCode.RUB.isoCode,
                 transactionDate = response.transactionDate.toEpochMilli(),
                 comment = response.comment,
                 createdAt = response.createdAt.toEpochMilli(),
@@ -323,9 +359,6 @@ class RoomFinanceLocalStore(
         database.offlineWriteDao().completeDelete(sentOperations)
     }
 
-    private companion object {
-        const val DATABASE_NAME = "finance.db"
-    }
 }
 
 internal class RoomFinanceSyncStore(
