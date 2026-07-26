@@ -362,7 +362,7 @@ class AnalyticsViewModelTest {
             val cached = transaction(id = 1, categoryId = 10, amount = "3")
             val refresh = CompletableDeferred<FinanceRefreshResult>()
             val repository =
-                object : FinanceRepository {
+                object : StubFinanceRepository() {
                     override fun observeAccounts(): Flow<List<Account>> = MutableStateFlow(listOf(cached.account))
 
                     override fun observeTransactions(query: TransactionsQuery): Flow<List<Transaction>> =
@@ -393,7 +393,7 @@ class AnalyticsViewModelTest {
             val cached = transaction(id = 1, categoryId = 10, amount = "3")
             val cacheReady = CompletableDeferred<Unit>()
             val repository =
-                object : FinanceRepository {
+                object : StubFinanceRepository() {
                     override fun observeAccounts(): Flow<List<Account>> =
                         flow {
                             cacheReady.await()
@@ -438,7 +438,7 @@ class AnalyticsViewModelTest {
     fun `offline refresh exposes empty analytics when cache is initialized`() =
         runTest {
             val repository =
-                object : FinanceRepository {
+                object : StubFinanceRepository() {
                     override fun observeAccounts(): Flow<List<Account>> = MutableStateFlow(emptyList())
 
                     override fun observeTransactions(query: TransactionsQuery): Flow<List<Transaction>> =
@@ -514,9 +514,15 @@ class AnalyticsViewModelTest {
         }
 }
 
+private open class StubFinanceRepository : FinanceRepository {
+    override suspend fun getAccounts() = error("Not used")
+
+    override suspend fun getTransactions(query: TransactionsQuery) = error("Not used")
+}
+
 private class QueueAnalyticsRepository(
     vararg results: AnalyticsLoadResult,
-) : FinanceRepository {
+) : StubFinanceRepository() {
     private val results = ArrayDeque(results.toList())
     private val firstSummary = (results.firstOrNull() as? AnalyticsLoadResult.Success)?.summary
     private val accounts = MutableStateFlow(firstSummary?.accounts.orEmpty())
@@ -560,7 +566,7 @@ private class QueueAnalyticsRepository(
 
 private class LambdaAnalyticsRepository(
     private val block: suspend (TransactionsQuery, Int) -> AnalyticsLoadResult,
-) : FinanceRepository {
+) : StubFinanceRepository() {
     val queries = mutableListOf<TransactionsQuery>()
     private val accounts = MutableStateFlow(listOf(account(1), account(2)))
     private val transactions = MutableStateFlow<List<Transaction>>(emptyList())
@@ -593,7 +599,7 @@ private class LambdaAnalyticsRepository(
     }
 }
 
-private fun success(transactions: List<Transaction> = emptyList()): AnalyticsLoadResult {
+private fun success(transactions: List<Transaction> = emptyList()): AnalyticsLoadResult.Success {
     val analyticsTransactions = transactions.map { it.toAnalyticsTransaction() }
     return AnalyticsLoadResult.Success(
         AnalyticsSummary(
@@ -610,7 +616,7 @@ private fun success(transactions: List<Transaction> = emptyList()): AnalyticsLoa
     )
 }
 
-private fun successWithOptions(): AnalyticsLoadResult {
+private fun successWithOptions(): AnalyticsLoadResult.Success {
     val transaction = transaction(id = 1, categoryId = 10, amount = "3")
     val analyticsTransaction = transaction.toAnalyticsTransaction()
     return AnalyticsLoadResult.Success(

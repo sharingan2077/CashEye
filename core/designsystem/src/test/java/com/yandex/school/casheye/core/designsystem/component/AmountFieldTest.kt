@@ -9,14 +9,14 @@ import java.util.Locale
 class AmountFieldTest {
     @Test
     fun `formats amount with separators from current locale`() {
-        assertEquals("1 126,57", formatAmount("1126.57", Locale("ru")))
+        assertEquals("1 126,57", formatAmount("1126.57", Locale.forLanguageTag("ru-RU")))
         assertEquals("1,126.57", formatAmount("1126.57", Locale.US))
         assertEquals("1.126,57", formatAmount("1126.57", Locale.GERMANY))
     }
 
     @Test
     fun `decimal separator creates two editable fraction cells`() {
-        val update = update("", "", 0, ".", 1, Locale("ru"))
+        val update = update("", "", 0, ".", 1, Locale.forLanguageTag("ru-RU"))
 
         assertEquals("0.00", update.canonicalAmount)
         assertEquals("0,00", update.fieldValue.text)
@@ -25,7 +25,7 @@ class AmountFieldTest {
 
     @Test
     fun `second decimal separator is ignored without moving cursor`() {
-        val update = update("69.09", "69,09", 3, "69,,09", 4, Locale("ru"))
+        val update = update("69.09", "69,09", 3, "69,,09", 4, Locale.forLanguageTag("ru-RU"))
 
         assertEquals("69.09", update.canonicalAmount)
         assertEquals("69,09", update.fieldValue.text)
@@ -34,8 +34,8 @@ class AmountFieldTest {
 
     @Test
     fun `typing in fraction replaces cells instead of appending`() {
-        val first = update("0.00", "0,00", 2, "0,100", 3, Locale("ru"))
-        val second = update(first.canonicalAmount, first.fieldValue.text, 3, "0,120", 4, Locale("ru"))
+        val first = update("0.00", "0,00", 2, "0,100", 3, Locale.forLanguageTag("ru-RU"))
+        val second = update(first.canonicalAmount, first.fieldValue.text, 3, "0,120", 4, Locale.forLanguageTag("ru-RU"))
 
         assertEquals("0.12", second.canonicalAmount)
         assertEquals("0,12", second.fieldValue.text)
@@ -43,8 +43,8 @@ class AmountFieldTest {
 
     @Test
     fun `backspace shifts fraction and keeps two cells`() {
-        val afterLastDigit = update("69.09", "69,09", 5, "69,0", 4, Locale("ru"))
-        val afterFirstDigit = update("69.09", "69,09", 4, "69,9", 3, Locale("ru"))
+        val afterLastDigit = update("69.09", "69,09", 5, "69,0", 4, Locale.forLanguageTag("ru-RU"))
+        val afterFirstDigit = update("69.09", "69,09", 4, "69,9", 3, Locale.forLanguageTag("ru-RU"))
 
         assertEquals("69.00", afterLastDigit.canonicalAmount)
         assertEquals("69,00", afterLastDigit.fieldValue.text)
@@ -56,7 +56,7 @@ class AmountFieldTest {
 
     @Test
     fun `removing decimal separator joins integer and fraction`() {
-        val update = update("69.00", "69,00", 3, "6900", 2, Locale("ru"))
+        val update = update("69.00", "69,00", 3, "6900", 2, Locale.forLanguageTag("ru-RU"))
 
         assertEquals("6900", update.canonicalAmount)
         assertEquals("6 900", update.fieldValue.text)

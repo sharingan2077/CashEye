@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.yandex.school.casheye.core.model.CurrencyCode
 import com.yandex.school.casheye.domain.finance.DEFAULT_REPORTING_CURRENCY
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.take
@@ -18,6 +19,7 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class PreferencesReportingCurrencyRepositoryTest {
     @get:Rule
     val temporaryFolder = TemporaryFolder()

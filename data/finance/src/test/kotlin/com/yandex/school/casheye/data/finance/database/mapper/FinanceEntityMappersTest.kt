@@ -60,7 +60,7 @@ class FinanceEntityMappersTest {
     }
 
     @Test
-    fun `transaction relation uses the newly selected account currency`() {
+    fun `transaction relation preserves the stored currency snapshot`() {
         val rubAccount = Account(7, "Roubles", "💳", BigDecimal.ZERO, CurrencyCode.RUB)
         val usdAccount = Account(8, "Dollars", "💵", BigDecimal.ZERO, CurrencyCode.USD)
         val category = Category(9, "Food", "🍜", false)
@@ -83,6 +83,6 @@ class FinanceEntityMappersTest {
                 category = category.toEntity(),
             ).toDomain()
 
-        assertEquals(CurrencyCode.USD, restored.currency)
+        assertEquals(CurrencyCode.RUB, restored.currency)
     }
 }

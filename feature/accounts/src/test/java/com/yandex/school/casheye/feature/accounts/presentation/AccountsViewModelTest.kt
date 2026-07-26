@@ -3,6 +3,7 @@ package com.yandex.school.casheye.feature.accounts.presentation
 import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.CurrencyCode
 import com.yandex.school.casheye.core.model.MoneyAmount
+import com.yandex.school.casheye.domain.finance.AccountsCurrentValuation
 import com.yandex.school.casheye.domain.finance.AccountsLoadResult
 import com.yandex.school.casheye.domain.finance.AccountsSummary
 import com.yandex.school.casheye.domain.finance.DeleteAccountUseCase
@@ -12,6 +13,7 @@ import com.yandex.school.casheye.domain.finance.FinanceRefreshResult
 import com.yandex.school.casheye.domain.finance.FinanceRepository
 import com.yandex.school.casheye.domain.finance.GetAccountTransactionCountUseCase
 import com.yandex.school.casheye.domain.finance.GetAccountsUseCase
+import com.yandex.school.casheye.domain.finance.TransactionsQuery
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
@@ -56,7 +58,7 @@ class AccountsViewModelTest {
             val summary =
                 AccountsSummary(
                     nativeTotals = listOf(MoneyAmount(BigDecimal("125000.00"), CurrencyCode.RUB)),
-                    currentValuation = null,
+                    currentValuation = currentValuation(),
                     accounts = listOf(account()),
                 )
             val repository = FakeAccountsRepository(AccountsLoadResult.Success(summary))
@@ -113,7 +115,7 @@ class AccountsViewModelTest {
             val summary =
                 AccountsSummary(
                     nativeTotals = listOf(MoneyAmount(BigDecimal("125000.00"), CurrencyCode.RUB)),
-                    currentValuation = null,
+                    currentValuation = currentValuation(),
                     accounts = listOf(account()),
                 )
             val viewModel =
@@ -158,7 +160,7 @@ class AccountsViewModelTest {
         runTest {
             val refresh = CompletableDeferred<FinanceRefreshResult>()
             val repository =
-                object : FinanceRepository {
+                object : StubFinanceRepository() {
                     override fun observeAccounts(): Flow<List<Account>> = MutableStateFlow(listOf(account()))
 
                     override suspend fun refreshAccounts(): FinanceRefreshResult = refresh.await()
@@ -181,7 +183,7 @@ class AccountsViewModelTest {
         runTest {
             val cacheReady = CompletableDeferred<Unit>()
             val repository =
-                object : FinanceRepository {
+                object : StubFinanceRepository() {
                     override fun observeAccounts(): Flow<List<Account>> =
                         flow {
                             cacheReady.await()
@@ -216,7 +218,7 @@ class AccountsViewModelTest {
     fun `offline refresh exposes empty accounts when cache is initialized`() =
         runTest {
             val repository =
-                object : FinanceRepository {
+                object : StubFinanceRepository() {
                     override fun observeAccounts(): Flow<List<Account>> = MutableStateFlow(emptyList())
 
                     override suspend fun refreshAccounts(): FinanceRefreshResult =
@@ -279,9 +281,15 @@ private fun accountsViewModel(repository: FinanceRepository): AccountsViewModel 
         DeleteAccountUseCase(repository),
     )
 
+private open class StubFinanceRepository : FinanceRepository {
+    override suspend fun getAccounts() = error("Not used")
+
+    override suspend fun getTransactions(query: TransactionsQuery) = error("Not used")
+}
+
 private class FakeAccountsRepository(
     vararg results: AccountsLoadResult,
-) : FinanceRepository {
+) : StubFinanceRepository() {
     private val results = ArrayDeque(results.toList())
     private val accounts =
         MutableStateFlow(
@@ -323,4 +331,11 @@ private fun account(): Account =
         emoji = "💳",
         balance = BigDecimal("125000.00"),
         currency = "RUB",
+    )
+
+private fun currentValuation(): AccountsCurrentValuation =
+    AccountsCurrentValuation(
+        includedTotal = MoneyAmount(BigDecimal("125000.00"), CurrencyCode.RUB),
+        excludedNativeTotals = emptyList(),
+        rateDate = null,
     )

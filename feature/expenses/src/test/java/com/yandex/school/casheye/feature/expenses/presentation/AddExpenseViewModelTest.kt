@@ -106,11 +106,9 @@ private class EditorRepository(
 ) : FinanceRepository {
     var saved: SaveTransactionCommand? = null
 
-    override suspend fun getAccounts() = EditorResult.Success(accounts)
+    override suspend fun getAccounts() = FinanceDataLoadResult.Success(accounts)
 
-    override suspend fun getTransactions(query: TransactionsQuery): FinanceDataLoadResult<List<Transaction>> {
-        TODO("Not yet implemented")
-    }
+    override suspend fun getTransactions(query: TransactionsQuery) = error("Not used")
 
     override suspend fun getCategories(isIncome: Boolean) =
         EditorResult.Success(listOf(Category(2, "Еда", "🍔", false)))
@@ -121,17 +119,6 @@ private class EditorRepository(
         saved = command
         return EditorResult.Success(Unit)
     }
-
-//    override suspend fun getDailySummary(
-//        date: LocalDate,
-//        currencyCode: String,
-//        transactionKind: com.yandex.school.casheye.domain.finance.TransactionKind,
-//    ) = error("Not used")
-//
-//    override suspend fun getAccountsSummary(currencyCode: String) = error("Not used")
-//
-//    override suspend fun getAnalytics(query: com.yandex.school.casheye.domain.finance.AnalyticsQuery) =
-//        error("Not used")
 }
 
 private fun account(balance: String) = Account(1, "Основной", "💵", BigDecimal(balance), "RUB")

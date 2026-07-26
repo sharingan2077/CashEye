@@ -198,7 +198,7 @@ class IncomeViewModelTest {
             val cached = incomeTransaction()
             val refresh = CompletableDeferred<FinanceRefreshResult>()
             val repository =
-                object : FinanceRepository {
+                object : StubFinanceRepository() {
                     override fun observeAccounts(): Flow<List<Account>> = MutableStateFlow(listOf(cached.account))
 
                     override fun observeTransactions(query: TransactionsQuery): Flow<List<Transaction>> =
@@ -228,7 +228,7 @@ class IncomeViewModelTest {
             val cached = incomeTransaction()
             val cacheReady = CompletableDeferred<Unit>()
             val repository =
-                object : FinanceRepository {
+                object : StubFinanceRepository() {
                     override fun observeAccounts(): Flow<List<Account>> =
                         flow {
                             cacheReady.await()
@@ -272,7 +272,7 @@ class IncomeViewModelTest {
     fun `offline refresh exposes empty income when cache is initialized`() =
         runTest {
             val repository =
-                object : FinanceRepository {
+                object : StubFinanceRepository() {
                     override fun observeAccounts(): Flow<List<Account>> = MutableStateFlow(emptyList())
 
                     override fun observeTransactions(query: TransactionsQuery): Flow<List<Transaction>> =
@@ -333,9 +333,15 @@ private fun incomeViewModel(
         clock,
     )
 
+private open class StubFinanceRepository : FinanceRepository {
+    override suspend fun getAccounts() = error("Not used")
+
+    override suspend fun getTransactions(query: TransactionsQuery) = error("Not used")
+}
+
 private class FakeIncomeFinanceRepository(
     vararg results: FinanceLoadResult,
-) : FinanceRepository {
+) : StubFinanceRepository() {
     private val results = ArrayDeque(results.toList())
     private val firstSummary = (results.firstOrNull() as? FinanceLoadResult.Success)?.summary
     private val accounts =

@@ -2,15 +2,15 @@ package com.yandex.school.casheye.feature.income.presentation
 
 import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.Category
-import com.yandex.school.casheye.domain.finance.AnalyticsQuery
 import com.yandex.school.casheye.domain.finance.EditorResult
+import com.yandex.school.casheye.domain.finance.FinanceDataLoadResult
 import com.yandex.school.casheye.domain.finance.FinanceRepository
 import com.yandex.school.casheye.domain.finance.GetEditorAccountsUseCase
 import com.yandex.school.casheye.domain.finance.GetEditorCategoriesUseCase
 import com.yandex.school.casheye.domain.finance.GetTransactionUseCase
 import com.yandex.school.casheye.domain.finance.SaveTransactionCommand
 import com.yandex.school.casheye.domain.finance.SaveTransactionUseCase
-import com.yandex.school.casheye.domain.finance.TransactionKind
+import com.yandex.school.casheye.domain.finance.TransactionsQuery
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -88,7 +88,9 @@ private class IncomeEditorRepository : FinanceRepository {
     var saved: SaveTransactionCommand? = null
 
     override suspend fun getAccounts() =
-        EditorResult.Success(listOf(Account(1, "Основной", "💵", BigDecimal.ZERO, "RUB")))
+        FinanceDataLoadResult.Success(listOf(Account(1, "Основной", "💵", BigDecimal.ZERO, "RUB")))
+
+    override suspend fun getTransactions(query: TransactionsQuery) = error("Not used")
 
     override suspend fun getCategories(isIncome: Boolean): EditorResult<List<Category>> {
         requestedIncome = isIncome
@@ -99,14 +101,4 @@ private class IncomeEditorRepository : FinanceRepository {
         saved = command
         return EditorResult.Success(Unit)
     }
-
-    override suspend fun getDailySummary(
-        date: LocalDate,
-        currencyCode: String,
-        transactionKind: TransactionKind,
-    ) = error("Not used")
-
-    override suspend fun getAccountsSummary(currencyCode: String) = error("Not used")
-
-    override suspend fun getAnalytics(query: AnalyticsQuery) = error("Not used")
 }

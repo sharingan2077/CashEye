@@ -92,9 +92,9 @@ class DailyAndAccountsSummariesTest {
                     .amount
                     .compareTo(BigDecimal("11000")),
             )
-            assertEquals(CurrencyCode.RUB, summary.currentValuation?.includedTotal?.currency)
-            assertEquals(rateDate, summary.currentValuation?.rateDate)
-            assertEquals(true, summary.currentValuation?.isComplete)
+            assertEquals(CurrencyCode.RUB, summary.currentValuation.includedTotal.currency)
+            assertEquals(rateDate, summary.currentValuation.rateDate)
+            assertEquals(true, summary.currentValuation.isComplete)
         }
 
     @Test
@@ -178,7 +178,7 @@ class DailyAndAccountsSummariesTest {
                 summary.currentValuation?.excludedNativeTotals,
             )
             assertFalse(requireNotNull(summary.currentValuation).isComplete)
-            assertNull(summary.currentValuation?.rateDate)
+            assertNull(summary.currentValuation.rateDate)
         }
 
     private fun account(

@@ -2,13 +2,12 @@ package com.yandex.school.casheye.feature.accounts.presentation
 
 import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.CurrencyCode
-import com.yandex.school.casheye.domain.finance.AnalyticsQuery
 import com.yandex.school.casheye.domain.finance.EditorResult
 import com.yandex.school.casheye.domain.finance.FinanceRepository
 import com.yandex.school.casheye.domain.finance.GetAccountUseCase
 import com.yandex.school.casheye.domain.finance.SaveAccountCommand
 import com.yandex.school.casheye.domain.finance.SaveAccountUseCase
-import com.yandex.school.casheye.domain.finance.TransactionKind
+import com.yandex.school.casheye.domain.finance.TransactionsQuery
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -21,7 +20,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import java.math.BigDecimal
-import java.time.LocalDate
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class AccountEditorViewModelTest {
@@ -74,6 +72,10 @@ class AccountEditorViewModelTest {
 private class AccountEditorRepository : FinanceRepository {
     var saved: SaveAccountCommand? = null
 
+    override suspend fun getAccounts() = error("Not used")
+
+    override suspend fun getTransactions(query: TransactionsQuery) = error("Not used")
+
     override suspend fun getAccount(id: Int) =
         EditorResult.Success(Account(id, "Основной", "💳", BigDecimal("100.00"), "RUB"))
 
@@ -81,14 +83,4 @@ private class AccountEditorRepository : FinanceRepository {
         saved = command
         return EditorResult.Success(Unit)
     }
-
-    override suspend fun getDailySummary(
-        date: LocalDate,
-        currencyCode: String,
-        transactionKind: TransactionKind,
-    ) = error("Not used")
-
-    override suspend fun getAccountsSummary(currencyCode: String) = error("Not used")
-
-    override suspend fun getAnalytics(query: AnalyticsQuery) = error("Not used")
 }

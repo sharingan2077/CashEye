@@ -280,6 +280,12 @@ private class AnalyticsFinanceRepository(
 
     override fun observeTransactions(query: TransactionsQuery): Flow<List<Transaction>> = transactions
 
+    override suspend fun getAccounts(): FinanceDataLoadResult<List<Account>> =
+        FinanceDataLoadResult.Success(accounts.value)
+
+    override suspend fun getTransactions(query: TransactionsQuery): FinanceDataLoadResult<List<Transaction>> =
+        FinanceDataLoadResult.Success(transactions.value)
+
     override suspend fun refreshPeriod(
         startDate: LocalDate,
         endDate: LocalDate,
