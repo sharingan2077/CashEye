@@ -142,7 +142,7 @@ private fun EmptyExpenses(modifier: Modifier = Modifier) {
             contentDescription = stringResource(R.string.empty_expenses),
             modifier =
                 Modifier
-                    .size(200.dp),
+                    .size(150.dp),
         )
         Text(
             text = stringResource(R.string.empty_expenses),
