@@ -93,9 +93,14 @@ private fun AnalyticsContent(
 ) {
     val chartModelProducer = remember { PieChartModelProducer() }
     var animateChartIn by remember { mutableStateOf(true) }
-    LaunchedEffect(state.categorySummaries) {
+    val otherLabel = stringResource(R.string.other)
+    val chartItems =
+        remember(state.categorySummaries, otherLabel) {
+            analyticsOverviewPieChartItems(state.categorySummaries, otherLabel)
+        }
+    LaunchedEffect(chartItems) {
         chartModelProducer.runTransaction {
-            pieSeries { series(analyticsPieChartValues(state.categorySummaries)) }
+            pieSeries { series(analyticsPieChartValues(chartItems)) }
         }
     }
 
@@ -103,7 +108,7 @@ private fun AnalyticsContent(
         item {
             AnalyticsPieChart(
                 total = formatAmount(state.total, state.currencyCode),
-                categories = state.categorySummaries,
+                items = chartItems,
                 modelProducer = chartModelProducer,
                 animateIn = animateChartIn,
                 onChartDispose = { animateChartIn = false },

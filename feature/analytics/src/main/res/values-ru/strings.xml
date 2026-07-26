@@ -16,6 +16,7 @@
     <string name="empty_period">За выбранный период операций нет</string>
     <string name="empty_period_description">Измените фильтры выше, чтобы найти нужные операции.</string>
     <string name="details">Детализация</string>
+    <string name="other">Другое</string>
     <string name="type_expenses">Расходы</string>
     <string name="type_income">Доходы</string>
     <string name="type_all">Всё</string>

@@ -406,7 +406,7 @@ private fun DetailsSheet(
             item {
                 AnalyticsPieChart(
                     total = formatAmount(state.total, state.currencyCode),
-                    categories = state.categorySummaries,
+                    items = analyticsPieChartItems(state.categorySummaries),
                     paddingValues = PaddingValues(bottom = 32.dp),
                     showLegend = false,
                 )

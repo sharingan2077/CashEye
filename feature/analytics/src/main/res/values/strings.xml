@@ -16,6 +16,7 @@
     <string name="empty_period">No transactions for the selected period</string>
     <string name="empty_period_description">Change the filters above to find the transactions you need.</string>
     <string name="details">Details</string>
+    <string name="other">Other</string>
     <string name="type_expenses">Expenses</string>
     <string name="type_income">Income</string>
     <string name="type_all">All</string>

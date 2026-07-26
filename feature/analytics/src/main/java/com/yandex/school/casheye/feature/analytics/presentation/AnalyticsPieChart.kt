@@ -34,11 +34,18 @@ import com.yandex.school.casheye.feature.analytics.R
 import java.math.BigDecimal
 
 private val singleCategoryPlaceholderRatio = BigDecimal("0.000001")
+private val otherCategoryColor = Color(0xFF8E8E93)
+
+internal data class AnalyticsPieChartItem(
+    val label: String,
+    val amount: BigDecimal,
+    val color: Color,
+)
 
 @Composable
-fun AnalyticsPieChart(
+internal fun AnalyticsPieChart(
     total: String,
-    categories: List<AnalyticsCategorySummary>,
+    items: List<AnalyticsPieChartItem>,
     modifier: Modifier = Modifier,
     paddingValues: PaddingValues = PaddingValues(vertical = 32.dp),
     showLegend: Boolean = true,
@@ -48,11 +55,11 @@ fun AnalyticsPieChart(
 ) {
     val internalModelProducer = remember { PieChartModelProducer() }
     val chartModelProducer = modelProducer ?: internalModelProducer
-    val colors = categories.map { analyticsColorForCategory(it.category.id) }
-    val chartColors = if (categories.size == 1) colors + Color.Transparent else colors
+    val colors = items.map(AnalyticsPieChartItem::color)
+    val chartColors = if (items.size == 1) colors + Color.Transparent else colors
     if (modelProducer == null) {
-        LaunchedEffect(categories) {
-            chartModelProducer.runTransaction { pieSeries { series(analyticsPieChartValues(categories)) } }
+        LaunchedEffect(items) {
+            chartModelProducer.runTransaction { pieSeries { series(analyticsPieChartValues(items)) } }
         }
     }
 
@@ -71,7 +78,7 @@ fun AnalyticsPieChart(
             animateIn = animateIn,
             onChartDispose = onChartDispose,
         )
-        if (showLegend) AnalyticsLegend(categories = categories, colors = colors)
+        if (showLegend) AnalyticsLegend(items = items)
     }
 }
 
@@ -113,8 +120,7 @@ private fun PieChartWithTotal(
 
 @Composable
 private fun AnalyticsLegend(
-    categories: List<AnalyticsCategorySummary>,
-    colors: List<Color>,
+    items: List<AnalyticsPieChartItem>,
 ) {
     FlowRow(
         modifier =
@@ -124,7 +130,7 @@ private fun AnalyticsLegend(
         horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        categories.forEachIndexed { index, summary ->
+        items.forEach { item ->
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -133,10 +139,10 @@ private fun AnalyticsLegend(
                     modifier =
                         Modifier
                             .size(12.dp)
-                            .background(colors[index], CircleShape),
+                            .background(item.color, CircleShape),
                 )
                 Text(
-                    text = summary.category.name,
+                    text = item.label,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.labelLarge,
                 )
@@ -151,8 +157,36 @@ internal fun analyticsColorForCategory(categoryId: Int): Color {
     return Color.hsv(hue = hue, saturation = 0.58f, value = 0.94f)
 }
 
-internal fun analyticsPieChartValues(categories: List<AnalyticsCategorySummary>): List<BigDecimal> {
-    val amounts = categories.map(AnalyticsCategorySummary::amount)
+internal fun analyticsPieChartItems(categories: List<AnalyticsCategorySummary>): List<AnalyticsPieChartItem> =
+    categories.map { summary ->
+        AnalyticsPieChartItem(
+            label = summary.category.name,
+            amount = summary.amount,
+            color = analyticsColorForCategory(summary.category.id),
+        )
+    }
+
+internal fun analyticsOverviewPieChartItems(
+    categories: List<AnalyticsCategorySummary>,
+    otherLabel: String,
+): List<AnalyticsPieChartItem> {
+    val leadingItems = analyticsPieChartItems(categories.take(MAX_OVERVIEW_CATEGORIES))
+    if (categories.size <= MAX_OVERVIEW_CATEGORIES) return leadingItems
+
+    val otherAmount =
+        categories
+            .drop(MAX_OVERVIEW_CATEGORIES)
+            .fold(BigDecimal.ZERO) { total, summary -> total + summary.amount }
+    return leadingItems +
+        AnalyticsPieChartItem(
+            label = otherLabel,
+            amount = otherAmount,
+            color = otherCategoryColor,
+        )
+}
+
+internal fun analyticsPieChartValues(items: List<AnalyticsPieChartItem>): List<BigDecimal> {
+    val amounts = items.map(AnalyticsPieChartItem::amount)
     return if (amounts.size == 1) {
         amounts + amounts.single().multiply(singleCategoryPlaceholderRatio)
     } else {
@@ -164,3 +198,4 @@ private const val UINT_MASK = 0xffffffffL
 private const val COLOR_SEQUENCE_LENGTH = 1_000_003L
 private const val FULL_HUE = 360L
 private const val GOLDEN_ANGLE = 137.508f
+private const val MAX_OVERVIEW_CATEGORIES = 4

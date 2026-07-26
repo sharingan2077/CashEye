@@ -16,6 +16,7 @@
     <string name="empty_period">Keine Vorgänge im ausgewählten Zeitraum</string>
     <string name="empty_period_description">Ändern Sie oben die Filter, um die gewünschten Vorgänge zu finden.</string>
     <string name="details">Details</string>
+    <string name="other">Sonstiges</string>
     <string name="type_expenses">Ausgaben</string>
     <string name="type_income">Einnahmen</string>
     <string name="type_all">Alle</string>
