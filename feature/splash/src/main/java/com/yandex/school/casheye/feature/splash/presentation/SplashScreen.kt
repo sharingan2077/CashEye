@@ -8,17 +8,22 @@ import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import com.airbnb.lottie.LottieComposition
 import com.airbnb.lottie.compose.LottieAnimation
@@ -31,9 +36,11 @@ import com.yandex.school.casheye.feature.splash.R
 
 @Composable
 fun SplashScreen(
+    onReady: () -> Unit,
     onFinish: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val currentOnReady by rememberUpdatedState(onReady)
     val currentOnFinish by rememberUpdatedState(onFinish)
 
     SplashSystemBarStyleEffect()
@@ -51,8 +58,16 @@ fun SplashScreen(
                 min = 0f,
                 max = SPLASH_END_PROGRESS,
             ),
-        speed = 20f, // TODO: Убрать скорость Splash Анимации
+//        speed = 20f, // TODO: Убрать скорость Splash Анимации
+//        speed = 0.01f,
     )
+
+    LaunchedEffect(compositionResult.isFailure, composition) {
+        if (compositionResult.isFailure || composition != null) {
+            withFrameNanos { }
+            currentOnReady()
+        }
+    }
 
     LaunchedEffect(compositionResult.isFailure, composition, progress) {
         if (
@@ -87,8 +102,11 @@ private fun SplashContent(
         LottieAnimation(
             composition = composition,
             progress = { progress },
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop,
+            modifier =
+                Modifier
+                    .size(SPLASH_ICON_SIZE)
+                    .offset(y = SPLASH_ICON_OFFSET_Y),
+            contentScale = ContentScale.Fit,
         )
     }
 }
@@ -151,3 +169,5 @@ private tailrec fun Context.findActivity(): Activity =
     }
 
 private const val SPLASH_END_PROGRESS = 0.6f
+private val SPLASH_ICON_SIZE = 194.dp
+private val SPLASH_ICON_OFFSET_Y = (-24).dp

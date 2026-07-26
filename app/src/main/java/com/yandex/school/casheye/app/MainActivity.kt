@@ -17,7 +17,9 @@ import dev.zacsweers.metrox.viewmodel.LocalMetroViewModelFactory
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        installSplashScreen()
+        var isLottieReady by mutableStateOf(SplashSession.hasFinishedLottie)
+        val splashScreen = installSplashScreen()
+        splashScreen.setKeepOnScreenCondition { !isLottieReady }
         super.onCreate(savedInstanceState)
 
         enableEdgeToEdge()
@@ -31,6 +33,7 @@ class MainActivity : ComponentActivity() {
 
                     if (isSplashVisible) {
                         SplashScreen(
+                            onReady = { isLottieReady = true },
                             onFinish = {
                                 SplashSession.hasFinishedLottie = true
                                 isSplashVisible = false
