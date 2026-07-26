@@ -202,7 +202,7 @@ private fun DateRangeFields(
         DateField(startDate, locale, Modifier.weight(1f))
         Text(
             text = "–",
-            color = MaterialTheme.colorScheme.outline,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
             modifier = Modifier.width(36.dp),
         )

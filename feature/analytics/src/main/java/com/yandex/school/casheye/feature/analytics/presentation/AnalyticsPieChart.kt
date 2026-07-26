@@ -21,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.patrykandpatrick.vico.compose.common.Fill
@@ -30,19 +31,35 @@ import com.patrykandpatrick.vico.compose.pie.PieSize
 import com.patrykandpatrick.vico.compose.pie.data.PieChartModelProducer
 import com.patrykandpatrick.vico.compose.pie.data.pieSeries
 import com.patrykandpatrick.vico.compose.pie.rememberPieChart
+import com.yandex.school.casheye.core.designsystem.theme.CashEyeExtendedTheme
 import com.yandex.school.casheye.feature.analytics.R
 import java.math.BigDecimal
 
 private val singleCategoryPlaceholderRatio = BigDecimal("0.000001")
-internal val otherCategoryColor = Color(0xFFFFB3C7)
-private val expensesTypeColor = Color(0xFFFF6B6B)
-private val incomeTypeColor = Color(0xFF5ECF8B)
+
+internal data class AnalyticsChartPalette(
+    val expense: Color,
+    val income: Color,
+    val other: Color,
+    val surface: Color,
+)
 
 internal data class AnalyticsPieChartItem(
     val label: String,
     val amount: BigDecimal,
     val color: Color,
 )
+
+@Composable
+internal fun analyticsChartPalette(): AnalyticsChartPalette {
+    val extendedColors = CashEyeExtendedTheme.colors
+    return AnalyticsChartPalette(
+        expense = extendedColors.chartExpense,
+        income = extendedColors.chartIncome,
+        other = extendedColors.chartOther,
+        surface = MaterialTheme.colorScheme.surface,
+    )
+}
 
 @Composable
 internal fun AnalyticsPieChart(
@@ -151,16 +168,37 @@ private fun AnalyticsLegend(items: List<AnalyticsPieChartItem>) {
     }
 }
 
-internal fun analyticsColorForCategory(categoryId: Int): Color {
+internal fun analyticsColorForCategory(
+    categoryId: Int,
+    surface: Color,
+): Color {
     val normalizedId = categoryId.toLong() and UINT_MASK
     val hue = (normalizedId.rem(COLOR_SEQUENCE_LENGTH).toFloat() * GOLDEN_ANGLE).rem(FULL_HUE)
-    return Color.hsv(hue = hue, saturation = 0.58f, value = 0.94f)
+    var saturation = CATEGORY_SATURATION
+    var value = CATEGORY_VALUE
+    val lightSurface = surface.luminance() >= LIGHT_SURFACE_LUMINANCE
+
+    repeat(MAX_CONTRAST_ADJUSTMENTS) {
+        val candidate = Color.hsv(hue = hue, saturation = saturation, value = value)
+        if (contrastRatio(candidate, surface) >= MIN_CHART_CONTRAST) return candidate
+
+        if (lightSurface) {
+            value = (value - COLOR_ADJUSTMENT_STEP).coerceAtLeast(0f)
+        } else {
+            saturation = (saturation - COLOR_ADJUSTMENT_STEP).coerceAtLeast(0f)
+        }
+    }
+
+    return Color.hsv(hue = hue, saturation = saturation, value = value)
 }
 
-internal fun analyticsColorForType(type: AnalyticsType): Color =
+internal fun analyticsColorForType(
+    type: AnalyticsType,
+    palette: AnalyticsChartPalette,
+): Color =
     when (type) {
-        AnalyticsType.Expenses -> expensesTypeColor
-        AnalyticsType.Income -> incomeTypeColor
+        AnalyticsType.Expenses -> palette.expense
+        AnalyticsType.Income -> palette.income
         AnalyticsType.All -> error("All is not a chart group")
     }
 
@@ -168,6 +206,7 @@ internal fun analyticsTypePieChartItems(
     summaries: List<AnalyticsTypeSummary>,
     expensesLabel: String,
     incomeLabel: String,
+    palette: AnalyticsChartPalette,
 ): List<AnalyticsPieChartItem> =
     summaries.sortedByDescending { it.amount.abs() }.map { summary ->
         AnalyticsPieChartItem(
@@ -178,24 +217,28 @@ internal fun analyticsTypePieChartItems(
                     AnalyticsType.All -> error("All is not a chart group")
                 },
             amount = summary.amount.abs(),
-            color = analyticsColorForType(summary.type),
+            color = analyticsColorForType(summary.type, palette),
         )
     }
 
-internal fun analyticsPieChartItems(categories: List<AnalyticsCategorySummary>): List<AnalyticsPieChartItem> =
+internal fun analyticsPieChartItems(
+    categories: List<AnalyticsCategorySummary>,
+    palette: AnalyticsChartPalette,
+): List<AnalyticsPieChartItem> =
     categories.map { summary ->
         AnalyticsPieChartItem(
             label = summary.category.name,
             amount = summary.amount,
-            color = analyticsColorForCategory(summary.category.id),
+            color = analyticsColorForCategory(summary.category.id, palette.surface),
         )
     }
 
 internal fun analyticsOverviewPieChartItems(
     categories: List<AnalyticsCategorySummary>,
     otherLabel: String,
+    palette: AnalyticsChartPalette,
 ): List<AnalyticsPieChartItem> {
-    val leadingItems = analyticsPieChartItems(categories.take(MAX_OVERVIEW_CATEGORIES))
+    val leadingItems = analyticsPieChartItems(categories.take(MAX_OVERVIEW_CATEGORIES), palette)
     if (categories.size <= MAX_OVERVIEW_CATEGORIES) return leadingItems
 
     val otherAmount =
@@ -206,8 +249,17 @@ internal fun analyticsOverviewPieChartItems(
         AnalyticsPieChartItem(
             label = otherLabel,
             amount = otherAmount,
-            color = otherCategoryColor,
+            color = palette.other,
         )
+}
+
+internal fun contrastRatio(
+    first: Color,
+    second: Color,
+): Float {
+    val lighter = maxOf(first.luminance(), second.luminance())
+    val darker = minOf(first.luminance(), second.luminance())
+    return (lighter + CONTRAST_LUMINANCE_OFFSET) / (darker + CONTRAST_LUMINANCE_OFFSET)
 }
 
 internal fun analyticsPieChartValues(items: List<AnalyticsPieChartItem>): List<BigDecimal> {
@@ -224,3 +276,10 @@ private const val COLOR_SEQUENCE_LENGTH = 1_000_003L
 private const val FULL_HUE = 360L
 private const val GOLDEN_ANGLE = 137.508f
 private const val MAX_OVERVIEW_CATEGORIES = 4
+private const val CATEGORY_SATURATION = 0.58f
+private const val CATEGORY_VALUE = 0.94f
+private const val LIGHT_SURFACE_LUMINANCE = 0.5f
+private const val MIN_CHART_CONTRAST = 3f
+private const val COLOR_ADJUSTMENT_STEP = 0.02f
+private const val MAX_CONTRAST_ADJUSTMENTS = 50
+private const val CONTRAST_LUMINANCE_OFFSET = 0.05f

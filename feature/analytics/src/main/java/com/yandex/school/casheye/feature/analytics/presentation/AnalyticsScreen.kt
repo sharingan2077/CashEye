@@ -65,7 +65,12 @@ fun AnalyticsScreen(
         onRefresh = { onIntent(AnalyticsIntent.Refresh) },
         modifier = modifier.fillMaxSize(),
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.surface),
+        ) {
             when (state) {
                 is AnalyticsUiState.Loading -> {
                     DelayedCircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
@@ -99,6 +104,7 @@ private fun AnalyticsContent(
 ) {
     val chartModelProducer = remember { PieChartModelProducer() }
     var animateChartIn by remember { mutableStateOf(true) }
+    val chartPalette = analyticsChartPalette()
     val otherLabel = stringResource(R.string.other)
     val expensesLabel = stringResource(R.string.type_expenses)
     val incomeLabel = stringResource(R.string.type_income)
@@ -110,11 +116,12 @@ private fun AnalyticsContent(
             otherLabel,
             expensesLabel,
             incomeLabel,
+            chartPalette,
         ) {
             if (state.data.filters.type == AnalyticsType.All) {
-                analyticsTypePieChartItems(state.typeSummaries, expensesLabel, incomeLabel)
+                analyticsTypePieChartItems(state.typeSummaries, expensesLabel, incomeLabel, chartPalette)
             } else {
-                analyticsOverviewPieChartItems(state.categorySummaries, otherLabel)
+                analyticsOverviewPieChartItems(state.categorySummaries, otherLabel, chartPalette)
             }
         }
     LaunchedEffect(chartItems) {
@@ -179,7 +186,7 @@ private fun AnalyticsContent(
                 amountSubtitle = transaction.originalAmountSubtitle(state.data.filters.type),
             )
             if (index != state.transactions.lastIndex || state.unconvertedTransactions.isNotEmpty()) {
-                HorizontalDivider(color = MaterialTheme.colorScheme.outline)
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             }
         }
         itemsIndexed(
@@ -205,7 +212,7 @@ private fun AnalyticsContent(
                 amountSubtitle = stringResource(R.string.not_included_missing_rate),
             )
             if (index != state.unconvertedTransactions.lastIndex) {
-                HorizontalDivider(color = MaterialTheme.colorScheme.outline)
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             }
         }
     }
@@ -412,21 +419,21 @@ private fun FilterView(
             value = filters.type.title(),
             onClick = { onIntent(AnalyticsIntent.OpenFilter(AnalyticsFilterKind.Type)) },
         )
-        HorizontalDivider(color = MaterialTheme.colorScheme.outline)
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         AnalyticsFilterItem(
             iconPainter = painterResource(R.drawable.calendar),
             title = stringResource(R.string.filter_period),
             value = filters.period.formatted(),
             onClick = { onIntent(AnalyticsIntent.OpenFilter(AnalyticsFilterKind.Period)) },
         )
-        HorizontalDivider(color = MaterialTheme.colorScheme.outline)
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         AnalyticsFilterItem(
             iconPainter = painterResource(R.drawable.tag),
             title = stringResource(R.string.filter_categories),
             value = categoriesTitle(filters.categoryIds, data.categories),
             onClick = { onIntent(AnalyticsIntent.OpenFilter(AnalyticsFilterKind.Categories)) },
         )
-        HorizontalDivider(color = MaterialTheme.colorScheme.outline)
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         AnalyticsFilterItem(
             iconPainter = painterResource(R.drawable.credit_card),
             title = stringResource(R.string.filter_account),

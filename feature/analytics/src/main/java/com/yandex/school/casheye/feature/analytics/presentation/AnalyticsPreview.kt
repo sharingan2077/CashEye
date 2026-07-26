@@ -37,10 +37,29 @@ private fun AnalyticsScreenPreview() {
     AnalyticsPreview()
 }
 
+@Preview(
+    name = "Details Light",
+    showBackground = true,
+    widthDp = 412,
+    heightDp = 892,
+    uiMode = Configuration.UI_MODE_NIGHT_NO,
+)
+@Preview(
+    name = "Details Dark",
+    showBackground = true,
+    widthDp = 412,
+    heightDp = 892,
+    uiMode = Configuration.UI_MODE_NIGHT_YES,
+)
+@Composable
+private fun AnalyticsDetailsPreview() {
+    AnalyticsPreview(activeSheet = AnalyticsSheet.Details)
+}
+
 @Composable
 private fun AnalyticsPreview(activeSheet: AnalyticsSheet? = null) {
     CashEyeTheme(dynamicColor = false) {
-        Surface(color = MaterialTheme.colorScheme.background) {
+        Surface(color = MaterialTheme.colorScheme.surface) {
             AnalyticsScreen(
                 state = analyticsPreviewState(activeSheet),
                 onIntent = {},

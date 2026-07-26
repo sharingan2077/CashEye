@@ -132,7 +132,7 @@ internal fun AnalyticsModalBottomSheet(
                         Modifier
                             .padding(top = 12.dp)
                             .size(width = 32.dp, height = 4.dp)
-                            .background(MaterialTheme.colorScheme.outline, RoundedCornerShape(100.dp)),
+                            .background(MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(100.dp)),
                 )
             }
         },
@@ -388,12 +388,13 @@ private fun DetailsSheet(
     val gestureCoordinator = rememberSheetListGestureCoordinator(listState)
     val expensesLabel = stringResource(R.string.type_expenses)
     val incomeLabel = stringResource(R.string.type_income)
+    val chartPalette = analyticsChartPalette()
     val isAllTypes = state.data.filters.type == AnalyticsType.All
     val chartItems =
         if (isAllTypes) {
-            analyticsTypePieChartItems(state.typeSummaries, expensesLabel, incomeLabel)
+            analyticsTypePieChartItems(state.typeSummaries, expensesLabel, incomeLabel, chartPalette)
         } else {
-            analyticsPieChartItems(state.categorySummaries)
+            analyticsPieChartItems(state.categorySummaries, chartPalette)
         }
     val chartTotal =
         if (isAllTypes) {
@@ -455,7 +456,7 @@ private fun DetailsSheet(
                                 currencyCode = state.currencyCode,
                             ),
                         total = chartTotal,
-                        color = analyticsColorForType(summary.type),
+                        color = analyticsColorForType(summary.type, chartPalette),
                     )
                 }
             } else {
@@ -471,7 +472,7 @@ private fun DetailsSheet(
                                 currencyCode = state.currencyCode,
                             ),
                         total = chartTotal,
-                        color = analyticsColorForCategory(summary.category.id),
+                        color = analyticsColorForCategory(summary.category.id, chartPalette.surface),
                     )
                 }
             }
@@ -530,7 +531,7 @@ private fun DetailsSummaryRow(
                     .clip(progressShape),
             progress = { fraction.toFloat() },
             color = color,
-            trackColor = MaterialTheme.colorScheme.outline,
+            trackColor = MaterialTheme.colorScheme.outlineVariant,
             strokeCap = StrokeCap.Butt,
             gapSize = 0.dp,
             drawStopIndicator = {},
