@@ -2,6 +2,7 @@ package com.yandex.school.casheye.feature.income.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.yandex.school.casheye.core.model.MoneyAmount
 import com.yandex.school.casheye.domain.finance.DeleteTransactionUseCase
 import com.yandex.school.casheye.domain.finance.EditorResult
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
@@ -83,7 +84,10 @@ class IncomeViewModel(
                 IncomeUiState.Empty()
             } else {
                 content.copy(
-                    total = content.total.subtract(removed.amount),
+                    nativeTotals =
+                        content.nativeTotals.subtract(
+                            amount = MoneyAmount(removed.amount, removed.currency),
+                        ),
                     transactions = remaining,
                     isRefreshing = false,
                 )
@@ -173,14 +177,24 @@ class IncomeViewModel(
                 IncomeUiState.Empty(isRefreshing)
             } else {
                 IncomeUiState.Content(
-                    total = summary.total,
-                    currencyCode = summary.currencyCode.isoCode,
+                    nativeTotals = summary.nativeTotals,
                     transactions = summary.transactions,
                     isRefreshing = isRefreshing,
                 )
             }
     }
 }
+
+private fun List<MoneyAmount>.subtract(amount: MoneyAmount): List<MoneyAmount> =
+    mapNotNull { total ->
+        if (total.currency != amount.currency) {
+            total
+        } else {
+            total
+                .copy(amount = total.amount - amount.amount)
+                .takeUnless { it.amount.signum() == 0 }
+        }
+    }
 
 private fun IncomeUiState.isRefreshable(): Boolean = this is IncomeUiState.Content || this is IncomeUiState.Empty
 

@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -26,11 +25,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.yandex.school.casheye.core.designsystem.component.DelayedCircularProgressIndicator
 import com.yandex.school.casheye.core.designsystem.component.ErrorState
 import com.yandex.school.casheye.core.designsystem.component.ErrorStateType
 import com.yandex.school.casheye.core.designsystem.component.MoneyListItem
+import com.yandex.school.casheye.core.designsystem.component.NativeMoneySummary
 import com.yandex.school.casheye.core.designsystem.component.PullToRefreshContainer
 import com.yandex.school.casheye.core.designsystem.component.SwipeToRevealDeleteItem
 import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
@@ -98,12 +97,15 @@ private fun IncomeContent(
             modifier
                 .fillMaxSize(),
     ) {
-        IncomeHero(
-            total =
-                formatAmount(
-                    amount = state.total,
-                    currencyCode = state.currencyCode,
-                ),
+        NativeMoneySummary(
+            title = stringResource(R.string.income_total),
+            nativeTotals =
+                state.nativeTotals.map {
+                    formatAmount(
+                        amount = it.amount,
+                        currencyCode = it.currency.isoCode,
+                    )
+                },
         )
         LazyColumn(
             modifier =
@@ -162,30 +164,6 @@ private fun EmptyIncome(modifier: Modifier = Modifier) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center,
-        )
-    }
-}
-
-@Composable
-private fun IncomeHero(total: String) {
-    Column(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .height(117.dp)
-                .padding(start = 20.dp, top = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        Text(
-            text = stringResource(R.string.income_total),
-            style = MaterialTheme.typography.labelLarge.copy(lineHeight = 16.sp),
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-        )
-        Text(
-            text = total,
-            modifier = Modifier.fillMaxWidth(),
-            style = MaterialTheme.typography.displayMedium,
-            color = MaterialTheme.colorScheme.onSurface,
         )
     }
 }

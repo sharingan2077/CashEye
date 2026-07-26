@@ -2,6 +2,11 @@
     <string name="empty_accounts">No accounts yet</string>
     <string name="empty_accounts_description">Add your first account to track your balance.</string>
     <string name="balance_total">balance, total</string>
+    <string name="balance_valuation">≈ %1$s</string>
+    <string name="balance_valuation_dated">≈ %1$s · rates as of %2$s</string>
+    <string name="balance_valuation_partial">Included ≈ %1$s</string>
+    <string name="balance_valuation_partial_dated">Included ≈ %1$s · rates as of %2$s</string>
+    <string name="balance_not_included">Not included: %1$s</string>
     <string name="retry">Retry</string>
     <string name="error_network">Check your internet connection</string>
     <string name="error_authorization">Authorization failed</string>

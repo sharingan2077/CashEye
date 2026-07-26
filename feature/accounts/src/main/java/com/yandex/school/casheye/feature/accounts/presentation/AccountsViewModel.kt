@@ -2,6 +2,7 @@ package com.yandex.school.casheye.feature.accounts.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.yandex.school.casheye.core.model.MoneyAmount
 import com.yandex.school.casheye.domain.finance.AccountsLoadResult
 import com.yandex.school.casheye.domain.finance.AccountsSummary
 import com.yandex.school.casheye.domain.finance.DeleteAccountUseCase
@@ -108,7 +109,11 @@ class AccountsViewModel(
                 AccountsUiState.Empty()
             } else {
                 content.copy(
-                    total = content.total.subtract(removed.balance),
+                    nativeTotals =
+                        content.nativeTotals.subtract(
+                            amount = MoneyAmount(removed.balance, removed.currency),
+                        ),
+                    currentValuation = null,
                     accounts = remaining,
                     deleteConfirmation = null,
                     isRefreshing = false,
@@ -187,8 +192,8 @@ class AccountsViewModel(
                 AccountsUiState.Empty(isRefreshing)
             } else {
                 AccountsUiState.Content(
-                    total = summary.total,
-                    currencyCode = summary.currencyCode.isoCode,
+                    nativeTotals = summary.nativeTotals,
+                    currentValuation = summary.currentValuation,
                     accounts = summary.accounts,
                     deleteConfirmation = deleteConfirmation,
                     isRefreshing = isRefreshing,
@@ -196,6 +201,17 @@ class AccountsViewModel(
             }
     }
 }
+
+private fun List<MoneyAmount>.subtract(amount: MoneyAmount): List<MoneyAmount> =
+    mapNotNull { total ->
+        if (total.currency != amount.currency) {
+            total
+        } else {
+            total
+                .copy(amount = total.amount - amount.amount)
+                .takeUnless { it.amount.signum() == 0 }
+        }
+    }
 
 private fun AccountsUiState.isRefreshable(): Boolean = this is AccountsUiState.Content || this is AccountsUiState.Empty
 

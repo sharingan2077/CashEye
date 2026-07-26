@@ -1,7 +1,8 @@
 package com.yandex.school.casheye.domain.finance
 
-import com.yandex.school.casheye.core.model.CurrencyCode
 import com.yandex.school.casheye.core.model.Account
+import com.yandex.school.casheye.core.model.CurrencyCode
+import com.yandex.school.casheye.core.model.MoneyAmount
 import com.yandex.school.casheye.core.model.Transaction
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,7 +17,7 @@ class ReportingCurrencyConsumersTest {
     private val reportingCurrencyRepository = FakeReportingCurrencyRepository(CurrencyCode.USD)
 
     @Test
-    fun `daily accounts and analytics summaries use the same reporting currency`() =
+    fun `analytics keeps reporting currency while empty native summaries stay empty`() =
         runTest {
             val date = LocalDate.of(2026, 7, 26)
 
@@ -40,8 +41,8 @@ class ReportingCurrencyConsumersTest {
                         ),
                     ).first() as AnalyticsLoadResult.Success
 
-            assertEquals(CurrencyCode.USD, daily.summary.currencyCode)
-            assertEquals(CurrencyCode.USD, accounts.summary.currencyCode)
+            assertEquals(emptyList<MoneyAmount>(), daily.summary.nativeTotals)
+            assertEquals(emptyList<MoneyAmount>(), accounts.summary.nativeTotals)
             assertEquals(CurrencyCode.USD, analytics.summary.currencyCode)
         }
 }

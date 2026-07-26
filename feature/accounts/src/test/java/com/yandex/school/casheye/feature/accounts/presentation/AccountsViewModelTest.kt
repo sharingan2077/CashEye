@@ -1,6 +1,8 @@
 package com.yandex.school.casheye.feature.accounts.presentation
 
 import com.yandex.school.casheye.core.model.Account
+import com.yandex.school.casheye.core.model.CurrencyCode
+import com.yandex.school.casheye.core.model.MoneyAmount
 import com.yandex.school.casheye.domain.finance.AccountsLoadResult
 import com.yandex.school.casheye.domain.finance.AccountsSummary
 import com.yandex.school.casheye.domain.finance.DeleteAccountUseCase
@@ -51,14 +53,19 @@ class AccountsViewModelTest {
     @Test
     fun `successful load exposes account content`() =
         runTest {
-            val summary = AccountsSummary(BigDecimal("125000.00"), "RUB", listOf(account()))
+            val summary =
+                AccountsSummary(
+                    nativeTotals = listOf(MoneyAmount(BigDecimal("125000.00"), CurrencyCode.RUB)),
+                    currentValuation = null,
+                    accounts = listOf(account()),
+                )
             val repository = FakeAccountsRepository(AccountsLoadResult.Success(summary))
             val viewModel = accountsViewModel(repository)
 
             advanceUntilIdle()
 
             assertEquals(
-                AccountsUiState.Content(summary.total, summary.currencyCode.isoCode, summary.accounts),
+                AccountsUiState.Content(summary.nativeTotals, summary.currentValuation, summary.accounts),
                 viewModel.state.value,
             )
             assertEquals(listOf("RUB"), repository.requestedCurrencies)
@@ -70,7 +77,7 @@ class AccountsViewModelTest {
             val viewModel =
                 accountsViewModel(
                     FakeAccountsRepository(
-                        AccountsLoadResult.Success(AccountsSummary(BigDecimal.ZERO, "RUB", emptyList())),
+                        AccountsLoadResult.Success(AccountsSummary(emptyList(), null, emptyList())),
                     ),
                 )
 
@@ -85,7 +92,7 @@ class AccountsViewModelTest {
             val repository =
                 FakeAccountsRepository(
                     AccountsLoadResult.Failure(FinanceFailureReason.Network),
-                    AccountsLoadResult.Success(AccountsSummary(BigDecimal.ZERO, "RUB", emptyList())),
+                    AccountsLoadResult.Success(AccountsSummary(emptyList(), null, emptyList())),
                 )
             val viewModel = accountsViewModel(repository)
 
@@ -103,7 +110,12 @@ class AccountsViewModelTest {
     @Test
     fun `failed refresh keeps content and emits show error effect`() =
         runTest {
-            val summary = AccountsSummary(BigDecimal("125000.00"), "RUB", listOf(account()))
+            val summary =
+                AccountsSummary(
+                    nativeTotals = listOf(MoneyAmount(BigDecimal("125000.00"), CurrencyCode.RUB)),
+                    currentValuation = null,
+                    accounts = listOf(account()),
+                )
             val viewModel =
                 accountsViewModel(
                     FakeAccountsRepository(
@@ -118,7 +130,7 @@ class AccountsViewModelTest {
             advanceUntilIdle()
 
             assertEquals(
-                AccountsUiState.Content(summary.total, summary.currencyCode.isoCode, summary.accounts),
+                AccountsUiState.Content(summary.nativeTotals, summary.currentValuation, summary.accounts),
                 viewModel.state.value,
             )
             assertEquals(AccountsEffect.ShowError(FinanceFailureReason.Server), effect.await())
@@ -129,8 +141,8 @@ class AccountsViewModelTest {
         runTest {
             val repository =
                 FakeAccountsRepository(
-                    AccountsLoadResult.Success(AccountsSummary(BigDecimal.ZERO, "RUB", emptyList())),
-                    AccountsLoadResult.Success(AccountsSummary(BigDecimal.ZERO, "RUB", emptyList())),
+                    AccountsLoadResult.Success(AccountsSummary(emptyList(), null, emptyList())),
+                    AccountsLoadResult.Success(AccountsSummary(emptyList(), null, emptyList())),
                 )
             val viewModel = accountsViewModel(repository)
 
@@ -230,7 +242,12 @@ class AccountsViewModelTest {
     @Test
     fun `account with transactions requires confirmation before cascade delete`() =
         runTest {
-            val summary = AccountsSummary(BigDecimal("125000.00"), "RUB", listOf(account()))
+            val summary =
+                AccountsSummary(
+                    nativeTotals = listOf(MoneyAmount(BigDecimal("125000.00"), CurrencyCode.RUB)),
+                    currentValuation = null,
+                    accounts = listOf(account()),
+                )
             val repository = FakeAccountsRepository(AccountsLoadResult.Success(summary))
             repository.transactionCount = 3
             val viewModel = accountsViewModel(repository)

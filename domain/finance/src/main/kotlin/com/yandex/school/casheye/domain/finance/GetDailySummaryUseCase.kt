@@ -1,9 +1,9 @@
 package com.yandex.school.casheye.domain.finance
 
+import com.yandex.school.casheye.core.model.MoneyAmount
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
-import java.math.BigDecimal
 import java.time.LocalDate
 
 class GetDailySummaryUseCase(
@@ -39,8 +39,11 @@ class GetDailySummaryUseCase(
             val result: FinanceLoadResult =
                 FinanceLoadResult.Success(
                     FinanceSummary(
-                        total = finance.fold(BigDecimal.ZERO) { total, transaction -> total + transaction.amount },
-                        currencyCode = reportingCurrency,
+                        nativeTotals =
+                            aggregateNativeMoney(
+                                amounts = finance.map { MoneyAmount(it.amount, it.currency) },
+                                reportingCurrency = reportingCurrency,
+                            ),
                         transactions = finance,
                     ),
                 )

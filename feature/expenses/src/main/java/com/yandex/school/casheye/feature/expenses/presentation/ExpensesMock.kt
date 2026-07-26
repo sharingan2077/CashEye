@@ -3,6 +3,7 @@ package com.yandex.school.casheye.feature.expenses.presentation
 import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.Category
 import com.yandex.school.casheye.core.model.CurrencyCode
+import com.yandex.school.casheye.core.model.MoneyAmount
 import com.yandex.school.casheye.core.model.Transaction
 import java.math.BigDecimal
 import java.time.Instant
@@ -19,8 +20,7 @@ private val MockAccount =
 
 internal val expensesUiStateMock =
     ExpensesUiState.Content(
-        total = BigDecimal("323524"),
-        currencyCode = CurrencyCode.RUB.isoCode,
+        nativeTotals = listOf(MoneyAmount(BigDecimal("323524"), CurrencyCode.RUB)),
         transactions =
             listOf(
                 expenseTransaction(1, 101, "Покупка канцтоваров", "✏️", "1200"),

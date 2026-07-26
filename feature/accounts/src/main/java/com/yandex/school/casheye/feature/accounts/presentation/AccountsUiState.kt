@@ -1,8 +1,9 @@
 package com.yandex.school.casheye.feature.accounts.presentation
 
 import com.yandex.school.casheye.core.model.Account
+import com.yandex.school.casheye.core.model.MoneyAmount
+import com.yandex.school.casheye.domain.finance.AccountsCurrentValuation
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
-import java.math.BigDecimal
 
 sealed interface AccountsUiState {
     val isRefreshing: Boolean
@@ -15,8 +16,8 @@ sealed interface AccountsUiState {
     ) : AccountsUiState
 
     data class Content(
-        val total: BigDecimal,
-        val currencyCode: String,
+        val nativeTotals: List<MoneyAmount>,
+        val currentValuation: AccountsCurrentValuation?,
         val accounts: List<Account>,
         val deleteConfirmation: AccountDeleteConfirmation? = null,
         override val isRefreshing: Boolean = false,

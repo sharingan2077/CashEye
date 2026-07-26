@@ -2,6 +2,11 @@
     <string name="empty_accounts">Noch keine Konten</string>
     <string name="empty_accounts_description">Fügen Sie Ihr erstes Konto hinzu, um Ihren Kontostand zu verfolgen.</string>
     <string name="balance_total">Kontostand, gesamt</string>
+    <string name="balance_valuation">≈ %1$s</string>
+    <string name="balance_valuation_dated">≈ %1$s · Kurse vom %2$s</string>
+    <string name="balance_valuation_partial">Berücksichtigt ≈ %1$s</string>
+    <string name="balance_valuation_partial_dated">Berücksichtigt ≈ %1$s · Kurse vom %2$s</string>
+    <string name="balance_not_included">Nicht berücksichtigt: %1$s</string>
     <string name="retry">Wiederholen</string>
     <string name="error_network">Internetverbindung prüfen</string>
     <string name="error_authorization">Anmeldung fehlgeschlagen</string>

@@ -2,6 +2,8 @@ package com.yandex.school.casheye.feature.expenses.presentation
 
 import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.Category
+import com.yandex.school.casheye.core.model.CurrencyCode
+import com.yandex.school.casheye.core.model.MoneyAmount
 import com.yandex.school.casheye.core.model.Transaction
 import com.yandex.school.casheye.domain.finance.DeleteTransactionUseCase
 import com.yandex.school.casheye.domain.finance.EditorResult
@@ -58,14 +60,18 @@ class ExpensesViewModelTest {
     @Test
     fun `successful load exposes content for expenses`() =
         runTest {
-            val summary = FinanceSummary(BigDecimal("25.00"), "RUB", listOf(transaction()))
+            val summary =
+                FinanceSummary(
+                    nativeTotals = listOf(MoneyAmount(BigDecimal("25.00"), CurrencyCode.RUB)),
+                    transactions = listOf(transaction()),
+                )
             val repository = FakeFinanceRepository(FinanceLoadResult.Success(summary))
             val viewModel = expensesViewModel(repository, clock)
 
             advanceUntilIdle()
 
             assertEquals(
-                ExpensesUiState.Content(summary.total, summary.currencyCode.isoCode, summary.transactions),
+                ExpensesUiState.Content(summary.nativeTotals, summary.transactions),
                 viewModel.state.value,
             )
         }
@@ -76,7 +82,7 @@ class ExpensesViewModelTest {
             val viewModel =
                 expensesViewModel(
                     FakeFinanceRepository(
-                        FinanceLoadResult.Success(FinanceSummary(BigDecimal.ZERO, "RUB", emptyList())),
+                        FinanceLoadResult.Success(FinanceSummary(emptyList(), emptyList())),
                     ),
                     clock,
                 )
@@ -103,7 +109,11 @@ class ExpensesViewModelTest {
     @Test
     fun `failed refresh keeps content and emits show error effect`() =
         runTest {
-            val summary = FinanceSummary(BigDecimal("25.00"), "RUB", listOf(transaction()))
+            val summary =
+                FinanceSummary(
+                    nativeTotals = listOf(MoneyAmount(BigDecimal("25.00"), CurrencyCode.RUB)),
+                    transactions = listOf(transaction()),
+                )
             val viewModel =
                 expensesViewModel(
                     FakeFinanceRepository(
@@ -119,7 +129,7 @@ class ExpensesViewModelTest {
             advanceUntilIdle()
 
             assertEquals(
-                ExpensesUiState.Content(summary.total, summary.currencyCode.isoCode, summary.transactions),
+                ExpensesUiState.Content(summary.nativeTotals, summary.transactions),
                 viewModel.state.value,
             )
             assertEquals(ExpensesEffect.ShowError(FinanceFailureReason.Server), effect.await())
@@ -130,8 +140,8 @@ class ExpensesViewModelTest {
         runTest {
             val repository =
                 FakeFinanceRepository(
-                    FinanceLoadResult.Success(FinanceSummary(BigDecimal.ZERO, "RUB", emptyList())),
-                    FinanceLoadResult.Success(FinanceSummary(BigDecimal.ZERO, "RUB", emptyList())),
+                    FinanceLoadResult.Success(FinanceSummary(emptyList(), emptyList())),
+                    FinanceLoadResult.Success(FinanceSummary(emptyList(), emptyList())),
                 )
             val viewModel = expensesViewModel(repository, clock)
             val selectedDate = LocalDate.of(2026, 6, 18)
@@ -148,7 +158,7 @@ class ExpensesViewModelTest {
         runTest {
             val repository =
                 FakeFinanceRepository(
-                    FinanceLoadResult.Success(FinanceSummary(BigDecimal.ZERO, "RUB", emptyList())),
+                    FinanceLoadResult.Success(FinanceSummary(emptyList(), emptyList())),
                 )
             val viewModel = expensesViewModel(repository, clock)
 
@@ -164,8 +174,8 @@ class ExpensesViewModelTest {
         runTest {
             val repository =
                 FakeFinanceRepository(
-                    FinanceLoadResult.Success(FinanceSummary(BigDecimal.ZERO, "RUB", emptyList())),
-                    FinanceLoadResult.Success(FinanceSummary(BigDecimal.ZERO, "RUB", emptyList())),
+                    FinanceLoadResult.Success(FinanceSummary(emptyList(), emptyList())),
+                    FinanceLoadResult.Success(FinanceSummary(emptyList(), emptyList())),
                 )
             val viewModel = expensesViewModel(repository, clock)
 
@@ -288,7 +298,11 @@ class ExpensesViewModelTest {
     @Test
     fun `deleting expense removes it and emits success effect`() =
         runTest {
-            val summary = FinanceSummary(BigDecimal("25.00"), "RUB", listOf(transaction()))
+            val summary =
+                FinanceSummary(
+                    nativeTotals = listOf(MoneyAmount(BigDecimal("25.00"), CurrencyCode.RUB)),
+                    transactions = listOf(transaction()),
+                )
             val repository = FakeFinanceRepository(FinanceLoadResult.Success(summary))
             val viewModel = expensesViewModel(repository, clock)
 

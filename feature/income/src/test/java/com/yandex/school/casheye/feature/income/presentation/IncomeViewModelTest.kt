@@ -2,6 +2,8 @@ package com.yandex.school.casheye.feature.income.presentation
 
 import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.Category
+import com.yandex.school.casheye.core.model.CurrencyCode
+import com.yandex.school.casheye.core.model.MoneyAmount
 import com.yandex.school.casheye.core.model.Transaction
 import com.yandex.school.casheye.domain.finance.DeleteTransactionUseCase
 import com.yandex.school.casheye.domain.finance.EditorResult
@@ -58,14 +60,18 @@ class IncomeViewModelTest {
     @Test
     fun `successful income load exposes content`() =
         runTest {
-            val summary = FinanceSummary(BigDecimal("125000.00"), "RUB", listOf(incomeTransaction()))
+            val summary =
+                FinanceSummary(
+                    nativeTotals = listOf(MoneyAmount(BigDecimal("125000.00"), CurrencyCode.RUB)),
+                    transactions = listOf(incomeTransaction()),
+                )
             val repository = FakeIncomeFinanceRepository(FinanceLoadResult.Success(summary))
             val viewModel = incomeViewModel(repository, clock)
 
             advanceUntilIdle()
 
             assertEquals(
-                IncomeUiState.Content(summary.total, summary.currencyCode.isoCode, summary.transactions),
+                IncomeUiState.Content(summary.nativeTotals, summary.transactions),
                 viewModel.state.value,
             )
         }
@@ -76,7 +82,7 @@ class IncomeViewModelTest {
             val viewModel =
                 incomeViewModel(
                     FakeIncomeFinanceRepository(
-                        FinanceLoadResult.Success(FinanceSummary(BigDecimal.ZERO, "RUB", emptyList())),
+                        FinanceLoadResult.Success(FinanceSummary(emptyList(), emptyList())),
                     ),
                     clock,
                 )
@@ -103,7 +109,11 @@ class IncomeViewModelTest {
     @Test
     fun `failed refresh keeps content and emits show error effect`() =
         runTest {
-            val summary = FinanceSummary(BigDecimal("125000.00"), "RUB", listOf(incomeTransaction()))
+            val summary =
+                FinanceSummary(
+                    nativeTotals = listOf(MoneyAmount(BigDecimal("125000.00"), CurrencyCode.RUB)),
+                    transactions = listOf(incomeTransaction()),
+                )
             val viewModel =
                 incomeViewModel(
                     FakeIncomeFinanceRepository(
@@ -119,7 +129,7 @@ class IncomeViewModelTest {
             advanceUntilIdle()
 
             assertEquals(
-                IncomeUiState.Content(summary.total, summary.currencyCode.isoCode, summary.transactions),
+                IncomeUiState.Content(summary.nativeTotals, summary.transactions),
                 viewModel.state.value,
             )
             assertEquals(IncomeEffect.ShowError(FinanceFailureReason.Server), effect.await())
@@ -130,9 +140,9 @@ class IncomeViewModelTest {
         runTest {
             val repository =
                 FakeIncomeFinanceRepository(
-                    FinanceLoadResult.Success(FinanceSummary(BigDecimal.ZERO, "RUB", emptyList())),
-                    FinanceLoadResult.Success(FinanceSummary(BigDecimal.ZERO, "RUB", emptyList())),
-                    FinanceLoadResult.Success(FinanceSummary(BigDecimal.ZERO, "RUB", emptyList())),
+                    FinanceLoadResult.Success(FinanceSummary(emptyList(), emptyList())),
+                    FinanceLoadResult.Success(FinanceSummary(emptyList(), emptyList())),
+                    FinanceLoadResult.Success(FinanceSummary(emptyList(), emptyList())),
                 )
             val viewModel = incomeViewModel(repository, clock)
             val selectedDate = LocalDate.of(2026, 6, 18)
@@ -154,7 +164,7 @@ class IncomeViewModelTest {
         runTest {
             val repository =
                 FakeIncomeFinanceRepository(
-                    FinanceLoadResult.Success(FinanceSummary(BigDecimal.ZERO, "RUB", emptyList())),
+                    FinanceLoadResult.Success(FinanceSummary(emptyList(), emptyList())),
                 )
             val viewModel = incomeViewModel(repository, clock)
 
@@ -170,8 +180,8 @@ class IncomeViewModelTest {
         runTest {
             val repository =
                 FakeIncomeFinanceRepository(
-                    FinanceLoadResult.Success(FinanceSummary(BigDecimal.ZERO, "RUB", emptyList())),
-                    FinanceLoadResult.Success(FinanceSummary(BigDecimal.ZERO, "RUB", emptyList())),
+                    FinanceLoadResult.Success(FinanceSummary(emptyList(), emptyList())),
+                    FinanceLoadResult.Success(FinanceSummary(emptyList(), emptyList())),
                 )
             val viewModel = incomeViewModel(repository, clock)
 
@@ -294,7 +304,11 @@ class IncomeViewModelTest {
     @Test
     fun `deleting income removes it and emits success effect`() =
         runTest {
-            val summary = FinanceSummary(BigDecimal("125000.00"), "RUB", listOf(incomeTransaction()))
+            val summary =
+                FinanceSummary(
+                    nativeTotals = listOf(MoneyAmount(BigDecimal("125000.00"), CurrencyCode.RUB)),
+                    transactions = listOf(incomeTransaction()),
+                )
             val repository = FakeIncomeFinanceRepository(FinanceLoadResult.Success(summary))
             val viewModel = incomeViewModel(repository, clock)
 

@@ -3,6 +3,7 @@ package com.yandex.school.casheye.domain.finance
 import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.Category
 import com.yandex.school.casheye.core.model.CurrencyCode
+import com.yandex.school.casheye.core.model.MoneyAmount
 import com.yandex.school.casheye.core.model.Transaction
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
@@ -113,15 +114,18 @@ sealed interface AnalyticsLoadResult {
 }
 
 data class AccountsSummary(
-    val total: BigDecimal,
-    val currencyCode: CurrencyCode,
+    val nativeTotals: List<MoneyAmount>,
+    val currentValuation: AccountsCurrentValuation?,
     val accounts: List<Account>,
+)
+
+data class AccountsCurrentValuation(
+    val includedTotal: MoneyAmount?,
+    val excludedNativeTotals: List<MoneyAmount>,
+    val rateDate: LocalDate?,
 ) {
-    constructor(
-        total: BigDecimal,
-        currencyCode: String,
-        accounts: List<Account>,
-    ) : this(total, CurrencyCode.fromIsoCode(currencyCode), accounts)
+    val isComplete: Boolean
+        get() = excludedNativeTotals.isEmpty()
 }
 
 sealed interface AccountsLoadResult {
@@ -140,16 +144,9 @@ enum class TransactionKind {
 }
 
 data class FinanceSummary(
-    val total: BigDecimal,
-    val currencyCode: CurrencyCode,
+    val nativeTotals: List<MoneyAmount>,
     val transactions: List<Transaction>,
-) {
-    constructor(
-        total: BigDecimal,
-        currencyCode: String,
-        transactions: List<Transaction>,
-    ) : this(total, CurrencyCode.fromIsoCode(currencyCode), transactions)
-}
+)
 
 sealed interface FinanceLoadResult {
     data class Success(

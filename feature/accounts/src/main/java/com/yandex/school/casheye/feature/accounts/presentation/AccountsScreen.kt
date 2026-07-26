@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -29,11 +28,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.yandex.school.casheye.core.designsystem.component.DelayedCircularProgressIndicator
 import com.yandex.school.casheye.core.designsystem.component.ErrorState
 import com.yandex.school.casheye.core.designsystem.component.ErrorStateType
 import com.yandex.school.casheye.core.designsystem.component.MoneyListItem
+import com.yandex.school.casheye.core.designsystem.component.NativeMoneySummary
 import com.yandex.school.casheye.core.designsystem.component.PullToRefreshContainer
 import com.yandex.school.casheye.core.designsystem.component.SwipeToRevealDeleteItem
 import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
@@ -41,6 +40,8 @@ import com.yandex.school.casheye.core.format.formatAmount
 import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import com.yandex.school.casheye.feature.accounts.R
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 
 @Composable
 fun AccountsScreen(
@@ -125,11 +126,7 @@ private fun AccountsContent(
 ) {
     Column(modifier = modifier.fillMaxSize()) {
         AccountsHero(
-            total =
-                formatAmount(
-                    amount = state.total,
-                    currencyCode = state.currencyCode,
-                ),
+            state = state,
         )
         LazyColumn(
             modifier =
@@ -193,27 +190,50 @@ private fun EmptyAccounts(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun AccountsHero(total: String) {
-    Column(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .height(117.dp)
-                .padding(start = 20.dp, top = 12.dp, end = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        Text(
-            text = stringResource(R.string.balance_total),
-            style = MaterialTheme.typography.labelLarge.copy(lineHeight = 16.sp),
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-        )
-        Text(
-            text = total,
-            modifier = Modifier.fillMaxWidth(),
-            style = MaterialTheme.typography.displayMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-    }
+private fun AccountsHero(state: AccountsUiState.Content) {
+    val valuation = state.currentValuation
+    val included =
+        valuation
+            ?.includedTotal
+            ?.let { formatAmount(it.amount, it.currency.isoCode) }
+    val date =
+        valuation
+            ?.rateDate
+            ?.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))
+    val valuationText =
+        included?.let {
+            when {
+                valuation?.isComplete == true && date != null ->
+                    stringResource(R.string.balance_valuation_dated, it, date)
+
+                valuation?.isComplete == true ->
+                    stringResource(R.string.balance_valuation, it)
+
+                date != null ->
+                    stringResource(R.string.balance_valuation_partial_dated, it, date)
+
+                else ->
+                    stringResource(R.string.balance_valuation_partial, it)
+            }
+        }
+    val excluded =
+        valuation
+            ?.excludedNativeTotals
+            ?.takeIf { it.isNotEmpty() }
+            ?.joinToString(separator = " · ") {
+                formatAmount(it.amount, it.currency.isoCode)
+            }
+            ?.let { stringResource(R.string.balance_not_included, it) }
+
+    NativeMoneySummary(
+        title = stringResource(R.string.balance_total),
+        nativeTotals =
+            state.nativeTotals.map {
+                formatAmount(it.amount, it.currency.isoCode)
+            },
+        valuation = valuationText,
+        warning = excluded,
+    )
 }
 
 private fun FinanceFailureReason.toErrorStateType(): ErrorStateType =

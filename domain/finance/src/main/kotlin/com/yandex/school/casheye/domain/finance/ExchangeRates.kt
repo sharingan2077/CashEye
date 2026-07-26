@@ -61,6 +61,31 @@ interface ExchangeRateRepository {
     ): ExchangeRateRefreshResult
 }
 
+internal object EmptyExchangeRateRepository : ExchangeRateRepository {
+    private val emptySnapshot =
+        ExchangeRateSnapshot(
+            rates = emptyList(),
+            requestedFrom = null,
+            requestedTo = null,
+            missingCurrencies = CurrencyCode.entries.toSet(),
+        )
+
+    override fun observeLatest(): Flow<ExchangeRateSnapshot> = kotlinx.coroutines.flow.flowOf(emptySnapshot)
+
+    override fun observeRange(
+        startDate: LocalDate,
+        endDate: LocalDate,
+    ): Flow<ExchangeRateSnapshot> = kotlinx.coroutines.flow.flowOf(emptySnapshot)
+
+    override suspend fun refreshLatest(force: Boolean): ExchangeRateRefreshResult =
+        ExchangeRateRefreshResult.Incomplete(emptySnapshot.missingCurrencies)
+
+    override suspend fun refreshRange(
+        startDate: LocalDate,
+        endDate: LocalDate,
+    ): ExchangeRateRefreshResult = ExchangeRateRefreshResult.Incomplete(emptySnapshot.missingCurrencies)
+}
+
 sealed interface CurrencyConversionResult {
     data class Complete(
         val money: MoneyAmount,

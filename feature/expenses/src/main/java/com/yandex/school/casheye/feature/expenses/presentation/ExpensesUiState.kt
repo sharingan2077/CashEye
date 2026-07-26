@@ -1,8 +1,8 @@
 package com.yandex.school.casheye.feature.expenses.presentation
 
+import com.yandex.school.casheye.core.model.MoneyAmount
 import com.yandex.school.casheye.core.model.Transaction
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
-import java.math.BigDecimal
 import java.time.LocalDate
 
 sealed interface ExpensesUiState {
@@ -16,8 +16,7 @@ sealed interface ExpensesUiState {
     ) : ExpensesUiState
 
     data class Content(
-        val total: BigDecimal,
-        val currencyCode: String,
+        val nativeTotals: List<MoneyAmount>,
         val transactions: List<Transaction>,
         override val isRefreshing: Boolean = false,
     ) : ExpensesUiState
