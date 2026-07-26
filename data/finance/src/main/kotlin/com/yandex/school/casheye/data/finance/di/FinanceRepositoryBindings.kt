@@ -124,7 +124,15 @@ object FinanceUseCaseBindings {
     fun provideGetAnalyticsUseCase(
         repository: FinanceRepository,
         reportingCurrencyRepository: ReportingCurrencyRepository,
-    ): GetAnalyticsUseCase = GetAnalyticsUseCase(repository, reportingCurrencyRepository)
+        exchangeRateRepository: ExchangeRateRepository,
+        currencyConverter: CurrencyConverter,
+    ): GetAnalyticsUseCase =
+        GetAnalyticsUseCase(
+            repository = repository,
+            reportingCurrencyRepository = reportingCurrencyRepository,
+            exchangeRateRepository = exchangeRateRepository,
+            currencyConverter = currencyConverter,
+        )
 
     @Provides
     fun provideObserveReportingCurrencyUseCase(
