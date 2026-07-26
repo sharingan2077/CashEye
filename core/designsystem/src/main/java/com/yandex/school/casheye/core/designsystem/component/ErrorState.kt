@@ -119,7 +119,7 @@ private fun ErrorStatePreview(
     @PreviewParameter(ErrorStateTypeProvider::class) type: ErrorStateType,
 ) {
     CashEyeTheme(dynamicColor = false) {
-        Surface(color = MaterialTheme.colorScheme.background) {
+        Surface(color = MaterialTheme.colorScheme.surface) {
             ErrorState(type = type)
         }
     }

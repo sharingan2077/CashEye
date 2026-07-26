@@ -54,7 +54,7 @@ fun IncomeScreen(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background),
+                    .background(MaterialTheme.colorScheme.surface),
         ) {
             when (state) {
                 IncomeUiState.Loading -> {
@@ -193,7 +193,7 @@ private fun FinanceFailureReason.toErrorStateType(): ErrorStateType =
 @Composable
 private fun IncomeScreenPreview() {
     CashEyeTheme(dynamicColor = false) {
-        Surface(color = MaterialTheme.colorScheme.background) {
+        Surface(color = MaterialTheme.colorScheme.surface) {
             IncomeScreen(
                 state = incomeUiStateMock,
                 onIntent = {},

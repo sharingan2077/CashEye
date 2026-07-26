@@ -54,7 +54,7 @@ fun ExpenseScreen(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background),
+                    .background(MaterialTheme.colorScheme.surface),
         ) {
             when (state) {
                 ExpensesUiState.Loading -> {
@@ -189,7 +189,7 @@ private fun FinanceFailureReason.toErrorStateType(): ErrorStateType =
 @Composable
 private fun ExpenseScreenPreview() {
     CashEyeTheme(dynamicColor = false) {
-        Surface(color = MaterialTheme.colorScheme.background) {
+        Surface(color = MaterialTheme.colorScheme.surface) {
             ExpenseScreen(
                 state = expensesUiStateMock,
                 onIntent = {},

@@ -47,8 +47,8 @@ import java.time.format.FormatStyle
 fun AccountsScreen(
     state: AccountsUiState,
     onIntent: (AccountsIntent) -> Unit,
-    onAccountClick: (Int) -> Unit = {},
     modifier: Modifier = Modifier,
+    onAccountClick: (Int) -> Unit = {},
 ) {
     PullToRefreshContainer(
         isRefreshing = state.isRefreshing,
@@ -59,7 +59,7 @@ fun AccountsScreen(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background),
+                    .background(MaterialTheme.colorScheme.surface),
         ) {
             when (state) {
                 AccountsUiState.Loading -> {
@@ -203,11 +203,11 @@ private fun AccountsHero(state: AccountsUiState.Content) {
     val valuationText =
         included?.let {
             when {
-                valuation?.isComplete == true && date != null -> {
+                valuation.isComplete && date != null -> {
                     stringResource(R.string.balance_valuation_dated, it, date)
                 }
 
-                valuation?.isComplete == true -> {
+                valuation.isComplete -> {
                     stringResource(R.string.balance_valuation, it)
                 }
 
@@ -264,7 +264,7 @@ private fun FinanceFailureReason.toErrorStateType(): ErrorStateType =
 @Composable
 private fun AccountsScreenPreview() {
     CashEyeTheme(dynamicColor = false) {
-        Surface(color = MaterialTheme.colorScheme.background) {
+        Surface(color = MaterialTheme.colorScheme.surface) {
             AccountsScreen(state = accountsUiStateMock, onIntent = {})
         }
     }

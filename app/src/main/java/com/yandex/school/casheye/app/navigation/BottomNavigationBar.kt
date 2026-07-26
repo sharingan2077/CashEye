@@ -22,7 +22,7 @@ fun BottomNavigationBar(
     onSelectKey: (NavKey) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val borderColor = MaterialTheme.colorScheme.outline
+    val borderColor = MaterialTheme.colorScheme.outlineVariant
 
     NavigationBar(
         modifier =

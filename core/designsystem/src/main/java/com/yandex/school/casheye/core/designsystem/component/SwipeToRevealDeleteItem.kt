@@ -103,7 +103,7 @@ fun SwipeToRevealDeleteItem(
             modifier =
                 Modifier
                     .offset { IntOffset(offset.roundToInt(), 0) }
-                    .background(MaterialTheme.colorScheme.background)
+                    .background(MaterialTheme.colorScheme.surface)
                     .draggable(
                         state =
                             rememberDraggableState { delta ->

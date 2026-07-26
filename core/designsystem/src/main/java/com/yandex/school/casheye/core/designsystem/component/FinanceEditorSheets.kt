@@ -1,5 +1,6 @@
 package com.yandex.school.casheye.core.designsystem.component
 
+import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
@@ -42,6 +43,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.SheetValue
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimeInput
@@ -60,7 +62,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
@@ -72,9 +73,11 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.yandex.school.casheye.core.designsystem.R
+import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
 import kotlinx.coroutines.android.awaitFrame
 import java.text.DecimalFormatSymbols
 import java.time.Instant
@@ -391,7 +394,7 @@ internal fun EditorSheetHandle() {
                     .padding(top = 10.dp)
                     .size(width = 32.dp, height = 4.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.outline),
+                    .background(MaterialTheme.colorScheme.outlineVariant),
         )
     }
 }
@@ -748,8 +751,18 @@ private fun EditorConfirmFab(
         onClick = onClick,
         modifier = Modifier.size(56.dp),
         shape = CircleShape,
-        containerColor = if (enabled) Color.Black else MaterialTheme.colorScheme.outlineVariant,
-        contentColor = MaterialTheme.colorScheme.onPrimary,
+        containerColor =
+            if (enabled) {
+                MaterialTheme.colorScheme.inverseSurface
+            } else {
+                MaterialTheme.colorScheme.outlineVariant
+            },
+        contentColor =
+            if (enabled) {
+                MaterialTheme.colorScheme.inverseOnSurface
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            },
     ) {
         if (isSaving) {
             Text("…", style = MaterialTheme.typography.titleLarge)
@@ -758,6 +771,31 @@ private fun EditorConfirmFab(
                 painter = painterResource(R.drawable.ic_editor_check),
                 contentDescription = stringResource(R.string.finance_editor_save),
             )
+        }
+    }
+}
+
+@Preview(
+    name = "Editor Confirm Light",
+    showBackground = true,
+    uiMode = Configuration.UI_MODE_NIGHT_NO,
+)
+@Preview(
+    name = "Editor Confirm Dark",
+    showBackground = true,
+    uiMode = Configuration.UI_MODE_NIGHT_YES,
+)
+@Composable
+private fun EditorConfirmFabPreview() {
+    CashEyeTheme(dynamicColor = false) {
+        Surface(color = MaterialTheme.colorScheme.surface) {
+            Row(
+                modifier = Modifier.padding(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                EditorConfirmFab(enabled = true, isSaving = false, onClick = {})
+                EditorConfirmFab(enabled = false, isSaving = false, onClick = {})
+            }
         }
     }
 }
