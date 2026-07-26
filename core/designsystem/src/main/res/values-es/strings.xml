@@ -38,6 +38,9 @@
     <string name="finance_editor_apply">Aplicar</string>
     <string name="finance_editor_cancel">Cancelar</string>
     <string name="finance_editor_done">Listo</string>
+    <string name="date_picker_confirm">Aceptar</string>
+    <string name="date_picker_cancel">Cancelar</string>
+    <string name="date_picker_title">Seleccionar fecha</string>
     <string name="finance_editor_comment_placeholder">Introduce un comentario</string>
     <string name="finance_editor_enter_time">Introduce la hora</string>
 </resources>

@@ -3,9 +3,6 @@
     <string name="empty_expenses_description">Choisissez une autre date dans la barre supérieure pour voir les dépenses</string>
     <string name="expenses_total">dépenses, total</string>
     <string name="retry">Réessayer</string>
-    <string name="confirm">OK</string>
-    <string name="cancel">Annuler</string>
-    <string name="select_date">Sélectionner une date</string>
     <string name="error_network">Vérifiez votre connexion Internet</string>
     <string name="error_authorization">Échec de l’autorisation</string>
     <string name="error_server">Le serveur est temporairement indisponible</string>

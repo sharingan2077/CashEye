@@ -38,6 +38,9 @@
     <string name="finance_editor_apply">Применить</string>
     <string name="finance_editor_cancel">Отменить</string>
     <string name="finance_editor_done">Готово</string>
+    <string name="date_picker_confirm">ОК</string>
+    <string name="date_picker_cancel">Отмена</string>
+    <string name="date_picker_title">Выберите дату</string>
     <string name="finance_editor_comment_placeholder">Введите комментарий</string>
     <string name="finance_editor_enter_time">Введите время</string>
 </resources>

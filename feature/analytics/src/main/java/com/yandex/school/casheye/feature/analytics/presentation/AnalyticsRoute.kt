@@ -19,7 +19,6 @@ fun AnalyticsRoute(
     entryPoint: AnalyticsEntryPoint,
     snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
-    refreshKey: Long = 0,
     viewModel: AnalyticsViewModel = metroViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -30,9 +29,6 @@ fun AnalyticsRoute(
 
     LaunchedEffect(entryPoint, viewModel) {
         viewModel.onIntent(AnalyticsIntent.Initialize(entryPoint))
-    }
-    LaunchedEffect(refreshKey) {
-        if (refreshKey > 0) viewModel.onIntent(AnalyticsIntent.Refresh)
     }
     LaunchedEffect(viewModel, snackbarHostState) {
         viewModel.effects.collectLatest { effect ->

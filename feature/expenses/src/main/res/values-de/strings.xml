@@ -3,9 +3,6 @@
     <string name="empty_expenses_description">Wählen Sie oben ein anderes Datum, um Ausgaben zu sehen</string>
     <string name="expenses_total">Ausgaben, gesamt</string>
     <string name="retry">Wiederholen</string>
-    <string name="confirm">OK</string>
-    <string name="cancel">Abbrechen</string>
-    <string name="select_date">Datum auswählen</string>
     <string name="error_network">Internetverbindung prüfen</string>
     <string name="error_authorization">Anmeldung fehlgeschlagen</string>
     <string name="error_server">Server ist vorübergehend nicht verfügbar</string>

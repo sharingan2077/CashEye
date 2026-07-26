@@ -21,7 +21,6 @@ fun IncomeRoute(
     selectedDate: LocalDate,
     snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
-    refreshKey: Long = 0,
     onTransactionClick: (Int) -> Unit = {},
     viewModel: IncomeViewModel = metroViewModel(),
 ) {
@@ -35,10 +34,6 @@ fun IncomeRoute(
 
     LaunchedEffect(selectedDate, viewModel) {
         viewModel.onIntent(IncomeIntent.SelectDate(selectedDate))
-    }
-
-    LaunchedEffect(refreshKey) {
-        if (refreshKey > 0) viewModel.onIntent(IncomeIntent.Refresh)
     }
 
     LaunchedEffect(viewModel, snackbarHostState) {

@@ -20,7 +20,6 @@ import kotlinx.coroutines.flow.collectLatest
 fun AccountsRoute(
     snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
-    refreshKey: Long = 0,
     onAccountClick: (Int) -> Unit = {},
     viewModel: AccountsViewModel = metroViewModel(),
 ) {
@@ -32,10 +31,6 @@ fun AccountsRoute(
     val resources = LocalContext.current.resources
 
     DismissSnackbarOnDispose(snackbarHostState)
-
-    LaunchedEffect(refreshKey) {
-        if (refreshKey > 0) viewModel.onIntent(AccountsIntent.Refresh)
-    }
 
     LaunchedEffect(viewModel, snackbarHostState) {
         viewModel.effects.collectLatest { effect ->

@@ -1,4 +1,4 @@
-package com.yandex.school.casheye.feature.expenses.presentation
+package com.yandex.school.casheye.core.designsystem.component
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.DatePicker
@@ -11,15 +11,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.yandex.school.casheye.core.designsystem.component.rememberPastOrPresentSelectableDates
-import com.yandex.school.casheye.feature.expenses.R
+import com.yandex.school.casheye.core.designsystem.R
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ExpensesDatePickerDialog(
+fun PastOrPresentDatePickerDialog(
     selectedDate: LocalDate,
     onDateSelect: (LocalDate) -> Unit,
     onDismiss: () -> Unit,
@@ -41,12 +40,12 @@ fun ExpensesDatePickerDialog(
                         ?.let(onDateSelect)
                 },
             ) {
-                Text(stringResource(R.string.confirm))
+                Text(stringResource(R.string.date_picker_confirm))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.cancel))
+                Text(stringResource(R.string.date_picker_cancel))
             }
         },
     ) {
@@ -54,7 +53,7 @@ fun ExpensesDatePickerDialog(
             state = datePickerState,
             title = {
                 Text(
-                    text = stringResource(R.string.select_date),
+                    text = stringResource(R.string.date_picker_title),
                     modifier = Modifier.padding(start = 24.dp, top = 16.dp),
                 )
             },

@@ -21,7 +21,6 @@ fun ExpensesRoute(
     selectedDate: LocalDate,
     snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
-    refreshKey: Long = 0,
     onTransactionClick: (Int) -> Unit = {},
     viewModel: ExpensesViewModel = metroViewModel(),
 ) {
@@ -35,10 +34,6 @@ fun ExpensesRoute(
 
     LaunchedEffect(selectedDate, viewModel) {
         viewModel.onIntent(ExpensesIntent.SelectDate(selectedDate))
-    }
-
-    LaunchedEffect(refreshKey) {
-        if (refreshKey > 0) viewModel.onIntent(ExpensesIntent.Refresh)
     }
 
     LaunchedEffect(viewModel, snackbarHostState) {
