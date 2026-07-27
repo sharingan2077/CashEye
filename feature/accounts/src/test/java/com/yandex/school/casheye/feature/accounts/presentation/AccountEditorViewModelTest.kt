@@ -4,12 +4,15 @@ import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.CurrencyCode
 import com.yandex.school.casheye.domain.finance.FinanceRepository
 import com.yandex.school.casheye.domain.finance.GetAccountUseCase
+import com.yandex.school.casheye.domain.finance.GetAccountCurrencyChangeEligibilityUseCase
 import com.yandex.school.casheye.domain.finance.SaveAccountUseCase
 import com.yandex.school.casheye.domain.finance.TransactionsQuery
 import com.yandex.school.casheye.domain.finance.editor.EditorResult
+import com.yandex.school.casheye.domain.finance.editor.AccountCurrencyChangeEligibility
 import com.yandex.school.casheye.domain.finance.editor.SaveAccountCommand
 import com.yandex.school.casheye.feature.accounts.presentation.efitor.AccountEditorIntent
 import com.yandex.school.casheye.feature.accounts.presentation.efitor.AccountEditorViewModel
+import com.yandex.school.casheye.feature.accounts.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -38,6 +41,7 @@ class AccountEditorViewModelTest {
             val viewModel =
                 AccountEditorViewModel(
                     GetAccountUseCase(repository),
+                    GetAccountCurrencyChangeEligibilityUseCase(repository),
                     SaveAccountUseCase(repository),
                 )
             viewModel.onIntent(AccountEditorIntent.Open(5))
@@ -58,6 +62,7 @@ class AccountEditorViewModelTest {
             val viewModel =
                 AccountEditorViewModel(
                     GetAccountUseCase(repository),
+                    GetAccountCurrencyChangeEligibilityUseCase(repository),
                     SaveAccountUseCase(repository),
                 )
             viewModel.onIntent(AccountEditorIntent.Open(null))
@@ -69,10 +74,53 @@ class AccountEditorViewModelTest {
 
             assertEquals(SaveAccountCommand(null, "Основной", "💵", BigDecimal("100.00"), "RUB"), repository.saved)
         }
+
+    @Test
+    fun `currency selection reports an error when account has transactions`() =
+        runTest {
+            val repository = AccountEditorRepository().apply {
+                currencyEligibility = AccountCurrencyChangeEligibility.HasTransactions
+            }
+            val viewModel =
+                AccountEditorViewModel(
+                    GetAccountUseCase(repository),
+                    GetAccountCurrencyChangeEligibilityUseCase(repository),
+                    SaveAccountUseCase(repository),
+                )
+            viewModel.onIntent(AccountEditorIntent.Open(5))
+            advanceUntilIdle()
+            viewModel.onIntent(AccountEditorIntent.CurrencyChangeRequested)
+            advanceUntilIdle()
+
+            assertEquals(R.string.error_account_currency_has_transactions, viewModel.state.value.error)
+            assertEquals(CurrencyCode.RUB, viewModel.state.value.currency)
+        }
+
+    @Test
+    fun `currency selection reports an error when history cannot be verified`() =
+        runTest {
+            val repository = AccountEditorRepository().apply {
+                currencyEligibility = AccountCurrencyChangeEligibility.HistoryUnavailable
+            }
+            val viewModel =
+                AccountEditorViewModel(
+                    GetAccountUseCase(repository),
+                    GetAccountCurrencyChangeEligibilityUseCase(repository),
+                    SaveAccountUseCase(repository),
+                )
+            viewModel.onIntent(AccountEditorIntent.Open(5))
+            advanceUntilIdle()
+            viewModel.onIntent(AccountEditorIntent.CurrencyChangeRequested)
+            advanceUntilIdle()
+
+            assertEquals(R.string.error_account_currency_history_unavailable, viewModel.state.value.error)
+            assertEquals(CurrencyCode.RUB, viewModel.state.value.currency)
+        }
 }
 
 private class AccountEditorRepository : FinanceRepository {
     var saved: SaveAccountCommand? = null
+    var currencyEligibility: AccountCurrencyChangeEligibility = AccountCurrencyChangeEligibility.Allowed
 
     override suspend fun getAccounts() = error("Not used")
 
@@ -85,4 +133,7 @@ private class AccountEditorRepository : FinanceRepository {
         saved = command
         return EditorResult.Success(Unit)
     }
+
+    override suspend fun getAccountCurrencyChangeEligibility(id: Int) =
+        EditorResult.Success(currencyEligibility)
 }

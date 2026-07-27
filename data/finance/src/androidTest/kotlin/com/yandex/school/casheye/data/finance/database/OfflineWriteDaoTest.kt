@@ -5,6 +5,7 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.yandex.school.casheye.data.finance.database.entity.AccountEntity
+import com.yandex.school.casheye.data.finance.database.entity.AccountTransactionHistoryVerificationEntity
 import com.yandex.school.casheye.data.finance.database.entity.CategoryEntity
 import com.yandex.school.casheye.data.finance.database.entity.PendingEntityType
 import com.yandex.school.casheye.data.finance.database.entity.PendingOperationType
@@ -18,6 +19,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -102,6 +104,58 @@ class OfflineWriteDaoTest {
             assertEquals(101, remaining.relatedAccountId)
             assertNull(remaining.dependsOnOperationId)
             assertEquals(101, snapshot.accountId)
+        }
+
+    @Test
+    fun accountCurrencyChangeRequiresVerifiedEmptyHistory() =
+        runTest {
+            database.accountDao().upsert(AccountEntity(5, "Original", "💳", "10.00", "RUB"))
+
+            val failure =
+                try {
+                    database.offlineWriteDao().updateAccount(accountCommand(id = 5, currency = "USD"), NOW)
+                    fail("Expected an unverified history to block currency change")
+                } catch (error: IllegalStateException) {
+                    error
+                }
+            assertTrue(failure.message.orEmpty().contains("transaction history"))
+
+            database
+                .accountTransactionHistoryVerificationDao()
+                .upsert(AccountTransactionHistoryVerificationEntity(5, NOW.toEpochMilli()))
+            database.offlineWriteDao().updateAccount(accountCommand(id = 5, currency = "USD"), NOW)
+
+            assertEquals("USD", database.accountDao().getById(5)?.currency)
+        }
+
+    @Test
+    fun accountCurrencyChangeRejectsAccountWithTransactions() =
+        runTest {
+            database.categoryDao().upsertAll(listOf(category))
+            database.accountDao().upsert(AccountEntity(5, "Original", "💳", "10.00", "RUB"))
+            database.transactionDao().upsert(
+                TransactionEntity(
+                    id = 50,
+                    accountId = 5,
+                    categoryId = category.id,
+                    amount = "1.00",
+                    currency = "RUB",
+                    transactionDate = NOW.toEpochMilli(),
+                    comment = null,
+                    createdAt = NOW.toEpochMilli(),
+                    updatedAt = NOW.toEpochMilli(),
+                ),
+            )
+
+            val failure =
+                try {
+                    database.offlineWriteDao().updateAccount(accountCommand(id = 5, currency = "USD"), NOW)
+                    fail("Expected transactions to block currency change")
+                } catch (error: IllegalStateException) {
+                    error
+                }
+
+            assertTrue(failure.message.orEmpty().contains("has transactions"))
         }
 
     @Test

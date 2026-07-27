@@ -348,6 +348,7 @@ private class FakeFinanceLocalStore(
     private val accounts = MutableStateFlow(initialAccounts)
     private var categories: List<Category> = emptyList()
     private val transactions = MutableStateFlow<List<Transaction>>(emptyList())
+    private val verifiedAccountHistoryIds = mutableSetOf<Int>()
     var savedTransaction: SaveTransactionCommand? = null
     var savedAccount: SaveAccountCommand? = null
     var periodRefreshes: Int = 0
@@ -410,6 +411,19 @@ private class FakeFinanceLocalStore(
     override suspend fun cacheTransaction(transaction: TransactionResponseDto) {
         transactions.value = transactions.value.filterNot { it.id == transaction.id } + transaction.toDomain()
     }
+
+    override suspend fun cacheCompleteAccountTransactionHistory(
+        accountId: Int,
+        transactions: List<TransactionResponseDto>,
+        verifiedAt: Instant,
+    ) {
+        for (transaction in transactions) {
+            cacheTransaction(transaction)
+        }
+        verifiedAccountHistoryIds += accountId
+    }
+
+    override suspend fun isAccountTransactionHistoryVerified(id: Int): Boolean = id in verifiedAccountHistoryIds
 
     override suspend fun saveAccount(
         command: SaveAccountCommand,
