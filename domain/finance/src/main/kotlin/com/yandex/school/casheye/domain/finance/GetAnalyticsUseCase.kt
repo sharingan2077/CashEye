@@ -15,7 +15,7 @@ import java.math.BigDecimal
 import java.time.ZoneId
 
 class GetAnalyticsUseCase(
-    private val repository: FinanceRepository,
+    private val repository: FinanceQueryRepository,
     private val reportingCurrencyRepository: ReportingCurrencyRepository = DefaultReportingCurrencyRepository,
     private val exchangeRateRepository: ExchangeRateRepository = EmptyExchangeRateRepository,
     private val currencyConverter: CurrencyConverter = CurrencyConverter(),

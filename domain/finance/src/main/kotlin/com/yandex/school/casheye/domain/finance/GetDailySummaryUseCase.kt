@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.combine
 import java.time.LocalDate
 
 class GetDailySummaryUseCase(
-    private val repository: FinanceRepository,
+    private val repository: FinanceQueryRepository,
     private val reportingCurrencyRepository: ReportingCurrencyRepository = DefaultReportingCurrencyRepository,
 ) {
     operator fun invoke(

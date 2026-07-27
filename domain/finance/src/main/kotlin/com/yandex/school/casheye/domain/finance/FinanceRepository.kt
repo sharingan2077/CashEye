@@ -2,18 +2,15 @@ package com.yandex.school.casheye.domain.finance
 
 import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.Category
-import com.yandex.school.casheye.core.model.CurrencyCode
-import com.yandex.school.casheye.core.model.MoneyAmount
 import com.yandex.school.casheye.core.model.Transaction
 import com.yandex.school.casheye.domain.finance.editor.EditorResult
 import com.yandex.school.casheye.domain.finance.editor.SaveAccountCommand
 import com.yandex.school.casheye.domain.finance.editor.SaveTransactionCommand
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
-import java.math.BigDecimal
 import java.time.LocalDate
 
-interface FinanceRepository {
+interface FinanceQueryRepository {
     fun observeAccounts(): Flow<List<Account>> = flowOf(emptyList())
 
     fun observeTransactions(query: TransactionsQuery): Flow<List<Transaction>> = flowOf(emptyList())
@@ -29,7 +26,9 @@ interface FinanceRepository {
     suspend fun getAccounts(): FinanceDataLoadResult<List<Account>>
 
     suspend fun getTransactions(query: TransactionsQuery): FinanceDataLoadResult<List<Transaction>>
+}
 
+interface FinanceEditorRepository {
     suspend fun getCategories(isIncome: Boolean): EditorResult<List<Category>> =
         EditorResult.Failure(FinanceFailureReason.Unknown)
 
@@ -51,140 +50,12 @@ interface FinanceRepository {
     suspend fun deleteAccount(id: Int): EditorResult<Int> = EditorResult.Failure(FinanceFailureReason.Unknown)
 }
 
+interface FinanceRepository :
+    FinanceQueryRepository,
+    FinanceEditorRepository
+
 data class TransactionsQuery(
     val accountIds: Set<Int>,
     val startDate: LocalDate,
     val endDate: LocalDate,
 )
-
-sealed interface FinanceDataLoadResult<out T> {
-    data class Success<T>(
-        val data: T,
-    ) : FinanceDataLoadResult<T>
-
-    data class Failure(
-        val reason: FinanceFailureReason,
-    ) : FinanceDataLoadResult<Nothing>
-}
-
-sealed interface FinanceRefreshResult {
-    data object Success : FinanceRefreshResult
-
-    data class Failure(
-        val reason: FinanceFailureReason,
-        val hasUsableCache: Boolean,
-    ) : FinanceRefreshResult
-}
-
-data class AnalyticsQuery(
-    val startDate: LocalDate,
-    val endDate: LocalDate,
-    val transactionKind: AnalyticsTransactionKind,
-    val accountId: Int?,
-    val categoryIds: Set<Int>,
-)
-
-enum class AnalyticsTransactionKind {
-    Income,
-    Expense,
-    All,
-}
-
-data class AnalyticsSummary(
-    val total: BigDecimal,
-    val currencyCode: CurrencyCode,
-    val transactions: List<AnalyticsTransaction>,
-    val unconvertedTransactions: List<UnconvertedAnalyticsTransaction>,
-    val accounts: List<Account>,
-    val availableCategories: List<Category>,
-)
-
-data class AnalyticsTransaction(
-    val transaction: Transaction,
-    val originalAmount: MoneyAmount,
-    val reportingAmount: MoneyAmount,
-    val rateDate: LocalDate?,
-) {
-    val id: Int
-        get() = transaction.id
-
-    val category: Category
-        get() = transaction.category
-
-    val transactionDate
-        get() = transaction.transactionDate
-}
-
-data class UnconvertedAnalyticsTransaction(
-    val transaction: Transaction,
-    val originalAmount: MoneyAmount,
-    val missingCurrencies: Set<CurrencyCode>,
-) {
-    val id: Int
-        get() = transaction.id
-}
-
-sealed interface AnalyticsLoadResult {
-    data class Success(
-        val summary: AnalyticsSummary,
-    ) : AnalyticsLoadResult
-
-    data class Failure(
-        val reason: FinanceFailureReason,
-    ) : AnalyticsLoadResult
-}
-
-data class AccountsSummary(
-    val nativeTotals: List<MoneyAmount>,
-    val currentValuation: AccountsCurrentValuation?,
-    val accounts: List<Account>,
-)
-
-data class AccountsCurrentValuation(
-    val includedTotal: MoneyAmount?,
-    val excludedNativeTotals: List<MoneyAmount>,
-    val rateDate: LocalDate?,
-) {
-    val isComplete: Boolean
-        get() = excludedNativeTotals.isEmpty()
-}
-
-sealed interface AccountsLoadResult {
-    data class Success(
-        val summary: AccountsSummary,
-    ) : AccountsLoadResult
-
-    data class Failure(
-        val reason: FinanceFailureReason,
-    ) : AccountsLoadResult
-}
-
-enum class TransactionKind {
-    Income,
-    Expense,
-}
-
-data class FinanceSummary(
-    val nativeTotals: List<MoneyAmount>,
-    val transactions: List<Transaction>,
-)
-
-sealed interface FinanceLoadResult {
-    data class Success(
-        val summary: FinanceSummary,
-    ) : FinanceLoadResult
-
-    data class Failure(
-        val reason: FinanceFailureReason,
-    ) : FinanceLoadResult
-}
-
-sealed interface FinanceFailureReason {
-    data object Network : FinanceFailureReason
-
-    data object Authorization : FinanceFailureReason
-
-    data object Server : FinanceFailureReason
-
-    data object Unknown : FinanceFailureReason
-}

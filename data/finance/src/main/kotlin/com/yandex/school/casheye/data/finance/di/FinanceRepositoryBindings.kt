@@ -20,6 +20,8 @@ import com.yandex.school.casheye.data.finance.sync.WorkManagerExchangeRateRefres
 import com.yandex.school.casheye.data.finance.sync.WorkManagerFinanceSyncScheduler
 import com.yandex.school.casheye.domain.finance.DeleteAccountUseCase
 import com.yandex.school.casheye.domain.finance.DeleteTransactionUseCase
+import com.yandex.school.casheye.domain.finance.FinanceEditorRepository
+import com.yandex.school.casheye.domain.finance.FinanceQueryRepository
 import com.yandex.school.casheye.domain.finance.FinanceRepository
 import com.yandex.school.casheye.domain.finance.GetAccountTransactionCountUseCase
 import com.yandex.school.casheye.domain.finance.GetAccountUseCase
@@ -83,6 +85,12 @@ object FinanceRepositoryBindings {
         localStore: FinanceLocalStore,
         syncScheduler: FinanceSyncScheduler,
     ): FinanceRepository = FinanceRepositoryImpl(api, localStore, Dispatchers.IO, syncScheduler)
+
+    @Provides
+    fun provideFinanceQueryRepository(repository: FinanceRepository): FinanceQueryRepository = repository
+
+    @Provides
+    fun provideFinanceEditorRepository(repository: FinanceRepository): FinanceEditorRepository = repository
 }
 
 @BindingContainer
@@ -102,13 +110,13 @@ object FinanceUseCaseBindings {
 
     @Provides
     fun provideGetDailySummaryUseCase(
-        repository: FinanceRepository,
+        repository: FinanceQueryRepository,
         reportingCurrencyRepository: ReportingCurrencyRepository,
     ): GetDailySummaryUseCase = GetDailySummaryUseCase(repository, reportingCurrencyRepository)
 
     @Provides
     fun provideGetAccountsUseCase(
-        repository: FinanceRepository,
+        repository: FinanceQueryRepository,
         reportingCurrencyRepository: ReportingCurrencyRepository,
         exchangeRateRepository: ExchangeRateRepository,
         currencyConverter: CurrencyConverter,
@@ -122,7 +130,7 @@ object FinanceUseCaseBindings {
 
     @Provides
     fun provideGetAnalyticsUseCase(
-        repository: FinanceRepository,
+        repository: FinanceQueryRepository,
         reportingCurrencyRepository: ReportingCurrencyRepository,
         exchangeRateRepository: ExchangeRateRepository,
         currencyConverter: CurrencyConverter,
@@ -144,36 +152,39 @@ object FinanceUseCaseBindings {
         SetReportingCurrencyUseCase(repository)
 
     @Provides
-    fun provideGetEditorAccountsUseCase(repository: FinanceRepository): GetEditorAccountsUseCase =
+    fun provideGetEditorAccountsUseCase(repository: FinanceQueryRepository): GetEditorAccountsUseCase =
         GetEditorAccountsUseCase(repository)
 
     @Provides
-    fun provideGetEditorCategoriesUseCase(repository: FinanceRepository): GetEditorCategoriesUseCase =
+    fun provideGetEditorCategoriesUseCase(repository: FinanceEditorRepository): GetEditorCategoriesUseCase =
         GetEditorCategoriesUseCase(repository)
 
     @Provides
-    fun provideGetTransactionUseCase(repository: FinanceRepository): GetTransactionUseCase =
+    fun provideGetTransactionUseCase(repository: FinanceEditorRepository): GetTransactionUseCase =
         GetTransactionUseCase(repository)
 
     @Provides
-    fun provideSaveTransactionUseCase(repository: FinanceRepository): SaveTransactionUseCase =
+    fun provideSaveTransactionUseCase(repository: FinanceEditorRepository): SaveTransactionUseCase =
         SaveTransactionUseCase(repository)
 
     @Provides
-    fun provideDeleteTransactionUseCase(repository: FinanceRepository): DeleteTransactionUseCase =
+    fun provideDeleteTransactionUseCase(repository: FinanceEditorRepository): DeleteTransactionUseCase =
         DeleteTransactionUseCase(repository)
 
     @Provides
-    fun provideGetAccountUseCase(repository: FinanceRepository): GetAccountUseCase = GetAccountUseCase(repository)
+    fun provideGetAccountUseCase(repository: FinanceEditorRepository): GetAccountUseCase = GetAccountUseCase(repository)
 
     @Provides
-    fun provideSaveAccountUseCase(repository: FinanceRepository): SaveAccountUseCase = SaveAccountUseCase(repository)
+    fun provideSaveAccountUseCase(repository: FinanceEditorRepository): SaveAccountUseCase =
+        SaveAccountUseCase(repository)
 
     @Provides
-    fun provideGetAccountTransactionCountUseCase(repository: FinanceRepository): GetAccountTransactionCountUseCase =
+    fun provideGetAccountTransactionCountUseCase(
+        repository: FinanceEditorRepository,
+    ): GetAccountTransactionCountUseCase =
         GetAccountTransactionCountUseCase(repository)
 
     @Provides
-    fun provideDeleteAccountUseCase(repository: FinanceRepository): DeleteAccountUseCase =
+    fun provideDeleteAccountUseCase(repository: FinanceEditorRepository): DeleteAccountUseCase =
         DeleteAccountUseCase(repository)
 }

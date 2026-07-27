@@ -6,7 +6,7 @@ import com.yandex.school.casheye.domain.finance.editor.SaveAccountCommand
 import com.yandex.school.casheye.domain.finance.editor.SaveTransactionCommand
 
 class GetEditorAccountsUseCase(
-    private val repository: FinanceRepository,
+    private val repository: FinanceQueryRepository,
 ) {
     suspend operator fun invoke(): EditorResult<List<Account>> =
         when (val result = repository.getAccounts()) {
@@ -16,49 +16,49 @@ class GetEditorAccountsUseCase(
 }
 
 class GetEditorCategoriesUseCase(
-    private val repository: FinanceRepository,
+    private val repository: FinanceEditorRepository,
 ) {
     suspend operator fun invoke(isIncome: Boolean) = repository.getCategories(isIncome)
 }
 
 class GetTransactionUseCase(
-    private val repository: FinanceRepository,
+    private val repository: FinanceEditorRepository,
 ) {
     suspend operator fun invoke(id: Int) = repository.getTransaction(id)
 }
 
 class SaveTransactionUseCase(
-    private val repository: FinanceRepository,
+    private val repository: FinanceEditorRepository,
 ) {
     suspend operator fun invoke(command: SaveTransactionCommand) = repository.saveTransaction(command)
 }
 
 class DeleteTransactionUseCase(
-    private val repository: FinanceRepository,
+    private val repository: FinanceEditorRepository,
 ) {
     suspend operator fun invoke(id: Int) = repository.deleteTransaction(id)
 }
 
 class GetAccountUseCase(
-    private val repository: FinanceRepository,
+    private val repository: FinanceEditorRepository,
 ) {
     suspend operator fun invoke(id: Int) = repository.getAccount(id)
 }
 
 class SaveAccountUseCase(
-    private val repository: FinanceRepository,
+    private val repository: FinanceEditorRepository,
 ) {
     suspend operator fun invoke(command: SaveAccountCommand) = repository.saveAccount(command)
 }
 
 class GetAccountTransactionCountUseCase(
-    private val repository: FinanceRepository,
+    private val repository: FinanceEditorRepository,
 ) {
     suspend operator fun invoke(id: Int) = repository.getAccountTransactionCount(id)
 }
 
 class DeleteAccountUseCase(
-    private val repository: FinanceRepository,
+    private val repository: FinanceEditorRepository,
 ) {
     suspend operator fun invoke(id: Int) = repository.deleteAccount(id)
 }
