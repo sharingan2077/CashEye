@@ -21,6 +21,7 @@ import java.io.IOException
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
+import kotlin.time.Duration.Companion.milliseconds
 
 sealed interface FinanceSyncResult {
     data object Success : FinanceSyncResult
@@ -45,7 +46,7 @@ class FinanceSyncer internal constructor(
     private val store: FinanceSyncStore,
     private val json: Json = Json,
     private val clock: Clock = Clock.systemDefaultZone(),
-    private val waitBeforeRetry: suspend (Long) -> Unit = { delay(it) },
+    private val waitBeforeRetry: suspend (Long) -> Unit = { delay(it.milliseconds) },
 ) {
     private val mutex = Mutex()
     private val retryPolicy = ServerRetryPolicy(waitBeforeRetry)

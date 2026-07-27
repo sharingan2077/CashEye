@@ -2,9 +2,10 @@ package com.yandex.school.casheye.data.finance.network
 
 import kotlinx.coroutines.delay
 import retrofit2.HttpException
+import kotlin.time.Duration.Companion.milliseconds
 
 internal class ServerRetryPolicy(
-    private val waitBeforeRetry: suspend (Long) -> Unit = { delay(it) },
+    private val waitBeforeRetry: suspend (Long) -> Unit = { delay(it.milliseconds) },
 ) {
     suspend fun <T> execute(block: suspend () -> T): T {
         repeat(MAX_SERVER_ATTEMPTS - 1) {

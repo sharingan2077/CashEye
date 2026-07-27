@@ -33,13 +33,14 @@ import java.io.IOException
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import kotlin.time.Duration.Companion.milliseconds
 
 class FinanceRepositoryImpl(
     private val api: FinanceApi,
     private val localStore: FinanceLocalStore,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val syncScheduler: FinanceSyncScheduler = NoOpFinanceSyncScheduler,
-    waitBeforeRetry: suspend (Long) -> Unit = { delay(it) },
+    waitBeforeRetry: suspend (Long) -> Unit = { delay(it.milliseconds) },
 ) : FinanceRepository {
     private val retryPolicy = ServerRetryPolicy(waitBeforeRetry)
 

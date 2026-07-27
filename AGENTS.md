@@ -216,3 +216,14 @@ Before using the Read tool on any file longer than 500 lines, first run
 `ast-index outline <file>` to get its structure, then Read only the targeted
 slice via offset/limit. Never bulk-read large files.
 ```
+
+## Kotlin and coroutines conventions
+
+- Prefer type-safe Kotlin duration APIs:
+    - `delay(300.milliseconds)`, not `delay(300L)`.
+    - `withTimeout(5.seconds)`, not `withTimeout(5_000L)`.
+- Import duration extensions explicitly:
+    - `kotlin.time.Duration.Companion.milliseconds`
+    - `kotlin.time.Duration.Companion.seconds`
+- Avoid unexplained raw numeric time values.
+- Extract repeated delays and timeouts into named `Duration` constants.

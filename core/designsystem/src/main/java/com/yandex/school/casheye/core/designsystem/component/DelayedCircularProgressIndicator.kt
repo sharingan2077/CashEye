@@ -9,13 +9,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun DelayedCircularProgressIndicator(modifier: Modifier = Modifier) {
     var isVisible by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        delay(LOADING_INDICATOR_DELAY_MILLIS)
+        delay(LOADING_INDICATOR_DELAY_MILLIS.milliseconds)
         isVisible = true
     }
 
