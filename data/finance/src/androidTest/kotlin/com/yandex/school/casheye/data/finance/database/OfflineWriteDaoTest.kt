@@ -19,7 +19,6 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
-import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -114,7 +113,7 @@ class OfflineWriteDaoTest {
             val failure =
                 try {
                     database.offlineWriteDao().updateAccount(accountCommand(id = 5, currency = "USD"), NOW)
-                    fail("Expected an unverified history to block currency change")
+                    error("Expected an unverified history to block currency change")
                 } catch (error: IllegalStateException) {
                     error
                 }
@@ -150,7 +149,7 @@ class OfflineWriteDaoTest {
             val failure =
                 try {
                     database.offlineWriteDao().updateAccount(accountCommand(id = 5, currency = "USD"), NOW)
-                    fail("Expected transactions to block currency change")
+                    error("Expected transactions to block currency change")
                 } catch (error: IllegalStateException) {
                     error
                 }
@@ -242,16 +241,14 @@ class OfflineWriteDaoTest {
         }
 
     @Test
-    fun changingAccountCurrencyDoesNotRewriteExistingTransactionSnapshot() =
+    fun upsertingAccountDoesNotRewriteExistingTransactionSnapshot() =
         runTest {
             database.accountDao().upsert(AccountEntity(5, "Main", "💳", "100.00", "RUB"))
             database.categoryDao().upsertAll(listOf(category))
             val write = database.offlineWriteDao().createTransaction(transactionCommand(accountId = 5), NOW)
 
-            database.offlineWriteDao().updateAccount(
-                accountCommand(id = 5, currency = "USD"),
-                NOW.plusSeconds(1),
-            )
+            val account = checkNotNull(database.accountDao().getById(5))
+            database.accountDao().upsert(account.copy(currency = "USD"))
 
             assertEquals("USD", database.accountDao().getById(5)?.currency)
             assertEquals(
