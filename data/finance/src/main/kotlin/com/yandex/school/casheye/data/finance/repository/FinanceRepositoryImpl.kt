@@ -12,8 +12,8 @@ import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import com.yandex.school.casheye.domain.finance.FinanceRefreshResult
 import com.yandex.school.casheye.domain.finance.FinanceRepository
 import com.yandex.school.casheye.domain.finance.TransactionsQuery
-import com.yandex.school.casheye.domain.finance.editor.EditorResult
 import com.yandex.school.casheye.domain.finance.editor.AccountCurrencyChangeEligibility
+import com.yandex.school.casheye.domain.finance.editor.EditorResult
 import com.yandex.school.casheye.domain.finance.editor.SaveAccountCommand
 import com.yandex.school.casheye.domain.finance.editor.SaveTransactionCommand
 import kotlinx.coroutines.CancellationException
@@ -131,9 +131,7 @@ class FinanceRepositoryImpl(
             scheduleSync()
         }
 
-    override suspend fun getAccountCurrencyChangeEligibility(
-        id: Int,
-    ): EditorResult<AccountCurrencyChangeEligibility> =
+    override suspend fun getAccountCurrencyChangeEligibility(id: Int): EditorResult<AccountCurrencyChangeEligibility> =
         editorRequest(ioDispatcher) {
             if (id > 0) {
                 try {

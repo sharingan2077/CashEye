@@ -3,16 +3,16 @@ package com.yandex.school.casheye.feature.accounts.presentation
 import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.CurrencyCode
 import com.yandex.school.casheye.domain.finance.FinanceRepository
-import com.yandex.school.casheye.domain.finance.GetAccountUseCase
 import com.yandex.school.casheye.domain.finance.GetAccountCurrencyChangeEligibilityUseCase
+import com.yandex.school.casheye.domain.finance.GetAccountUseCase
 import com.yandex.school.casheye.domain.finance.SaveAccountUseCase
 import com.yandex.school.casheye.domain.finance.TransactionsQuery
-import com.yandex.school.casheye.domain.finance.editor.EditorResult
 import com.yandex.school.casheye.domain.finance.editor.AccountCurrencyChangeEligibility
+import com.yandex.school.casheye.domain.finance.editor.EditorResult
 import com.yandex.school.casheye.domain.finance.editor.SaveAccountCommand
+import com.yandex.school.casheye.feature.accounts.R
 import com.yandex.school.casheye.feature.accounts.presentation.efitor.AccountEditorIntent
 import com.yandex.school.casheye.feature.accounts.presentation.efitor.AccountEditorViewModel
-import com.yandex.school.casheye.feature.accounts.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -78,9 +78,10 @@ class AccountEditorViewModelTest {
     @Test
     fun `currency selection reports an error when account has transactions`() =
         runTest {
-            val repository = AccountEditorRepository().apply {
-                currencyEligibility = AccountCurrencyChangeEligibility.HasTransactions
-            }
+            val repository =
+                AccountEditorRepository().apply {
+                    currencyEligibility = AccountCurrencyChangeEligibility.HasTransactions
+                }
             val viewModel =
                 AccountEditorViewModel(
                     GetAccountUseCase(repository),
@@ -99,9 +100,10 @@ class AccountEditorViewModelTest {
     @Test
     fun `currency selection reports an error when history cannot be verified`() =
         runTest {
-            val repository = AccountEditorRepository().apply {
-                currencyEligibility = AccountCurrencyChangeEligibility.HistoryUnavailable
-            }
+            val repository =
+                AccountEditorRepository().apply {
+                    currencyEligibility = AccountCurrencyChangeEligibility.HistoryUnavailable
+                }
             val viewModel =
                 AccountEditorViewModel(
                     GetAccountUseCase(repository),
@@ -134,6 +136,5 @@ private class AccountEditorRepository : FinanceRepository {
         return EditorResult.Success(Unit)
     }
 
-    override suspend fun getAccountCurrencyChangeEligibility(id: Int) =
-        EditorResult.Success(currencyEligibility)
+    override suspend fun getAccountCurrencyChangeEligibility(id: Int) = EditorResult.Success(currencyEligibility)
 }

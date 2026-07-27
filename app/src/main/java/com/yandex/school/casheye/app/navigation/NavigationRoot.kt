@@ -75,7 +75,7 @@ fun NavigationRoot(
         navigator = navigator,
         selectedDate = selectedDate,
         networkRecoveryRefresh = networkRecoveryRefresh,
-        onNetworkRecoveryRefreshConsumed = { id ->
+        onNetworkRecoveryRefresh = { id ->
             if (networkRecoveryRefresh?.id == id) {
                 networkRecoveryRefresh = null
             }

@@ -186,12 +186,13 @@ private fun totalTextStyle(
     return (MINIMUM_TOTAL_FONT_SIZE.value.toInt()..largestFontSize)
         .reversed()
         .firstOrNull { fontSize ->
-            textMeasurer.measure(
-                text = AnnotatedString(total),
-                style = baseStyle.copy(fontSize = fontSize.sp),
-                maxLines = 1,
-                softWrap = false,
-            ).size.width <= availableWidth
+            textMeasurer
+                .measure(
+                    text = AnnotatedString(total),
+                    style = baseStyle.copy(fontSize = fontSize.sp),
+                    maxLines = 1,
+                    softWrap = false,
+                ).size.width <= availableWidth
         }?.let { fontSize -> baseStyle.copy(fontSize = fontSize.sp) }
         ?: baseStyle.copy(fontSize = MINIMUM_TOTAL_FONT_SIZE)
 }

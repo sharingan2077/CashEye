@@ -53,21 +53,66 @@ class AnalyticsViewModel(
     @Suppress("CyclomaticComplexMethod")
     fun onIntent(intent: AnalyticsIntent) {
         when (intent) {
-            is AnalyticsIntent.Initialize -> initialize(intent.entryPoint)
-            is AnalyticsIntent.OpenFilter -> openFilter(intent.kind)
-            AnalyticsIntent.DismissSheet -> updateSheet(null)
-            is AnalyticsIntent.SelectDraftType -> selectDraftType(intent.type)
-            AnalyticsIntent.ApplyDraftType -> applyDraftType()
-            is AnalyticsIntent.SelectPeriodPreset -> applyPeriodPreset(intent.preset)
-            AnalyticsIntent.OpenCustomPeriod -> openCustomPeriod()
-            is AnalyticsIntent.UpdateCustomPeriod -> updateCustomPeriod(intent.startDate, intent.endDate)
-            AnalyticsIntent.ApplyCustomPeriod -> applyCustomPeriod()
-            is AnalyticsIntent.ToggleDraftCategory -> toggleDraftCategory(intent.categoryId)
-            AnalyticsIntent.ApplyDraftCategories -> applyDraftCategories()
-            is AnalyticsIntent.SelectAccount -> applyAccount(intent.accountId)
-            AnalyticsIntent.OpenDetails -> updateSheet(AnalyticsSheet.Details)
-            AnalyticsIntent.Retry -> refreshAnalytics(currentQuery())
-            AnalyticsIntent.Refresh -> refreshAnalytics(currentQuery())
+            is AnalyticsIntent.Initialize -> {
+                initialize(intent.entryPoint)
+            }
+
+            is AnalyticsIntent.OpenFilter -> {
+                openFilter(intent.kind)
+            }
+
+            AnalyticsIntent.DismissSheet -> {
+                updateSheet(null)
+            }
+
+            is AnalyticsIntent.SelectDraftType -> {
+                selectDraftType(intent.type)
+            }
+
+            AnalyticsIntent.ApplyDraftType -> {
+                applyDraftType()
+            }
+
+            is AnalyticsIntent.SelectPeriodPreset -> {
+                applyPeriodPreset(intent.preset)
+            }
+
+            AnalyticsIntent.OpenCustomPeriod -> {
+                openCustomPeriod()
+            }
+
+            is AnalyticsIntent.UpdateCustomPeriod -> {
+                updateCustomPeriod(intent.startDate, intent.endDate)
+            }
+
+            AnalyticsIntent.ApplyCustomPeriod -> {
+                applyCustomPeriod()
+            }
+
+            is AnalyticsIntent.ToggleDraftCategory -> {
+                toggleDraftCategory(intent.categoryId)
+            }
+
+            AnalyticsIntent.ApplyDraftCategories -> {
+                applyDraftCategories()
+            }
+
+            is AnalyticsIntent.SelectAccount -> {
+                applyAccount(intent.accountId)
+            }
+
+            AnalyticsIntent.OpenDetails -> {
+                updateSheet(AnalyticsSheet.Details)
+            }
+
+            AnalyticsIntent.Retry -> {
+                refreshAnalytics(currentQuery())
+            }
+
+            AnalyticsIntent.Refresh -> {
+                refreshAnalytics(currentQuery())
+            }
+
             AnalyticsIntent.NetworkRecovered -> {
                 if (initialized) {
                     refreshAnalytics(currentQuery(), showLoadingForEmptyCache = true)

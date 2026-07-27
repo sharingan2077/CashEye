@@ -59,7 +59,7 @@ fun AccountEditorSheet(
     onBalanceChange: (String) -> Unit,
     onCurrencyChange: (String) -> Unit,
     currencySelectionRequest: Int,
-    onCurrencyRequested: () -> Unit,
+    onRequestCurrency: () -> Unit,
     onEmojiChange: (String) -> Unit,
     onSave: () -> Unit,
     onDismiss: () -> Unit,
@@ -184,7 +184,7 @@ fun AccountEditorSheet(
                         value = currencyShortLabel(currency),
                         onClick = {
                             clearPrimaryFocus()
-                            if (isEditing) onCurrencyRequested() else nested = AccountNestedSheet.Currency
+                            if (isEditing) onRequestCurrency() else nested = AccountNestedSheet.Currency
                         },
                         showDivider = false,
                     )

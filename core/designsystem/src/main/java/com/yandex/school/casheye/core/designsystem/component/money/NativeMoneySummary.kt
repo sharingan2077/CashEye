@@ -68,12 +68,13 @@ fun NativeMoneySummary(
                         .drop(preferredStyleIndex)
                         .firstOrNull { style ->
                             displayedTotals.all { total ->
-                                textMeasurer.measure(
-                                    text = AnnotatedString(total),
-                                    style = style,
-                                    maxLines = 1,
-                                    softWrap = false,
-                                ).size.width <= availableWidth
+                                textMeasurer
+                                    .measure(
+                                        text = AnnotatedString(total),
+                                        style = style,
+                                        maxLines = 1,
+                                        softWrap = false,
+                                    ).size.width <= availableWidth
                             }
                         } ?: summaryTextStyles.last()
                 }

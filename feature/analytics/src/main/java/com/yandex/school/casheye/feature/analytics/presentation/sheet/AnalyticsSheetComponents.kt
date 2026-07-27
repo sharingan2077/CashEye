@@ -124,9 +124,7 @@ internal class SheetDragBlockingNestedScrollConnection(
 }
 
 @Composable
-internal fun rememberSheetListGestureCoordinator(
-    listState: LazyListState,
-): SheetDragBlockingNestedScrollConnection {
+internal fun rememberSheetListGestureCoordinator(listState: LazyListState): SheetDragBlockingNestedScrollConnection {
     val listFlingBehavior = ScrollableDefaults.flingBehavior()
     return remember(listState, listFlingBehavior) {
         SheetDragBlockingNestedScrollConnection(

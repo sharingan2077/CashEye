@@ -3,8 +3,8 @@ package com.yandex.school.casheye.domain.finance
 import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.Category
 import com.yandex.school.casheye.core.model.Transaction
-import com.yandex.school.casheye.domain.finance.editor.EditorResult
 import com.yandex.school.casheye.domain.finance.editor.AccountCurrencyChangeEligibility
+import com.yandex.school.casheye.domain.finance.editor.EditorResult
 import com.yandex.school.casheye.domain.finance.editor.SaveAccountCommand
 import com.yandex.school.casheye.domain.finance.editor.SaveTransactionCommand
 import kotlinx.coroutines.flow.Flow

@@ -4,6 +4,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -23,7 +24,7 @@ fun ExpensesRoute(
     modifier: Modifier = Modifier,
     onTransactionClick: (Int) -> Unit = {},
     networkRecoveryRefreshId: Long? = null,
-    onNetworkRecoveryRefreshConsumed: (Long) -> Unit = {},
+    onNetworkRecoveryRefresh: (Long) -> Unit = {},
     viewModel: ExpensesViewModel = metroViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -31,6 +32,7 @@ fun ExpensesRoute(
     val retryLabel = stringResource(R.string.retry)
     val deletedMessage = stringResource(R.string.expense_deleted)
     val deleteErrorMessage = stringResource(R.string.error_delete_expense)
+    val currentOnNetworkRecoveryRefresh by rememberUpdatedState(onNetworkRecoveryRefresh)
 
     DismissSnackbarOnDispose(snackbarHostState)
 
@@ -41,7 +43,7 @@ fun ExpensesRoute(
     LaunchedEffect(networkRecoveryRefreshId, viewModel) {
         val refreshId = networkRecoveryRefreshId ?: return@LaunchedEffect
         viewModel.onIntent(ExpensesIntent.NetworkRecovered)
-        onNetworkRecoveryRefreshConsumed(refreshId)
+        currentOnNetworkRecoveryRefresh(refreshId)
     }
 
     LaunchedEffect(viewModel, snackbarHostState) {

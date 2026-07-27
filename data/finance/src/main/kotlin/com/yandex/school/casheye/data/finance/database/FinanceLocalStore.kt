@@ -6,9 +6,9 @@ import androidx.room.withTransaction
 import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.Category
 import com.yandex.school.casheye.core.model.Transaction
+import com.yandex.school.casheye.data.finance.database.entity.AccountTransactionHistoryVerificationEntity
 import com.yandex.school.casheye.data.finance.database.entity.PendingEntityType
 import com.yandex.school.casheye.data.finance.database.entity.PendingOperationEntity
-import com.yandex.school.casheye.data.finance.database.entity.AccountTransactionHistoryVerificationEntity
 import com.yandex.school.casheye.data.finance.database.mapper.toDomain
 import com.yandex.school.casheye.data.finance.database.mapper.toEntity
 import com.yandex.school.casheye.data.finance.dto.AccountDto

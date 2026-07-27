@@ -3,8 +3,8 @@ package com.yandex.school.casheye.feature.accounts.presentation.efitor
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
-import com.yandex.school.casheye.domain.finance.GetAccountUseCase
 import com.yandex.school.casheye.domain.finance.GetAccountCurrencyChangeEligibilityUseCase
+import com.yandex.school.casheye.domain.finance.GetAccountUseCase
 import com.yandex.school.casheye.domain.finance.SaveAccountUseCase
 import com.yandex.school.casheye.domain.finance.editor.AccountCurrencyChangeEligibility
 import com.yandex.school.casheye.domain.finance.editor.EditorResult
@@ -30,13 +30,33 @@ class AccountEditorViewModel(
 
     fun onIntent(intent: AccountEditorIntent) {
         when (intent) {
-            is AccountEditorIntent.Open -> load(intent.accountId)
-            is AccountEditorIntent.NameChanged -> _state.value = _state.value.copy(name = intent.value, error = null)
-            is AccountEditorIntent.BalanceChanged -> updateBalance(intent.value)
-            is AccountEditorIntent.CurrencyChanged -> _state.value = _state.value.copy(currency = intent.value, error = null)
-            AccountEditorIntent.CurrencyChangeRequested -> requestCurrencyChange()
-            is AccountEditorIntent.EmojiChanged -> _state.value = _state.value.copy(emoji = intent.value)
-            AccountEditorIntent.Save -> save()
+            is AccountEditorIntent.Open -> {
+                load(intent.accountId)
+            }
+
+            is AccountEditorIntent.NameChanged -> {
+                _state.value = _state.value.copy(name = intent.value, error = null)
+            }
+
+            is AccountEditorIntent.BalanceChanged -> {
+                updateBalance(intent.value)
+            }
+
+            is AccountEditorIntent.CurrencyChanged -> {
+                _state.value = _state.value.copy(currency = intent.value, error = null)
+            }
+
+            AccountEditorIntent.CurrencyChangeRequested -> {
+                requestCurrencyChange()
+            }
+
+            is AccountEditorIntent.EmojiChanged -> {
+                _state.value = _state.value.copy(emoji = intent.value)
+            }
+
+            AccountEditorIntent.Save -> {
+                save()
+            }
         }
     }
 
@@ -89,13 +109,19 @@ class AccountEditorViewModel(
             when (val result = getAccountCurrencyChangeEligibility(accountId)) {
                 is EditorResult.Success -> {
                     when (result.value) {
-                        AccountCurrencyChangeEligibility.Allowed -> _effects.emit(AccountEditorEffect.OpenCurrencySelector)
+                        AccountCurrencyChangeEligibility.Allowed -> {
+                            _effects.emit(AccountEditorEffect.OpenCurrencySelector)
+                        }
+
                         AccountCurrencyChangeEligibility.HasTransactions -> {
                             _state.value = _state.value.copy(error = R.string.error_account_currency_has_transactions)
                         }
 
                         AccountCurrencyChangeEligibility.HistoryUnavailable -> {
-                            _state.value = _state.value.copy(error = R.string.error_account_currency_history_unavailable)
+                            _state.value =
+                                _state.value.copy(
+                                    error = R.string.error_account_currency_history_unavailable,
+                                )
                         }
                     }
                 }

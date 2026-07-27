@@ -4,6 +4,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -20,12 +21,13 @@ fun AnalyticsRoute(
     snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
     networkRecoveryRefreshId: Long? = null,
-    onNetworkRecoveryRefreshConsumed: (Long) -> Unit = {},
+    onNetworkRecoveryRefresh: (Long) -> Unit = {},
     viewModel: AnalyticsViewModel = metroViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val failureMessages = localizedFailureMessages()
     val retryLabel = stringResource(R.string.retry)
+    val currentOnNetworkRecoveryRefresh by rememberUpdatedState(onNetworkRecoveryRefresh)
 
     DismissSnackbarOnDispose(snackbarHostState)
 
@@ -36,7 +38,7 @@ fun AnalyticsRoute(
     LaunchedEffect(networkRecoveryRefreshId, viewModel) {
         val refreshId = networkRecoveryRefreshId ?: return@LaunchedEffect
         viewModel.onIntent(AnalyticsIntent.NetworkRecovered)
-        onNetworkRecoveryRefreshConsumed(refreshId)
+        currentOnNetworkRecoveryRefresh(refreshId)
     }
     LaunchedEffect(viewModel, snackbarHostState) {
         viewModel.effects.collectLatest { effect ->

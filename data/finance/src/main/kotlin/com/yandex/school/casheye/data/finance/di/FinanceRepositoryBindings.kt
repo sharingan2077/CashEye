@@ -23,9 +23,9 @@ import com.yandex.school.casheye.domain.finance.DeleteTransactionUseCase
 import com.yandex.school.casheye.domain.finance.FinanceEditorRepository
 import com.yandex.school.casheye.domain.finance.FinanceQueryRepository
 import com.yandex.school.casheye.domain.finance.FinanceRepository
+import com.yandex.school.casheye.domain.finance.GetAccountCurrencyChangeEligibilityUseCase
 import com.yandex.school.casheye.domain.finance.GetAccountTransactionCountUseCase
 import com.yandex.school.casheye.domain.finance.GetAccountUseCase
-import com.yandex.school.casheye.domain.finance.GetAccountCurrencyChangeEligibilityUseCase
 import com.yandex.school.casheye.domain.finance.GetAccountsUseCase
 import com.yandex.school.casheye.domain.finance.GetAnalyticsUseCase
 import com.yandex.school.casheye.domain.finance.GetDailySummaryUseCase
@@ -182,14 +182,12 @@ object FinanceUseCaseBindings {
     @Provides
     fun provideGetAccountCurrencyChangeEligibilityUseCase(
         repository: FinanceEditorRepository,
-    ): GetAccountCurrencyChangeEligibilityUseCase =
-        GetAccountCurrencyChangeEligibilityUseCase(repository)
+    ): GetAccountCurrencyChangeEligibilityUseCase = GetAccountCurrencyChangeEligibilityUseCase(repository)
 
     @Provides
     fun provideGetAccountTransactionCountUseCase(
         repository: FinanceEditorRepository,
-    ): GetAccountTransactionCountUseCase =
-        GetAccountTransactionCountUseCase(repository)
+    ): GetAccountTransactionCountUseCase = GetAccountTransactionCountUseCase(repository)
 
     @Provides
     fun provideDeleteAccountUseCase(repository: FinanceEditorRepository): DeleteAccountUseCase =

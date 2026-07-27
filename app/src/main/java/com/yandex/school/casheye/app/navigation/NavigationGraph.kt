@@ -26,7 +26,7 @@ internal fun NavigationContent(
     navigator: Navigator,
     selectedDate: LocalDate,
     networkRecoveryRefresh: NetworkRecoveryRefresh?,
-    onNetworkRecoveryRefreshConsumed: (Long) -> Unit,
+    onNetworkRecoveryRefresh: (Long) -> Unit,
     onEditExpense: (Int) -> Unit,
     onEditIncome: (Int) -> Unit,
     onEditAccount: (Int) -> Unit,
@@ -53,7 +53,7 @@ internal fun NavigationContent(
                             onTransactionClick = onEditExpense,
                             networkRecoveryRefreshId =
                                 networkRecoveryRefresh?.takeIf { it.route == Route.Expenses }?.id,
-                            onNetworkRecoveryRefreshConsumed = onNetworkRecoveryRefreshConsumed,
+                            onNetworkRecoveryRefresh = onNetworkRecoveryRefresh,
                         )
                     }
                     entry<Route.Income> {
@@ -63,7 +63,7 @@ internal fun NavigationContent(
                             onTransactionClick = onEditIncome,
                             networkRecoveryRefreshId =
                                 networkRecoveryRefresh?.takeIf { it.route == Route.Income }?.id,
-                            onNetworkRecoveryRefreshConsumed = onNetworkRecoveryRefreshConsumed,
+                            onNetworkRecoveryRefresh = onNetworkRecoveryRefresh,
                         )
                     }
                     entry<Route.Account> {
@@ -72,7 +72,7 @@ internal fun NavigationContent(
                             onAccountClick = onEditAccount,
                             networkRecoveryRefreshId =
                                 networkRecoveryRefresh?.takeIf { it.route == Route.Account }?.id,
-                            onNetworkRecoveryRefreshConsumed = onNetworkRecoveryRefreshConsumed,
+                            onNetworkRecoveryRefresh = onNetworkRecoveryRefresh,
                         )
                     }
                     entry<Route.Analytics> { route ->
@@ -81,7 +81,7 @@ internal fun NavigationContent(
                             snackbarHostState = snackbarHostState,
                             networkRecoveryRefreshId =
                                 networkRecoveryRefresh?.takeIf { it.route == route }?.id,
-                            onNetworkRecoveryRefreshConsumed = onNetworkRecoveryRefreshConsumed,
+                            onNetworkRecoveryRefresh = onNetworkRecoveryRefresh,
                         )
                     }
                 },

@@ -25,7 +25,7 @@ fun AccountEditorScreen(
             onIntent(AccountEditorIntent.CurrencyChanged(CurrencyCode.fromIsoCode(it)))
         },
         currencySelectionRequest = currencySelectionRequest,
-        onCurrencyRequested = { onIntent(AccountEditorIntent.CurrencyChangeRequested) },
+        onRequestCurrency = { onIntent(AccountEditorIntent.CurrencyChangeRequested) },
         onEmojiChange = { onIntent(AccountEditorIntent.EmojiChanged(it)) },
         onSave = { onIntent(AccountEditorIntent.Save) },
         onDismiss = onDismiss,
