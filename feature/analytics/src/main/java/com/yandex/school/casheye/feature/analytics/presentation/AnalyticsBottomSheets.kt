@@ -61,7 +61,6 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.Velocity
@@ -256,13 +255,13 @@ private fun PeriodSheet(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = preset.title(),
-                        fontWeight = FontWeight.Medium,
+                        style = MaterialTheme.typography.titleMedium,
                     )
                     if (preset == AnalyticsPeriodPreset.Custom && period.preset == preset) {
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = period.formatted(),
-                            style = MaterialTheme.typography.bodySmall,
+                            style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
@@ -319,6 +318,7 @@ private fun CategoriesSheet(
                             Modifier
                                 .weight(1f)
                                 .padding(horizontal = 16.dp),
+                        style = MaterialTheme.typography.titleMedium,
                     )
                     Checkbox(
                         checked = category.id in sheet.selectedIds,
@@ -407,6 +407,7 @@ private fun DetailsSheet(
             title = stringResource(R.string.details),
             modifier = Modifier.align(Alignment.CenterHorizontally),
             paddingValues = PaddingValues(start = 24.dp, end = 24.dp, bottom = 32.dp),
+            isDetails = true,
         )
         LazyColumn(
             modifier =
@@ -556,7 +557,12 @@ private fun AccountRow(
             lead = { EmojiCircle(emoji = emoji) },
             content = {
                 Column {
-                    Text(text = title, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                     subtitle?.let { Text(text = it, style = MaterialTheme.typography.bodySmall) }
                 }
             },
@@ -586,7 +592,11 @@ private fun SelectionRow(
                     .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(text = title, modifier = Modifier.weight(1f))
+            Text(
+                text = title,
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.titleMedium,
+            )
             TypeSelectionIndicator(selected = selected)
         }
         if (!isLast) HorizontalDivider()
@@ -662,10 +672,16 @@ private fun SheetTitle(
     title: String,
     modifier: Modifier = Modifier,
     paddingValues: PaddingValues = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
+    isDetails: Boolean = false,
 ) {
     Text(
         text = title,
-        style = MaterialTheme.typography.headlineSmall,
+        style =
+            if (isDetails) {
+                MaterialTheme.typography.headlineSmall
+            } else {
+                MaterialTheme.typography.headlineMedium
+            },
         modifier = modifier.padding(paddingValues),
     )
 }

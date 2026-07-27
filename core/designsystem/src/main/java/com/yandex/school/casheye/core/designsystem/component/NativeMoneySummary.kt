@@ -10,7 +10,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 
 @Composable
 fun NativeMoneySummary(
@@ -33,7 +32,7 @@ fun NativeMoneySummary(
         Text(
             text = title,
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-            style = MaterialTheme.typography.labelLarge.copy(lineHeight = 16.sp),
+            style = MaterialTheme.typography.labelLarge,
         )
         Text(
             text = summaryText,

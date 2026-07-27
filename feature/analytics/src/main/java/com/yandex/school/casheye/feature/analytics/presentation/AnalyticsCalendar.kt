@@ -38,9 +38,9 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.yandex.school.casheye.feature.analytics.R
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -75,8 +75,7 @@ internal fun CustomPeriodSheet(
     AnalyticsModalBottomSheet(onDismissRequest = { onIntent(AnalyticsIntent.DismissSheet) }) {
         Text(
             text = stringResource(R.string.period_custom),
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.SemiBold,
+            style = MaterialTheme.typography.titleMedium.copy(fontSize = 20.sp),
             modifier = Modifier.padding(start = 24.dp, top = 4.dp, end = 24.dp, bottom = 14.dp),
         )
         DateRangeFields(
@@ -145,7 +144,6 @@ private fun CalendarMonthSelector(
                         .format(DateTimeFormatter.ofPattern("LLLL yyyy", locale))
                         .replaceFirstChar { it.titlecase(locale) },
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 8.dp),
             )
@@ -203,6 +201,7 @@ private fun DateRangeFields(
         Text(
             text = "–",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center,
             modifier = Modifier.width(36.dp),
         )
@@ -255,7 +254,6 @@ private fun CalendarMonthHeader(
                     .format(DateTimeFormatter.ofPattern("LLLL yyyy", locale))
                     .replaceFirstChar { it.titlecase(locale) },
             style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold,
             textAlign = TextAlign.Center,
             modifier = Modifier.weight(1f),
         )

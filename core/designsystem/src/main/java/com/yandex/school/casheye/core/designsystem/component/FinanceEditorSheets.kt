@@ -62,6 +62,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
@@ -69,6 +70,7 @@ import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
@@ -320,6 +322,8 @@ internal fun FinanceEditorContent(
     requestAmountFocus: Boolean,
     onAmountFocusRequest: () -> Unit,
     title: String? = null,
+    titleStyle: TextStyle = MaterialTheme.typography.titleMedium,
+    titleColor: Color = Color.Unspecified,
     rows: @Composable ColumnScope.(clearPrimaryFocus: () -> Unit) -> Unit,
 ) {
     val amountFocusRequester = remember { FocusRequester() }
@@ -341,7 +345,8 @@ internal fun FinanceEditorContent(
         title?.let {
             Text(
                 text = it,
-                style = MaterialTheme.typography.titleMedium,
+                style = titleStyle,
+                color = titleColor,
                 modifier = Modifier.align(Alignment.CenterHorizontally).padding(bottom = 14.dp),
             )
         }
@@ -463,7 +468,7 @@ private fun EditorAmountField(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                     textStyle =
-                        MaterialTheme.typography.displaySmall.copy(
+                        MaterialTheme.typography.displayMedium.copy(
                             color = MaterialTheme.colorScheme.onSurface,
                             textAlign = TextAlign.Start,
                         ),
@@ -471,7 +476,7 @@ private fun EditorAmountField(
                 if (fieldValue.text.isNotEmpty()) {
                     Text(
                         text = currency,
-                        style = MaterialTheme.typography.displaySmall,
+                        style = MaterialTheme.typography.displayMedium,
                         color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.padding(start = 4.dp),
                     )

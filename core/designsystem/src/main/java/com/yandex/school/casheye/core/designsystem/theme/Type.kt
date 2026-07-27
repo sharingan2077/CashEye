@@ -15,7 +15,6 @@ val Typography =
                 fontFamily = CashEyeFontFamily,
                 fontWeight = FontWeight.Medium,
                 fontSize = 56.sp,
-                lineHeight = 64.sp,
                 letterSpacing = 0.sp,
             ),
         displayMedium =
@@ -23,15 +22,13 @@ val Typography =
                 fontFamily = CashEyeFontFamily,
                 fontWeight = FontWeight.Bold,
                 fontSize = 45.sp,
-                lineHeight = 53.sp,
-                letterSpacing = (-1).sp,
+                letterSpacing = 0.sp,
             ),
         displaySmall =
             TextStyle(
                 fontFamily = CashEyeFontFamily,
                 fontWeight = FontWeight.Bold,
                 fontSize = 36.sp,
-                lineHeight = 44.sp,
                 letterSpacing = 0.sp,
             ),
         headlineLarge =
@@ -39,7 +36,6 @@ val Typography =
                 fontFamily = CashEyeFontFamily,
                 fontWeight = FontWeight.Medium,
                 fontSize = 32.sp,
-                lineHeight = 40.sp,
                 letterSpacing = 0.sp,
             ),
         headlineMedium =
@@ -47,7 +43,6 @@ val Typography =
                 fontFamily = CashEyeFontFamily,
                 fontWeight = FontWeight.Bold,
                 fontSize = 28.sp,
-                lineHeight = 36.sp,
                 letterSpacing = 0.sp,
             ),
         headlineSmall =
@@ -55,7 +50,6 @@ val Typography =
                 fontFamily = CashEyeFontFamily,
                 fontWeight = FontWeight.Medium,
                 fontSize = 24.sp,
-                lineHeight = 32.sp,
                 letterSpacing = 0.sp,
             ),
         titleLarge =
@@ -63,7 +57,6 @@ val Typography =
                 fontFamily = CashEyeFontFamily,
                 fontWeight = FontWeight.Normal,
                 fontSize = 24.sp,
-                lineHeight = 32.sp,
                 letterSpacing = 0.sp,
             ),
         titleMedium =
@@ -71,7 +64,6 @@ val Typography =
                 fontFamily = CashEyeFontFamily,
                 fontWeight = FontWeight.Medium,
                 fontSize = 16.sp,
-                lineHeight = 20.sp,
                 letterSpacing = 0.sp,
             ),
         titleSmall =
@@ -79,15 +71,13 @@ val Typography =
                 fontFamily = CashEyeFontFamily,
                 fontWeight = FontWeight.Medium,
                 fontSize = 14.sp,
-                lineHeight = 20.sp,
-                letterSpacing = 0.1.sp,
+                letterSpacing = 0.sp,
             ),
         bodyLarge =
             TextStyle(
                 fontFamily = CashEyeFontFamily,
                 fontWeight = FontWeight.Normal,
                 fontSize = 16.sp,
-                lineHeight = 20.sp,
                 letterSpacing = 0.sp,
             ),
         bodyMedium =
@@ -95,7 +85,6 @@ val Typography =
                 fontFamily = CashEyeFontFamily,
                 fontWeight = FontWeight.Normal,
                 fontSize = 14.sp,
-                lineHeight = 16.sp,
                 letterSpacing = 0.sp,
             ),
         bodySmall =
@@ -103,7 +92,6 @@ val Typography =
                 fontFamily = CashEyeFontFamily,
                 fontWeight = FontWeight.Normal,
                 fontSize = 12.sp,
-                lineHeight = 16.sp,
                 letterSpacing = 0.sp,
             ),
         labelLarge =
@@ -111,15 +99,13 @@ val Typography =
                 fontFamily = CashEyeFontFamily,
                 fontWeight = FontWeight.Medium,
                 fontSize = 14.sp,
-                lineHeight = 20.sp,
-                letterSpacing = 0.1.sp,
+                letterSpacing = 0.sp,
             ),
         labelMedium =
             TextStyle(
                 fontFamily = CashEyeFontFamily,
                 fontWeight = FontWeight.Medium,
                 fontSize = 12.sp,
-                lineHeight = 14.sp,
                 letterSpacing = 0.sp,
             ),
         labelSmall =
@@ -127,7 +113,6 @@ val Typography =
                 fontFamily = CashEyeFontFamily,
                 fontWeight = FontWeight.Normal,
                 fontSize = 12.sp,
-                lineHeight = 16.sp,
-                letterSpacing = 0.5.sp,
+                letterSpacing = 0.sp,
             ),
     )
