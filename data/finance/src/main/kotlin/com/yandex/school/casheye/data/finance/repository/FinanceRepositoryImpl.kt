@@ -5,9 +5,6 @@ import com.yandex.school.casheye.core.model.Category
 import com.yandex.school.casheye.core.model.Transaction
 import com.yandex.school.casheye.data.finance.api.FinanceApi
 import com.yandex.school.casheye.data.finance.database.FinanceLocalStore
-import com.yandex.school.casheye.data.finance.dto.AccountDto
-import com.yandex.school.casheye.data.finance.dto.CategoryDto
-import com.yandex.school.casheye.data.finance.dto.TransactionResponseDto
 import com.yandex.school.casheye.data.finance.network.ServerRetryPolicy
 import com.yandex.school.casheye.data.finance.sync.FinanceSyncScheduler
 import com.yandex.school.casheye.domain.finance.FinanceDataLoadResult
@@ -21,18 +18,12 @@ import com.yandex.school.casheye.domain.finance.editor.SaveTransactionCommand
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
-import retrofit2.HttpException
-import java.io.IOException
 import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
 import kotlin.time.Duration.Companion.milliseconds
 
 class FinanceRepositoryImpl(
@@ -43,11 +34,12 @@ class FinanceRepositoryImpl(
     waitBeforeRetry: suspend (Long) -> Unit = { delay(it.milliseconds) },
 ) : FinanceRepository {
     private val retryPolicy = ServerRetryPolicy(waitBeforeRetry)
+    private val periodRefresher = FinancePeriodRefresher(api, localStore, retryPolicy)
 
     override fun observeAccounts(): Flow<List<Account>> = localStore.observeAccounts()
 
     override fun observeTransactions(query: TransactionsQuery): Flow<List<Transaction>> {
-        val period = query.startDate.toPeriod(query.endDate)
+        val period = query.startDate.toFinancePeriod(query.endDate)
         return localStore
             .observeTransactions(null, period.start, period.end)
             .map { transactions ->
@@ -69,7 +61,7 @@ class FinanceRepositoryImpl(
         endDate: LocalDate,
     ): FinanceRefreshResult =
         refreshCatching {
-            loadRemotePeriod(startDate.toPeriod(endDate))
+            periodRefresher.refresh(startDate.toFinancePeriod(endDate))
         }
 
     override suspend fun getAccounts(): FinanceDataLoadResult<List<Account>> =
@@ -166,7 +158,7 @@ class FinanceRepositoryImpl(
 
     override suspend fun getTransactions(query: TransactionsQuery): FinanceDataLoadResult<List<Transaction>> =
         withContext(ioDispatcher) {
-            val period = query.startDate.toPeriod(query.endDate)
+            val period = query.startDate.toFinancePeriod(query.endDate)
             val refreshFailure =
                 when (val refresh = refreshPeriod(query.startDate, query.endDate)) {
                     FinanceRefreshResult.Success -> null
@@ -212,40 +204,6 @@ class FinanceRepositoryImpl(
             false
         }
 
-    private suspend fun loadRemotePeriod(period: InstantPeriod) {
-        val requestStart = period.startDate.toString()
-        val requestEnd = period.endDate.toString()
-        val snapshot =
-            coroutineScope {
-                val accounts = async { retryPolicy.execute { api.getAccounts() } }
-                val incomeCategories = async { retryPolicy.execute { api.getCategories(true) } }
-                val expenseCategories = async { retryPolicy.execute { api.getCategories(false) } }
-                val loadedAccounts = accounts.await()
-                val transactions =
-                    loadedAccounts
-                        .map { account ->
-                            async {
-                                retryPolicy.execute {
-                                    api.getTransactions(account.id, requestStart, requestEnd)
-                                }
-                            }
-                        }.awaitAll()
-                        .flatten()
-                RemoteSnapshot(
-                    accounts = loadedAccounts,
-                    categories = incomeCategories.await() + expenseCategories.await(),
-                    transactions = transactions,
-                )
-            }
-        localStore.refreshPeriod(
-            accounts = snapshot.accounts,
-            categories = snapshot.categories,
-            transactions = snapshot.transactions,
-            startInclusive = period.start,
-            endInclusive = period.end,
-        )
-    }
-
     private fun scheduleSync() {
         runCatching(syncScheduler::enqueueImmediateSync)
     }
@@ -284,72 +242,6 @@ private data object NoOpFinanceSyncScheduler : FinanceSyncScheduler {
     override fun registerPeriodicSync() = Unit
 
     override fun enqueueImmediateSync() = Unit
-}
-
-private data class RemoteSnapshot(
-    val accounts: List<AccountDto>,
-    val categories: List<CategoryDto>,
-    val transactions: List<TransactionResponseDto>,
-)
-
-private data class InstantPeriod(
-    val startDate: LocalDate,
-    val endDate: LocalDate,
-    val start: Instant,
-    val end: Instant,
-)
-
-private fun LocalDate.toPeriod(endDate: LocalDate): InstantPeriod {
-    val zone = ZoneId.systemDefault()
-    return InstantPeriod(
-        startDate = this,
-        endDate = endDate,
-        start = atStartOfDay(zone).toInstant(),
-        end =
-            endDate
-                .plusDays(1)
-                .atStartOfDay(zone)
-                .toInstant()
-                .minusMillis(1),
-    )
-}
-
-private suspend inline fun <T> editorRequest(
-    dispatcher: CoroutineDispatcher,
-    crossinline block: suspend () -> T,
-): EditorResult<T> =
-    try {
-        EditorResult.Success(withContext(dispatcher) { block() })
-    } catch (error: CancellationException) {
-        throw error
-    } catch (error: Exception) {
-        EditorResult.Failure(error.toFailureReason())
-    }
-
-private fun Exception.toFailureReason(): FinanceFailureReason =
-    when (this) {
-        is IOException -> {
-            FinanceFailureReason.Network
-        }
-
-        is HttpException -> {
-            when (code()) {
-                HttpStatus.UNAUTHORIZED, HttpStatus.FORBIDDEN -> FinanceFailureReason.Authorization
-                in HttpStatus.SERVER_ERROR_MIN..HttpStatus.SERVER_ERROR_MAX -> FinanceFailureReason.Server
-                else -> FinanceFailureReason.Unknown
-            }
-        }
-
-        else -> {
-            FinanceFailureReason.Unknown
-        }
-    }
-
-private object HttpStatus {
-    const val UNAUTHORIZED = 401
-    const val FORBIDDEN = 403
-    const val SERVER_ERROR_MIN = 500
-    const val SERVER_ERROR_MAX = 599
 }
 
 private const val EARLIEST_TRANSACTION_DATE = "1970-01-01"
