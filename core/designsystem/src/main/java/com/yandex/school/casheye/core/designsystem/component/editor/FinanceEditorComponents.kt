@@ -51,9 +51,10 @@ fun EditorRow(
     label: String,
     value: String,
     onClick: (() -> Unit)?,
+    modifier: Modifier = Modifier,
     showDivider: Boolean = true,
 ) {
-    Column {
+    Column(modifier = modifier) {
         Row(
             modifier =
                 Modifier
@@ -175,8 +176,9 @@ fun EditorSelectionRow(
     selected: Boolean,
     isLast: Boolean,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    Column {
+    Column(modifier = modifier) {
         ListItem(
             lead = { Text(text = emoji, fontSize = 24.sp) },
             trail = {
@@ -221,7 +223,8 @@ fun EditorTextContent(
     placeholder: String,
     singleLine: Boolean,
     onConfirm: (String) -> Unit,
-    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+    onDismiss: () -> Unit = {},
 ) {
     var draft by remember(value) { mutableStateOf(value) }
     val focusRequester = remember { FocusRequester() }
@@ -230,7 +233,7 @@ fun EditorTextContent(
         awaitFrame()
         focusRequester.requestFocus()
     }
-    Column(Modifier.fillMaxWidth().imePadding()) {
+    Column(modifier.fillMaxWidth().imePadding()) {
         EditorSheetTitle(title)
         OutlinedTextField(
             value = draft,

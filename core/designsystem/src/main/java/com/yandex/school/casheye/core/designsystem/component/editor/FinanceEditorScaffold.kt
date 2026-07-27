@@ -60,6 +60,7 @@ fun FinanceEditorContent(
     onSave: () -> Unit,
     requestAmountFocus: Boolean,
     onAmountFocusRequest: () -> Unit,
+    modifier: Modifier = Modifier,
     title: String? = null,
     titleStyle: TextStyle = MaterialTheme.typography.titleMedium,
     titleColor: Color = Color.Unspecified,
@@ -77,7 +78,7 @@ fun FinanceEditorContent(
 
     Column(
         modifier =
-            Modifier
+            modifier
                 .fillMaxWidth()
                 .imePadding(),
     ) {
