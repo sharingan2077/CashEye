@@ -18,6 +18,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -92,6 +96,8 @@ private fun IncomeContent(
     onTransactionDelete: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var revealedTransactionId by remember { mutableStateOf<Int?>(null) }
+
     Column(
         modifier =
             modifier
@@ -120,7 +126,17 @@ private fun IncomeContent(
             ) { transaction ->
                 SwipeToRevealDeleteItem(
                     actionLabel = stringResource(R.string.delete_income),
-                    onClick = { onTransactionClick(transaction.id) },
+                    isRevealed = revealedTransactionId == transaction.id,
+                    onReveal = { revealedTransactionId = transaction.id },
+                    onDismissReveal = {
+                        if (revealedTransactionId == transaction.id) {
+                            revealedTransactionId = null
+                        }
+                    },
+                    onClick = {
+                        revealedTransactionId = null
+                        onTransactionClick(transaction.id)
+                    },
                     onDelete = { onTransactionDelete(transaction.id) },
                 ) {
                     MoneyListItem(

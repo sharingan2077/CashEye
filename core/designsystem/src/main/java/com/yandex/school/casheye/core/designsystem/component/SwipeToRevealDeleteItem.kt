@@ -22,6 +22,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -42,6 +43,9 @@ import kotlin.math.roundToInt
 @Composable
 fun SwipeToRevealDeleteItem(
     actionLabel: String,
+    isRevealed: Boolean,
+    onReveal: () -> Unit,
+    onDismissReveal: () -> Unit,
     onClick: () -> Unit,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
@@ -50,14 +54,29 @@ fun SwipeToRevealDeleteItem(
     val actionWidth = 88.dp
     val density = LocalDensity.current
     var actionWidthPx by remember { mutableFloatStateOf(with(density) { actionWidth.toPx() }) }
-    var targetOffset by remember { mutableFloatStateOf(0f) }
+    var targetOffset by remember {
+        mutableFloatStateOf(
+            if (isRevealed) {
+                -actionWidthPx
+            } else {
+                0f
+            },
+        )
+    }
     var isDragging by remember { mutableStateOf(false) }
+    var revealRequestedDuringDrag by remember { mutableStateOf(false) }
     val offset by
         animateFloatAsState(
             targetValue = targetOffset,
             animationSpec = if (isDragging) snap() else spring(),
             label = "deleteRevealOffset",
         )
+
+    LaunchedEffect(isRevealed) {
+        if (!isRevealed) {
+            targetOffset = 0f
+        }
+    }
 
     Box(
         modifier =
@@ -107,22 +126,38 @@ fun SwipeToRevealDeleteItem(
                     .draggable(
                         state =
                             rememberDraggableState { delta ->
-                                targetOffset = (targetOffset + delta).coerceIn(-actionWidthPx, 0f)
+                                val previousOffset = targetOffset
+                                targetOffset =
+                                    (targetOffset + delta).coerceIn(-actionWidthPx, 0f)
+                                val revealThreshold = -actionWidthPx / 2f
+                                if (
+                                    !revealRequestedDuringDrag &&
+                                    previousOffset > revealThreshold &&
+                                    targetOffset <= revealThreshold
+                                ) {
+                                    revealRequestedDuringDrag = true
+                                    onReveal()
+                                }
                             },
                         orientation = Orientation.Horizontal,
-                        onDragStarted = { isDragging = true },
+                        onDragStarted = {
+                            isDragging = true
+                            revealRequestedDuringDrag = targetOffset <= -actionWidthPx / 2f
+                        },
                         onDragStopped = {
                             isDragging = false
                             targetOffset =
                                 if (targetOffset <= -actionWidthPx / 2f) {
                                     -actionWidthPx
                                 } else {
+                                    onDismissReveal()
                                     0f
                                 }
                         },
                     ).clickable {
-                        if (targetOffset < 0f) {
+                        if (targetOffset < 0f || isRevealed) {
                             targetOffset = 0f
+                            onDismissReveal()
                         } else {
                             onClick()
                         }

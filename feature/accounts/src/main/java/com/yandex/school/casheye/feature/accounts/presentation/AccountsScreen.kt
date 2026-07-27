@@ -20,6 +20,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -124,6 +128,8 @@ private fun AccountsContent(
     onAccountDelete: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var revealedAccountId by remember { mutableStateOf<Int?>(null) }
+
     Column(modifier = modifier.fillMaxSize()) {
         AccountsHero(
             state = state,
@@ -141,7 +147,17 @@ private fun AccountsContent(
             ) { accountItem ->
                 SwipeToRevealDeleteItem(
                     actionLabel = stringResource(R.string.delete_account),
-                    onClick = { onAccountClick(accountItem.id) },
+                    isRevealed = revealedAccountId == accountItem.id,
+                    onReveal = { revealedAccountId = accountItem.id },
+                    onDismissReveal = {
+                        if (revealedAccountId == accountItem.id) {
+                            revealedAccountId = null
+                        }
+                    },
+                    onClick = {
+                        revealedAccountId = null
+                        onAccountClick(accountItem.id)
+                    },
                     onDelete = { onAccountDelete(accountItem.id) },
                 ) {
                     MoneyListItem(
