@@ -14,6 +14,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yandex.school.casheye.R
+import com.yandex.school.casheye.app.navigation.chrome.NavigationScaffold
+import com.yandex.school.casheye.app.navigation.chrome.TOP_LEVEL_DESTINATIONS
+import com.yandex.school.casheye.app.navigation.editor.EditorOverlayHost
+import com.yandex.school.casheye.app.navigation.editor.EditorTarget
 import com.yandex.school.casheye.core.designsystem.component.datepicker.PastOrPresentDatePickerDialog
 import kotlinx.coroutines.flow.StateFlow
 import java.time.LocalDate

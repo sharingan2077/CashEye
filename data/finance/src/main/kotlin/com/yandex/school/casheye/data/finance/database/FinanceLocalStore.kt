@@ -15,8 +15,8 @@ import com.yandex.school.casheye.data.finance.dto.AccountResponseDto
 import com.yandex.school.casheye.data.finance.dto.CategoryDto
 import com.yandex.school.casheye.data.finance.dto.TransactionDto
 import com.yandex.school.casheye.data.finance.dto.TransactionResponseDto
-import com.yandex.school.casheye.domain.finance.SaveAccountCommand
-import com.yandex.school.casheye.domain.finance.SaveTransactionCommand
+import com.yandex.school.casheye.domain.finance.editor.SaveAccountCommand
+import com.yandex.school.casheye.domain.finance.editor.SaveTransactionCommand
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn

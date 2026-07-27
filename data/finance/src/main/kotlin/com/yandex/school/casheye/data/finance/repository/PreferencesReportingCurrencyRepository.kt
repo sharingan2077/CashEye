@@ -6,8 +6,8 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.yandex.school.casheye.core.model.CurrencyCode
-import com.yandex.school.casheye.domain.finance.DEFAULT_REPORTING_CURRENCY
-import com.yandex.school.casheye.domain.finance.ReportingCurrencyRepository
+import com.yandex.school.casheye.domain.finance.currency.DEFAULT_REPORTING_CURRENCY
+import com.yandex.school.casheye.domain.finance.currency.ReportingCurrencyRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map

@@ -4,13 +4,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.yandex.school.casheye.core.model.MoneyAmount
 import com.yandex.school.casheye.domain.finance.DeleteTransactionUseCase
-import com.yandex.school.casheye.domain.finance.EditorResult
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import com.yandex.school.casheye.domain.finance.FinanceLoadResult
 import com.yandex.school.casheye.domain.finance.FinanceRefreshResult
 import com.yandex.school.casheye.domain.finance.FinanceSummary
 import com.yandex.school.casheye.domain.finance.GetDailySummaryUseCase
 import com.yandex.school.casheye.domain.finance.TransactionKind
+import com.yandex.school.casheye.domain.finance.editor.EditorResult
 import dev.zacsweers.metro.Inject
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job

@@ -4,7 +4,7 @@ import com.yandex.school.casheye.data.finance.api.ExchangeRateApi
 import com.yandex.school.casheye.data.finance.database.entity.ExchangeRateCoverageEntity
 import com.yandex.school.casheye.data.finance.database.entity.ExchangeRateEntity
 import com.yandex.school.casheye.data.finance.dto.ExchangeRateDto
-import com.yandex.school.casheye.domain.finance.ExchangeRateRefreshResult
+import com.yandex.school.casheye.domain.finance.currency.ExchangeRateRefreshResult
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest

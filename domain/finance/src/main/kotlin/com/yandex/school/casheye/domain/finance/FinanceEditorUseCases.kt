@@ -1,6 +1,9 @@
 package com.yandex.school.casheye.domain.finance
 
 import com.yandex.school.casheye.core.model.Account
+import com.yandex.school.casheye.domain.finance.editor.EditorResult
+import com.yandex.school.casheye.domain.finance.editor.SaveAccountCommand
+import com.yandex.school.casheye.domain.finance.editor.SaveTransactionCommand
 
 class GetEditorAccountsUseCase(
     private val repository: FinanceRepository,

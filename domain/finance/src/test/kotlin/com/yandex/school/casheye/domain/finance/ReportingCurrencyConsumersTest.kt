@@ -4,6 +4,7 @@ import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.CurrencyCode
 import com.yandex.school.casheye.core.model.MoneyAmount
 import com.yandex.school.casheye.core.model.Transaction
+import com.yandex.school.casheye.domain.finance.currency.ReportingCurrencyRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first

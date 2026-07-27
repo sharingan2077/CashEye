@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
+import com.yandex.school.casheye.app.navigation.chrome.APP_CHROME_ANIMATION_DURATION_MILLIS
 import com.yandex.school.casheye.feature.accounts.presentation.AccountsRoute
 import com.yandex.school.casheye.feature.analytics.presentation.AnalyticsEntryPoint
 import com.yandex.school.casheye.feature.analytics.presentation.AnalyticsRoute

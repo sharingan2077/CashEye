@@ -2,15 +2,17 @@ package com.yandex.school.casheye.feature.income.presentation
 
 import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.Category
-import com.yandex.school.casheye.domain.finance.EditorResult
 import com.yandex.school.casheye.domain.finance.FinanceDataLoadResult
 import com.yandex.school.casheye.domain.finance.FinanceRepository
 import com.yandex.school.casheye.domain.finance.GetEditorAccountsUseCase
 import com.yandex.school.casheye.domain.finance.GetEditorCategoriesUseCase
 import com.yandex.school.casheye.domain.finance.GetTransactionUseCase
-import com.yandex.school.casheye.domain.finance.SaveTransactionCommand
 import com.yandex.school.casheye.domain.finance.SaveTransactionUseCase
 import com.yandex.school.casheye.domain.finance.TransactionsQuery
+import com.yandex.school.casheye.domain.finance.editor.EditorResult
+import com.yandex.school.casheye.domain.finance.editor.SaveTransactionCommand
+import com.yandex.school.casheye.feature.income.presentation.edtior.AddIncomeIntent
+import com.yandex.school.casheye.feature.income.presentation.edtior.AddIncomeViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher

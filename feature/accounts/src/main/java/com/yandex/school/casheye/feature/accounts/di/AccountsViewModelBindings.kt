@@ -1,8 +1,8 @@
 package com.yandex.school.casheye.feature.accounts.di
 
 import androidx.lifecycle.ViewModel
-import com.yandex.school.casheye.feature.accounts.presentation.AccountEditorViewModel
 import com.yandex.school.casheye.feature.accounts.presentation.AccountsViewModel
+import com.yandex.school.casheye.feature.accounts.presentation.efitor.AccountEditorViewModel
 import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.Binds
 import dev.zacsweers.metro.IntoMap

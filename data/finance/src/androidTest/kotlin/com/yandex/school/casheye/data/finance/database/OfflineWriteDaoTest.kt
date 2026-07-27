@@ -10,8 +10,8 @@ import com.yandex.school.casheye.data.finance.database.entity.PendingEntityType
 import com.yandex.school.casheye.data.finance.database.entity.PendingOperationType
 import com.yandex.school.casheye.data.finance.database.entity.TransactionEntity
 import com.yandex.school.casheye.data.finance.database.model.TransactionCommandSnapshot
-import com.yandex.school.casheye.domain.finance.SaveAccountCommand
-import com.yandex.school.casheye.domain.finance.SaveTransactionCommand
+import com.yandex.school.casheye.domain.finance.editor.SaveAccountCommand
+import com.yandex.school.casheye.domain.finance.editor.SaveTransactionCommand
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import org.junit.After

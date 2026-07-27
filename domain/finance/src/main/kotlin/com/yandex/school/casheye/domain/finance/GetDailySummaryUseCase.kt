@@ -1,6 +1,9 @@
 package com.yandex.school.casheye.domain.finance
 
 import com.yandex.school.casheye.core.model.MoneyAmount
+import com.yandex.school.casheye.domain.finance.currency.DefaultReportingCurrencyRepository
+import com.yandex.school.casheye.domain.finance.currency.ReportingCurrencyRepository
+import com.yandex.school.casheye.domain.finance.currency.aggregateNativeMoney
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine

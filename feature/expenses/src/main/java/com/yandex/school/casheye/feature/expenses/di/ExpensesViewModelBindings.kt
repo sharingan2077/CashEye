@@ -1,8 +1,8 @@
 package com.yandex.school.casheye.feature.expenses.di
 
 import androidx.lifecycle.ViewModel
-import com.yandex.school.casheye.feature.expenses.presentation.AddExpenseViewModel
 import com.yandex.school.casheye.feature.expenses.presentation.ExpensesViewModel
+import com.yandex.school.casheye.feature.expenses.presentation.editor.AddExpenseViewModel
 import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.Binds
 import dev.zacsweers.metro.IntoMap

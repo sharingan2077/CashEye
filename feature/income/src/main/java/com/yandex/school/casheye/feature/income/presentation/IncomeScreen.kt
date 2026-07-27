@@ -41,6 +41,7 @@ import com.yandex.school.casheye.core.format.formatAmount
 import com.yandex.school.casheye.core.model.Transaction
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import com.yandex.school.casheye.feature.income.R
+import com.yandex.school.casheye.feature.income.presentation.preview.incomeUiStateMock
 
 @Composable
 fun IncomeScreen(

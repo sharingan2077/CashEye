@@ -2,6 +2,13 @@ package com.yandex.school.casheye.feature.analytics.presentation
 
 import androidx.compose.ui.graphics.Color
 import com.yandex.school.casheye.core.model.Category
+import com.yandex.school.casheye.feature.analytics.presentation.chart.AnalyticsChartPalette
+import com.yandex.school.casheye.feature.analytics.presentation.chart.analyticsColorForCategory
+import com.yandex.school.casheye.feature.analytics.presentation.chart.analyticsColorForType
+import com.yandex.school.casheye.feature.analytics.presentation.chart.analyticsOverviewPieChartItems
+import com.yandex.school.casheye.feature.analytics.presentation.chart.analyticsPieChartItems
+import com.yandex.school.casheye.feature.analytics.presentation.chart.analyticsTypePieChartItems
+import com.yandex.school.casheye.feature.analytics.presentation.chart.contrastRatio
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
@@ -138,8 +145,14 @@ class AnalyticsPieChartTest {
 
     @Test
     fun `type and other colors use the supplied theme palette`() {
-        assertEquals(LIGHT_PALETTE.expense, analyticsColorForType(AnalyticsType.Expenses, LIGHT_PALETTE))
-        assertEquals(LIGHT_PALETTE.income, analyticsColorForType(AnalyticsType.Income, LIGHT_PALETTE))
+        assertEquals(
+            LIGHT_PALETTE.expense,
+            analyticsColorForType(AnalyticsType.Expenses, LIGHT_PALETTE),
+        )
+        assertEquals(
+            LIGHT_PALETTE.income,
+            analyticsColorForType(AnalyticsType.Income, LIGHT_PALETTE),
+        )
 
         val categories = categorySummaries("50", "40", "30", "20", "10")
         val items = analyticsOverviewPieChartItems(categories, OTHER_LABEL, DARK_PALETTE)

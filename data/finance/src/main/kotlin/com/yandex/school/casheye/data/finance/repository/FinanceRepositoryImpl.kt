@@ -10,14 +10,14 @@ import com.yandex.school.casheye.data.finance.dto.CategoryDto
 import com.yandex.school.casheye.data.finance.dto.TransactionResponseDto
 import com.yandex.school.casheye.data.finance.network.ServerRetryPolicy
 import com.yandex.school.casheye.data.finance.sync.FinanceSyncScheduler
-import com.yandex.school.casheye.domain.finance.EditorResult
 import com.yandex.school.casheye.domain.finance.FinanceDataLoadResult
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import com.yandex.school.casheye.domain.finance.FinanceRefreshResult
 import com.yandex.school.casheye.domain.finance.FinanceRepository
-import com.yandex.school.casheye.domain.finance.SaveAccountCommand
-import com.yandex.school.casheye.domain.finance.SaveTransactionCommand
 import com.yandex.school.casheye.domain.finance.TransactionsQuery
+import com.yandex.school.casheye.domain.finance.editor.EditorResult
+import com.yandex.school.casheye.domain.finance.editor.SaveAccountCommand
+import com.yandex.school.casheye.domain.finance.editor.SaveTransactionCommand
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers

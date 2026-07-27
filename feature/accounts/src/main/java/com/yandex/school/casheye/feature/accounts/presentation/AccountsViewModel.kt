@@ -6,11 +6,11 @@ import com.yandex.school.casheye.core.model.MoneyAmount
 import com.yandex.school.casheye.domain.finance.AccountsLoadResult
 import com.yandex.school.casheye.domain.finance.AccountsSummary
 import com.yandex.school.casheye.domain.finance.DeleteAccountUseCase
-import com.yandex.school.casheye.domain.finance.EditorResult
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import com.yandex.school.casheye.domain.finance.FinanceRefreshResult
 import com.yandex.school.casheye.domain.finance.GetAccountTransactionCountUseCase
 import com.yandex.school.casheye.domain.finance.GetAccountsUseCase
+import com.yandex.school.casheye.domain.finance.editor.EditorResult
 import dev.zacsweers.metro.Inject
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job

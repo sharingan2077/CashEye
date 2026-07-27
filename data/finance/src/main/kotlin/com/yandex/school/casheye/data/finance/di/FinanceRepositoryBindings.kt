@@ -18,10 +18,8 @@ import com.yandex.school.casheye.data.finance.sync.FinanceSyncScheduler
 import com.yandex.school.casheye.data.finance.sync.FinanceSyncer
 import com.yandex.school.casheye.data.finance.sync.WorkManagerExchangeRateRefreshScheduler
 import com.yandex.school.casheye.data.finance.sync.WorkManagerFinanceSyncScheduler
-import com.yandex.school.casheye.domain.finance.CurrencyConverter
 import com.yandex.school.casheye.domain.finance.DeleteAccountUseCase
 import com.yandex.school.casheye.domain.finance.DeleteTransactionUseCase
-import com.yandex.school.casheye.domain.finance.ExchangeRateRepository
 import com.yandex.school.casheye.domain.finance.FinanceRepository
 import com.yandex.school.casheye.domain.finance.GetAccountTransactionCountUseCase
 import com.yandex.school.casheye.domain.finance.GetAccountUseCase
@@ -31,11 +29,13 @@ import com.yandex.school.casheye.domain.finance.GetDailySummaryUseCase
 import com.yandex.school.casheye.domain.finance.GetEditorAccountsUseCase
 import com.yandex.school.casheye.domain.finance.GetEditorCategoriesUseCase
 import com.yandex.school.casheye.domain.finance.GetTransactionUseCase
-import com.yandex.school.casheye.domain.finance.ObserveReportingCurrencyUseCase
-import com.yandex.school.casheye.domain.finance.ReportingCurrencyRepository
 import com.yandex.school.casheye.domain.finance.SaveAccountUseCase
 import com.yandex.school.casheye.domain.finance.SaveTransactionUseCase
-import com.yandex.school.casheye.domain.finance.SetReportingCurrencyUseCase
+import com.yandex.school.casheye.domain.finance.currency.CurrencyConverter
+import com.yandex.school.casheye.domain.finance.currency.ExchangeRateRepository
+import com.yandex.school.casheye.domain.finance.currency.ObserveReportingCurrencyUseCase
+import com.yandex.school.casheye.domain.finance.currency.ReportingCurrencyRepository
+import com.yandex.school.casheye.domain.finance.currency.SetReportingCurrencyUseCase
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.Provides

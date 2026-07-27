@@ -2,6 +2,9 @@ package com.yandex.school.casheye.domain.finance
 
 import com.yandex.school.casheye.core.model.CurrencyCode
 import com.yandex.school.casheye.core.model.MoneyAmount
+import com.yandex.school.casheye.domain.finance.currency.CurrencyConversionResult
+import com.yandex.school.casheye.domain.finance.currency.CurrencyConverter
+import com.yandex.school.casheye.domain.finance.currency.ExchangeRate
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test

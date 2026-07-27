@@ -3,7 +3,7 @@ package com.yandex.school.casheye.data.finance.sync
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.work.ListenableWorker
 import com.yandex.school.casheye.core.model.CurrencyCode
-import com.yandex.school.casheye.domain.finance.ExchangeRateRefreshResult
+import com.yandex.school.casheye.domain.finance.currency.ExchangeRateRefreshResult
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith

@@ -14,13 +14,13 @@ import com.yandex.school.casheye.data.finance.dto.TransactionResponseDto
 import com.yandex.school.casheye.data.finance.mapper.toDomain
 import com.yandex.school.casheye.data.finance.repository.FinanceRepositoryImpl
 import com.yandex.school.casheye.data.finance.sync.FinanceSyncScheduler
-import com.yandex.school.casheye.domain.finance.EditorResult
 import com.yandex.school.casheye.domain.finance.FinanceDataLoadResult
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import com.yandex.school.casheye.domain.finance.FinanceRefreshResult
-import com.yandex.school.casheye.domain.finance.SaveAccountCommand
-import com.yandex.school.casheye.domain.finance.SaveTransactionCommand
 import com.yandex.school.casheye.domain.finance.TransactionsQuery
+import com.yandex.school.casheye.domain.finance.editor.EditorResult
+import com.yandex.school.casheye.domain.finance.editor.SaveAccountCommand
+import com.yandex.school.casheye.domain.finance.editor.SaveTransactionCommand
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow

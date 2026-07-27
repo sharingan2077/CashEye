@@ -4,7 +4,7 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.yandex.school.casheye.core.model.CurrencyCode
-import com.yandex.school.casheye.domain.finance.DEFAULT_REPORTING_CURRENCY
+import com.yandex.school.casheye.domain.finance.currency.DEFAULT_REPORTING_CURRENCY
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first

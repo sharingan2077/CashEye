@@ -6,7 +6,6 @@ import com.yandex.school.casheye.core.model.CurrencyCode
 import com.yandex.school.casheye.core.model.MoneyAmount
 import com.yandex.school.casheye.core.model.Transaction
 import com.yandex.school.casheye.domain.finance.DeleteTransactionUseCase
-import com.yandex.school.casheye.domain.finance.EditorResult
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import com.yandex.school.casheye.domain.finance.FinanceLoadResult
 import com.yandex.school.casheye.domain.finance.FinanceRefreshResult
@@ -14,6 +13,7 @@ import com.yandex.school.casheye.domain.finance.FinanceRepository
 import com.yandex.school.casheye.domain.finance.FinanceSummary
 import com.yandex.school.casheye.domain.finance.GetDailySummaryUseCase
 import com.yandex.school.casheye.domain.finance.TransactionsQuery
+import com.yandex.school.casheye.domain.finance.editor.EditorResult
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers

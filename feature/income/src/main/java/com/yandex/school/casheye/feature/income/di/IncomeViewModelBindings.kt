@@ -1,8 +1,8 @@
 package com.yandex.school.casheye.feature.income.di
 
 import androidx.lifecycle.ViewModel
-import com.yandex.school.casheye.feature.income.presentation.AddIncomeViewModel
 import com.yandex.school.casheye.feature.income.presentation.IncomeViewModel
+import com.yandex.school.casheye.feature.income.presentation.edtior.AddIncomeViewModel
 import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.Binds
 import dev.zacsweers.metro.IntoMap

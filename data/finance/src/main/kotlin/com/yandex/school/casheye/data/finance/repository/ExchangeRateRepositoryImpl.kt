@@ -7,10 +7,10 @@ import com.yandex.school.casheye.data.finance.database.dao.ExchangeRateDao
 import com.yandex.school.casheye.data.finance.database.entity.ExchangeRateCoverageEntity
 import com.yandex.school.casheye.data.finance.database.entity.ExchangeRateEntity
 import com.yandex.school.casheye.data.finance.dto.ExchangeRateDto
-import com.yandex.school.casheye.domain.finance.ExchangeRate
-import com.yandex.school.casheye.domain.finance.ExchangeRateRefreshResult
-import com.yandex.school.casheye.domain.finance.ExchangeRateRepository
-import com.yandex.school.casheye.domain.finance.ExchangeRateSnapshot
+import com.yandex.school.casheye.domain.finance.currency.ExchangeRate
+import com.yandex.school.casheye.domain.finance.currency.ExchangeRateRefreshResult
+import com.yandex.school.casheye.domain.finance.currency.ExchangeRateRepository
+import com.yandex.school.casheye.domain.finance.currency.ExchangeRateSnapshot
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map

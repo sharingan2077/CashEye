@@ -12,8 +12,8 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import com.yandex.school.casheye.domain.finance.ExchangeRateRefreshResult
-import com.yandex.school.casheye.domain.finance.ExchangeRateRepository
+import com.yandex.school.casheye.domain.finance.currency.ExchangeRateRefreshResult
+import com.yandex.school.casheye.domain.finance.currency.ExchangeRateRepository
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn

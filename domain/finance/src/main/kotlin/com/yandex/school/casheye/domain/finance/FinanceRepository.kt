@@ -5,6 +5,9 @@ import com.yandex.school.casheye.core.model.Category
 import com.yandex.school.casheye.core.model.CurrencyCode
 import com.yandex.school.casheye.core.model.MoneyAmount
 import com.yandex.school.casheye.core.model.Transaction
+import com.yandex.school.casheye.domain.finance.editor.EditorResult
+import com.yandex.school.casheye.domain.finance.editor.SaveAccountCommand
+import com.yandex.school.casheye.domain.finance.editor.SaveTransactionCommand
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import java.math.BigDecimal
