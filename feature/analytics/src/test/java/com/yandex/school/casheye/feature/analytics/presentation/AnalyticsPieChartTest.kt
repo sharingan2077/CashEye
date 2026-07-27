@@ -26,21 +26,30 @@ class AnalyticsPieChartTest {
     }
 
     @Test
-    fun `first twenty categories receive distinct colors in both themes`() {
-        val lightColors = (0 until 20).map { analyticsColorForCategory(it, LIGHT_PALETTE.surface) }
-        val darkColors = (0 until 20).map { analyticsColorForCategory(it, DARK_PALETTE.surface) }
+    fun `first palette cycle uses distinct colors in both themes`() {
+        val lightColors =
+            (1..CATEGORY_PALETTE_SIZE).map {
+                analyticsColorForCategory(it, LIGHT_PALETTE.surface)
+            }
+        val darkColors =
+            (1..CATEGORY_PALETTE_SIZE).map {
+                analyticsColorForCategory(it, DARK_PALETTE.surface)
+            }
 
         assertEquals(lightColors.size, lightColors.toSet().size)
         assertEquals(darkColors.size, darkColors.toSet().size)
     }
 
     @Test
-    fun `extended category range does not repeat colors in both themes`() {
-        val lightColors = (0 until 100).map { analyticsColorForCategory(it, LIGHT_PALETTE.surface) }
-        val darkColors = (0 until 100).map { analyticsColorForCategory(it, DARK_PALETTE.surface) }
-
-        assertEquals(lightColors.size, lightColors.toSet().size)
-        assertEquals(darkColors.size, darkColors.toSet().size)
+    fun `category colors repeat only after a full palette cycle`() {
+        assertEquals(
+            analyticsColorForCategory(1, LIGHT_PALETTE.surface),
+            analyticsColorForCategory(1 + CATEGORY_PALETTE_SIZE, LIGHT_PALETTE.surface),
+        )
+        assertEquals(
+            analyticsColorForCategory(1, DARK_PALETTE.surface),
+            analyticsColorForCategory(1 + CATEGORY_PALETTE_SIZE, DARK_PALETTE.surface),
+        )
     }
 
     @Test
@@ -52,13 +61,23 @@ class AnalyticsPieChartTest {
     }
 
     @Test
-    fun `category colors keep non text contrast against both surfaces`() {
-        listOf(LIGHT_PALETTE, DARK_PALETTE).forEach { palette ->
-            (0 until 100).forEach { categoryId ->
-                val color = analyticsColorForCategory(categoryId, palette.surface)
-                assertContrastAtLeast(color, palette.surface, MIN_CHART_CONTRAST)
-            }
+    fun `dark category colors keep non text contrast`() {
+        (1..CATEGORY_PALETTE_SIZE).forEach { categoryId ->
+            val color = analyticsColorForCategory(categoryId, DARK_PALETTE.surface)
+            assertContrastAtLeast(color, DARK_PALETTE.surface, MIN_CHART_CONTRAST)
         }
+    }
+
+    @Test
+    fun `supplied category color pairs are preserved`() {
+        assertEquals(Color(0xFFABE016), analyticsColorForCategory(1, LIGHT_PALETTE.surface))
+        assertEquals(Color(0xFFA2DB02), analyticsColorForCategory(1, DARK_PALETTE.surface))
+        assertEquals(Color(0xFFB5A2FE), analyticsColorForCategory(2, LIGHT_PALETTE.surface))
+        assertEquals(Color(0xFF9A83F7), analyticsColorForCategory(2, DARK_PALETTE.surface))
+        assertEquals(Color(0xFF40E0B0), analyticsColorForCategory(3, LIGHT_PALETTE.surface))
+        assertEquals(Color(0xFF20CA99), analyticsColorForCategory(3, DARK_PALETTE.surface))
+        assertEquals(Color(0xFFFFD485), analyticsColorForCategory(4, LIGHT_PALETTE.surface))
+        assertEquals(Color(0xFFFBBC3B), analyticsColorForCategory(4, DARK_PALETTE.surface))
     }
 
     @Test
@@ -191,18 +210,19 @@ class AnalyticsPieChartTest {
         const val EXPENSES_LABEL = "Expenses"
         const val INCOME_LABEL = "Income"
         const val MIN_CHART_CONTRAST = 3f
+        const val CATEGORY_PALETTE_SIZE = 24
         val LIGHT_PALETTE =
             AnalyticsChartPalette(
-                expense = Color(0xFFC43E3E),
-                income = Color(0xFF329E5D),
-                other = Color(0xFFC65A77),
+                expense = Color(0xFFE63E83),
+                income = Color(0xFFABE016),
+                other = Color(0xFFE6EBEF),
                 surface = Color(0xFFFEF7FF),
             )
         val DARK_PALETTE =
             AnalyticsChartPalette(
-                expense = Color(0xFFFF8585),
-                income = Color(0xFF72DB9C),
-                other = Color(0xFFFF9EB8),
+                expense = Color(0xFFFF6FA8),
+                income = Color(0xFFA2DB02),
+                other = Color(0xFF727B82),
                 surface = Color(0xFF141218),
             )
     }

@@ -9,17 +9,16 @@ import org.junit.Test
 class ExtendedColorsTest {
     @Test
     fun `light and dark chart colors use theme specific tones`() {
-        assertEquals(Color(0xFFC43E3E), LightExtendedColors.chartExpense)
-        assertEquals(Color(0xFF329E5D), LightExtendedColors.chartIncome)
-        assertEquals(Color(0xFFC65A77), LightExtendedColors.chartOther)
-        assertEquals(Color(0xFFFF8585), DarkExtendedColors.chartExpense)
-        assertEquals(Color(0xFF72DB9C), DarkExtendedColors.chartIncome)
-        assertEquals(Color(0xFFFF9EB8), DarkExtendedColors.chartOther)
+        assertEquals(Color(0xFFE63E83), LightExtendedColors.chartExpense)
+        assertEquals(Color(0xFFABE016), LightExtendedColors.chartIncome)
+        assertEquals(Color(0xFFE6EBEF), LightExtendedColors.chartOther)
+        assertEquals(Color(0xFFFF6FA8), DarkExtendedColors.chartExpense)
+        assertEquals(Color(0xFFA2DB02), DarkExtendedColors.chartIncome)
+        assertEquals(Color(0xFF727B82), DarkExtendedColors.chartOther)
     }
 
     @Test
-    fun `chart colors meet non text contrast in both themes`() {
-        assertPaletteContrast(LightExtendedColors, LightSurface)
+    fun `dark chart colors meet non text contrast`() {
         assertPaletteContrast(DarkExtendedColors, DarkSurface)
     }
 

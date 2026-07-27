@@ -172,24 +172,14 @@ internal fun analyticsColorForCategory(
     categoryId: Int,
     surface: Color,
 ): Color {
-    val normalizedId = categoryId.toLong() and UINT_MASK
-    val hue = (normalizedId.rem(COLOR_SEQUENCE_LENGTH).toFloat() * GOLDEN_ANGLE).rem(FULL_HUE)
-    var saturation = CATEGORY_SATURATION
-    var value = CATEGORY_VALUE
     val lightSurface = surface.luminance() >= LIGHT_SURFACE_LUMINANCE
-
-    repeat(MAX_CONTRAST_ADJUSTMENTS) {
-        val candidate = Color.hsv(hue = hue, saturation = saturation, value = value)
-        if (contrastRatio(candidate, surface) >= MIN_CHART_CONTRAST) return candidate
-
-        if (lightSurface) {
-            value = (value - COLOR_ADJUSTMENT_STEP).coerceAtLeast(0f)
-        } else {
-            saturation = (saturation - COLOR_ADJUSTMENT_STEP).coerceAtLeast(0f)
-        }
-    }
-
-    return Color.hsv(hue = hue, saturation = saturation, value = value)
+    val paletteIndex =
+        Math.floorMod(
+            categoryId.toLong() - FIRST_CATEGORY_ID,
+            CATEGORY_COLOR_PAIRS.size.toLong(),
+        ).toInt()
+    val pair = CATEGORY_COLOR_PAIRS[paletteIndex]
+    return if (lightSurface) pair.light else pair.dark
 }
 
 internal fun analyticsColorForType(
@@ -271,15 +261,40 @@ internal fun analyticsPieChartValues(items: List<AnalyticsPieChartItem>): List<B
     }
 }
 
-private const val UINT_MASK = 0xffffffffL
-private const val COLOR_SEQUENCE_LENGTH = 1_000_003L
-private const val FULL_HUE = 360L
-private const val GOLDEN_ANGLE = 137.508f
 private const val MAX_OVERVIEW_CATEGORIES = 4
-private const val CATEGORY_SATURATION = 0.58f
-private const val CATEGORY_VALUE = 0.94f
+private const val FIRST_CATEGORY_ID = 1L
 private const val LIGHT_SURFACE_LUMINANCE = 0.5f
-private const val MIN_CHART_CONTRAST = 3f
-private const val COLOR_ADJUSTMENT_STEP = 0.02f
-private const val MAX_CONTRAST_ADJUSTMENTS = 50
 private const val CONTRAST_LUMINANCE_OFFSET = 0.05f
+
+private data class AnalyticsCategoryColorPair(
+    val light: Color,
+    val dark: Color,
+)
+
+private val CATEGORY_COLOR_PAIRS =
+    listOf(
+        AnalyticsCategoryColorPair(light = Color(0xFFABE016), dark = Color(0xFFA2DB02)),
+        AnalyticsCategoryColorPair(light = Color(0xFFB5A2FE), dark = Color(0xFF9A83F7)),
+        AnalyticsCategoryColorPair(light = Color(0xFF40E0B0), dark = Color(0xFF20CA99)),
+        AnalyticsCategoryColorPair(light = Color(0xFFFFD485), dark = Color(0xFFFBBC3B)),
+        AnalyticsCategoryColorPair(light = Color(0xFFFF9FCA), dark = Color(0xFFF66AAD)),
+        AnalyticsCategoryColorPair(light = Color(0xFF79CDF7), dark = Color(0xFF42B7EF)),
+        AnalyticsCategoryColorPair(light = Color(0xFFFF9A8B), dark = Color(0xFFF56F61)),
+        AnalyticsCategoryColorPair(light = Color(0xFF62D7E5), dark = Color(0xFF28BFCE)),
+        AnalyticsCategoryColorPair(light = Color(0xFF8CB4FF), dark = Color(0xFF5B92F5)),
+        AnalyticsCategoryColorPair(light = Color(0xFFFFB36B), dark = Color(0xFFF58D32)),
+        AnalyticsCategoryColorPair(light = Color(0xFFD296FF), dark = Color(0xFFBB62F4)),
+        AnalyticsCategoryColorPair(light = Color(0xFF73D997), dark = Color(0xFF42C674)),
+        AnalyticsCategoryColorPair(light = Color(0xFFF29ADF), dark = Color(0xFFDE64C4)),
+        AnalyticsCategoryColorPair(light = Color(0xFF9CA7FF), dark = Color(0xFF727FF2)),
+        AnalyticsCategoryColorPair(light = Color(0xFF65D8C9), dark = Color(0xFF2FC2B2)),
+        AnalyticsCategoryColorPair(light = Color(0xFFFF9BA5), dark = Color(0xFFF26A78)),
+        AnalyticsCategoryColorPair(light = Color(0xFFC7E86B), dark = Color(0xFFA9D63E)),
+        AnalyticsCategoryColorPair(light = Color(0xFFA7C5FF), dark = Color(0xFF719CEF)),
+        AnalyticsCategoryColorPair(light = Color(0xFFFFB0E6), dark = Color(0xFFF27BCB)),
+        AnalyticsCategoryColorPair(light = Color(0xFF7DE3A1), dark = Color(0xFF43CD77)),
+        AnalyticsCategoryColorPair(light = Color(0xFFC4A6FF), dark = Color(0xFFA274F5)),
+        AnalyticsCategoryColorPair(light = Color(0xFFFFCA9E), dark = Color(0xFFF5A45F)),
+        AnalyticsCategoryColorPair(light = Color(0xFF6ED9F2), dark = Color(0xFF32BFD9)),
+        AnalyticsCategoryColorPair(light = Color(0xFFF5A0B8), dark = Color(0xFFE86B91)),
+    )
