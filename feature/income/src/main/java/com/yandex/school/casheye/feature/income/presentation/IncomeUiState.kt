@@ -31,6 +31,8 @@ sealed interface IncomeIntent {
 
     data object Refresh : IncomeIntent
 
+    data object NetworkRecovered : IncomeIntent
+
     data class SelectDate(
         val date: LocalDate,
     ) : IncomeIntent

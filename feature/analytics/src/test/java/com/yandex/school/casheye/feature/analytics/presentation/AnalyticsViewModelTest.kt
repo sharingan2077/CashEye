@@ -414,6 +414,43 @@ class AnalyticsViewModelTest {
         }
 
     @Test
+    fun `network recovery shows loading after an empty-cache error`() =
+        runTest {
+            val refresh = CompletableDeferred<FinanceRefreshResult>()
+            var refreshCount = 0
+            val repository =
+                object : StubFinanceRepository() {
+                    override fun observeAccounts(): Flow<List<Account>> = MutableStateFlow(emptyList())
+
+                    override fun observeTransactions(query: TransactionsQuery): Flow<List<Transaction>> =
+                        MutableStateFlow(emptyList())
+
+                    override suspend fun refreshPeriod(
+                        startDate: LocalDate,
+                        endDate: LocalDate,
+                    ): FinanceRefreshResult =
+                        if (++refreshCount == 1) {
+                            FinanceRefreshResult.Failure(FinanceFailureReason.Network, hasUsableCache = false)
+                        } else {
+                            refresh.await()
+                        }
+                }
+            val viewModel = AnalyticsViewModel(GetAnalyticsUseCase(repository), clock)
+
+            viewModel.onIntent(AnalyticsIntent.Initialize(AnalyticsEntryPoint.Expenses))
+            advanceUntilIdle()
+            assertTrue(viewModel.state.value is AnalyticsUiState.Error)
+
+            viewModel.onIntent(AnalyticsIntent.NetworkRecovered)
+            runCurrent()
+            assertTrue(viewModel.state.value is AnalyticsUiState.Loading)
+
+            refresh.complete(FinanceRefreshResult.Success)
+            advanceUntilIdle()
+            assertTrue(viewModel.state.value is AnalyticsUiState.Empty)
+        }
+
+    @Test
     fun `network failure waits for cached analytics without emitting error`() =
         runTest {
             val cached = transaction(id = 1, categoryId = 10, amount = "3")

@@ -33,6 +33,8 @@ sealed interface AccountsIntent {
 
     data object Refresh : AccountsIntent
 
+    data object NetworkRecovered : AccountsIntent
+
     data class RequestAccountDelete(
         val id: Int,
     ) : AccountsIntent

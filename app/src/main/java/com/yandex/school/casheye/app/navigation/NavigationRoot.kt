@@ -33,7 +33,16 @@ fun NavigationRoot(
     val snackbarHostState = remember { SnackbarHostState() }
     val isOnline by networkStatus.collectAsStateWithLifecycle()
     var previousOnline by rememberSaveable { mutableStateOf<Boolean?>(null) }
+    var networkRecoveryRefresh by remember { mutableStateOf<NetworkRecoveryRefresh?>(null) }
+    var nextNetworkRecoveryRefreshId by remember { mutableLongStateOf(0L) }
     val offlineMessage = stringResource(R.string.network_offline_message)
+
+    val navigationState =
+        rememberNavigationState(
+            startRoute = Route.Expenses,
+            topLevelRoutes = TOP_LEVEL_DESTINATIONS.keys,
+        )
+    val navigator = remember { Navigator(navigationState) }
 
     LaunchedEffect(isOnline) {
         val wasOnline = previousOnline
@@ -44,17 +53,19 @@ fun NavigationRoot(
                 withDismissAction = true,
                 duration = SnackbarDuration.Long,
             )
+        } else if (isOnline && wasOnline == false) {
+            val route =
+                navigationState.backStacks[navigationState.topLevelRoute]?.lastOrNull() as? Route
+            if (route != null) {
+                nextNetworkRecoveryRefreshId += 1
+                networkRecoveryRefresh =
+                    NetworkRecoveryRefresh(id = nextNetworkRecoveryRefreshId, route = route)
+            }
         }
     }
 
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
     val selectedDate = LocalDate.ofEpochDay(selectedDateEpochDay).coerceAtMost(LocalDate.now())
-    val navigationState =
-        rememberNavigationState(
-            startRoute = Route.Expenses,
-            topLevelRoutes = TOP_LEVEL_DESTINATIONS.keys,
-        )
-    val navigator = remember { Navigator(navigationState) }
     var editorTarget by remember { mutableStateOf<EditorTarget?>(null) }
 
     NavigationScaffold(
@@ -63,6 +74,12 @@ fun NavigationRoot(
         snackbarHostState = snackbarHostState,
         navigator = navigator,
         selectedDate = selectedDate,
+        networkRecoveryRefresh = networkRecoveryRefresh,
+        onNetworkRecoveryRefreshConsumed = { id ->
+            if (networkRecoveryRefresh?.id == id) {
+                networkRecoveryRefresh = null
+            }
+        },
         onDateClick = { showDatePicker = true },
         onEditExpense = { editorTarget = EditorTarget.Expense(it) },
         onEditIncome = { editorTarget = EditorTarget.Income(it) },
@@ -94,3 +111,8 @@ fun NavigationRoot(
         onDismiss = { editorTarget = null },
     )
 }
+
+internal data class NetworkRecoveryRefresh(
+    val id: Long,
+    val route: Route,
+)

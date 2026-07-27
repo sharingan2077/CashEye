@@ -22,6 +22,8 @@ fun ExpensesRoute(
     snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
     onTransactionClick: (Int) -> Unit = {},
+    networkRecoveryRefreshId: Long? = null,
+    onNetworkRecoveryRefreshConsumed: (Long) -> Unit = {},
     viewModel: ExpensesViewModel = metroViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -34,6 +36,12 @@ fun ExpensesRoute(
 
     LaunchedEffect(selectedDate, viewModel) {
         viewModel.onIntent(ExpensesIntent.SelectDate(selectedDate))
+    }
+
+    LaunchedEffect(networkRecoveryRefreshId, viewModel) {
+        val refreshId = networkRecoveryRefreshId ?: return@LaunchedEffect
+        viewModel.onIntent(ExpensesIntent.NetworkRecovered)
+        onNetworkRecoveryRefreshConsumed(refreshId)
     }
 
     LaunchedEffect(viewModel, snackbarHostState) {

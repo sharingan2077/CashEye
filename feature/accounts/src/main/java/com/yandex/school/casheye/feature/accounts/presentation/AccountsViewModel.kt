@@ -50,6 +50,7 @@ class AccountsViewModel(
         when (intent) {
             AccountsIntent.Retry -> refreshAccounts()
             AccountsIntent.Refresh -> refreshAccounts()
+            AccountsIntent.NetworkRecovered -> refreshAccounts(showLoadingForEmptyCache = true)
             is AccountsIntent.RequestAccountDelete -> requestAccountDelete(intent.id)
             AccountsIntent.ConfirmAccountDelete -> confirmAccountDelete()
             AccountsIntent.CancelAccountDelete -> updateDeleteConfirmation(null)
@@ -144,11 +145,13 @@ class AccountsViewModel(
             }
     }
 
-    private fun refreshAccounts() {
+    private fun refreshAccounts(showLoadingForEmptyCache: Boolean = false) {
         refreshJob?.cancel()
         val observationReady = localObservationReady
         if (_state.value.isRefreshable()) {
             _state.value = _state.value.withRefreshing(true)
+        } else if (showLoadingForEmptyCache) {
+            _state.value = AccountsUiState.Loading
         }
         refreshJob =
             viewModelScope.launch {

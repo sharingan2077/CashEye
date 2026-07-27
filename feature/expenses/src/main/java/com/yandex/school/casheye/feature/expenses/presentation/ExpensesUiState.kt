@@ -31,6 +31,8 @@ sealed interface ExpensesIntent {
 
     data object Refresh : ExpensesIntent
 
+    data object NetworkRecovered : ExpensesIntent
+
     data class SelectDate(
         val date: LocalDate,
     ) : ExpensesIntent

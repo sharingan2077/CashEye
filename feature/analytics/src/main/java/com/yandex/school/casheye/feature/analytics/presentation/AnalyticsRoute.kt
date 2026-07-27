@@ -19,6 +19,8 @@ fun AnalyticsRoute(
     entryPoint: AnalyticsEntryPoint,
     snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
+    networkRecoveryRefreshId: Long? = null,
+    onNetworkRecoveryRefreshConsumed: (Long) -> Unit = {},
     viewModel: AnalyticsViewModel = metroViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -29,6 +31,12 @@ fun AnalyticsRoute(
 
     LaunchedEffect(entryPoint, viewModel) {
         viewModel.onIntent(AnalyticsIntent.Initialize(entryPoint))
+    }
+
+    LaunchedEffect(networkRecoveryRefreshId, viewModel) {
+        val refreshId = networkRecoveryRefreshId ?: return@LaunchedEffect
+        viewModel.onIntent(AnalyticsIntent.NetworkRecovered)
+        onNetworkRecoveryRefreshConsumed(refreshId)
     }
     LaunchedEffect(viewModel, snackbarHostState) {
         viewModel.effects.collectLatest { effect ->

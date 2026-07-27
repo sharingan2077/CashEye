@@ -165,6 +165,8 @@ sealed interface AnalyticsIntent {
     data object Retry : AnalyticsIntent
 
     data object Refresh : AnalyticsIntent
+
+    data object NetworkRecovered : AnalyticsIntent
 }
 
 sealed interface AnalyticsEffect {

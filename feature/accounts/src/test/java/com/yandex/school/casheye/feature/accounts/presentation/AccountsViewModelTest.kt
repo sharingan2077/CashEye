@@ -155,6 +155,36 @@ class AccountsViewModelTest {
         }
 
     @Test
+    fun `network recovery shows loading after an empty-cache error`() =
+        runTest {
+            val refresh = CompletableDeferred<FinanceRefreshResult>()
+            var refreshCount = 0
+            val repository =
+                object : StubFinanceRepository() {
+                    override fun observeAccounts(): Flow<List<Account>> = MutableStateFlow(emptyList())
+
+                    override suspend fun refreshAccounts(): FinanceRefreshResult =
+                        if (++refreshCount == 1) {
+                            FinanceRefreshResult.Failure(FinanceFailureReason.Network, hasUsableCache = false)
+                        } else {
+                            refresh.await()
+                        }
+                }
+            val viewModel = accountsViewModel(repository)
+
+            advanceUntilIdle()
+            assertEquals(AccountsUiState.Error(FinanceFailureReason.Network), viewModel.state.value)
+
+            viewModel.onIntent(AccountsIntent.NetworkRecovered)
+            runCurrent()
+            assertEquals(AccountsUiState.Loading, viewModel.state.value)
+
+            refresh.complete(FinanceRefreshResult.Success)
+            advanceUntilIdle()
+            assertEquals(AccountsUiState.Empty(), viewModel.state.value)
+        }
+
+    @Test
     fun `cached accounts stay visible while initial refresh is running`() =
         runTest {
             val refresh = CompletableDeferred<FinanceRefreshResult>()

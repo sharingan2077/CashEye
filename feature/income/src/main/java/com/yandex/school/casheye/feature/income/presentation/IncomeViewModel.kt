@@ -55,6 +55,7 @@ class IncomeViewModel(
         when (intent) {
             IncomeIntent.Retry -> refreshIncome(selectedDate)
             IncomeIntent.Refresh -> refreshIncome(selectedDate)
+            IncomeIntent.NetworkRecovered -> refreshIncome(selectedDate, showLoadingForEmptyCache = true)
             is IncomeIntent.SelectDate -> selectDate(intent.date)
             is IncomeIntent.DeleteTransaction -> deleteTransaction(intent.id)
         }
@@ -133,11 +134,16 @@ class IncomeViewModel(
             }
     }
 
-    private fun refreshIncome(date: LocalDate) {
+    private fun refreshIncome(
+        date: LocalDate,
+        showLoadingForEmptyCache: Boolean = false,
+    ) {
         refreshJob?.cancel()
         val observationReady = localObservationReady
         if (_state.value.isRefreshable()) {
             _state.value = _state.value.withRefreshing(true)
+        } else if (showLoadingForEmptyCache) {
+            _state.value = IncomeUiState.Loading
         }
         refreshJob =
             viewModelScope.launch {

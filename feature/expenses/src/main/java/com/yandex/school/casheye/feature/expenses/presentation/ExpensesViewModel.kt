@@ -53,6 +53,7 @@ class ExpensesViewModel(
         when (intent) {
             ExpensesIntent.Retry -> refreshExpenses(selectedDate)
             ExpensesIntent.Refresh -> refreshExpenses(selectedDate)
+            ExpensesIntent.NetworkRecovered -> refreshExpenses(selectedDate, showLoadingForEmptyCache = true)
             is ExpensesIntent.SelectDate -> selectDate(intent.date)
             is ExpensesIntent.DeleteTransaction -> deleteTransaction(intent.id)
         }
@@ -131,11 +132,16 @@ class ExpensesViewModel(
             }
     }
 
-    private fun refreshExpenses(date: LocalDate) {
+    private fun refreshExpenses(
+        date: LocalDate,
+        showLoadingForEmptyCache: Boolean = false,
+    ) {
         refreshJob?.cancel()
         val observationReady = localObservationReady
         if (_state.value.isRefreshable()) {
             _state.value = _state.value.withRefreshing(true)
+        } else if (showLoadingForEmptyCache) {
+            _state.value = ExpensesUiState.Loading
         }
         refreshJob =
             viewModelScope.launch {

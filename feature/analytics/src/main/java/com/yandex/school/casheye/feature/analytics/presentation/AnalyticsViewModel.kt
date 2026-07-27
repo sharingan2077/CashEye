@@ -68,6 +68,11 @@ class AnalyticsViewModel(
             AnalyticsIntent.OpenDetails -> updateSheet(AnalyticsSheet.Details)
             AnalyticsIntent.Retry -> refreshAnalytics(currentQuery())
             AnalyticsIntent.Refresh -> refreshAnalytics(currentQuery())
+            AnalyticsIntent.NetworkRecovered -> {
+                if (initialized) {
+                    refreshAnalytics(currentQuery(), showLoadingForEmptyCache = true)
+                }
+            }
         }
     }
 
@@ -254,11 +259,16 @@ class AnalyticsViewModel(
         refreshAnalytics(query)
     }
 
-    private fun refreshAnalytics(query: AnalyticsQuery) {
+    private fun refreshAnalytics(
+        query: AnalyticsQuery,
+        showLoadingForEmptyCache: Boolean = false,
+    ) {
         refreshJob?.cancel()
         val observationReady = localObservationReady
         if (_state.value.isRefreshable()) {
             _state.value = _state.value.withRefreshing(true)
+        } else if (showLoadingForEmptyCache) {
+            _state.value = AnalyticsUiState.Loading(screenData)
         }
         refreshJob =
             viewModelScope.launch {

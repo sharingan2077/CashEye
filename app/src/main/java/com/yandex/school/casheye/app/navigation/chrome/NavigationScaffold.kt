@@ -31,6 +31,7 @@ import com.yandex.school.casheye.R
 import com.yandex.school.casheye.app.navigation.NavigationContent
 import com.yandex.school.casheye.app.navigation.NavigationState
 import com.yandex.school.casheye.app.navigation.Navigator
+import com.yandex.school.casheye.app.navigation.NetworkRecoveryRefresh
 import com.yandex.school.casheye.app.navigation.Route
 import com.yandex.school.casheye.app.navigation.toAnalyticsEntryPoint
 import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
@@ -43,6 +44,8 @@ internal fun NavigationScaffold(
     snackbarHostState: SnackbarHostState,
     navigator: Navigator,
     selectedDate: LocalDate,
+    networkRecoveryRefresh: NetworkRecoveryRefresh?,
+    onNetworkRecoveryRefreshConsumed: (Long) -> Unit,
     onEditExpense: (Int) -> Unit,
     onEditIncome: (Int) -> Unit,
     onEditAccount: (Int) -> Unit,
@@ -137,6 +140,8 @@ internal fun NavigationScaffold(
             snackbarHostState = snackbarHostState,
             navigator = navigator,
             selectedDate = selectedDate,
+            networkRecoveryRefresh = networkRecoveryRefresh,
+            onNetworkRecoveryRefreshConsumed = onNetworkRecoveryRefreshConsumed,
             onEditExpense = onEditExpense,
             onEditIncome = onEditIncome,
             onEditAccount = onEditAccount,

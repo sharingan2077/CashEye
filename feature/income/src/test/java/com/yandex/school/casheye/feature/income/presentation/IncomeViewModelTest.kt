@@ -192,6 +192,42 @@ class IncomeViewModelTest {
         }
 
     @Test
+    fun `network recovery shows loading after an empty-cache error`() =
+        runTest {
+            val refresh = CompletableDeferred<FinanceRefreshResult>()
+            var refreshCount = 0
+            val repository =
+                object : StubFinanceRepository() {
+                    override fun observeAccounts(): Flow<List<Account>> = MutableStateFlow(emptyList())
+
+                    override fun observeTransactions(query: TransactionsQuery): Flow<List<Transaction>> =
+                        MutableStateFlow(emptyList())
+
+                    override suspend fun refreshPeriod(
+                        startDate: LocalDate,
+                        endDate: LocalDate,
+                    ): FinanceRefreshResult =
+                        if (++refreshCount == 1) {
+                            FinanceRefreshResult.Failure(FinanceFailureReason.Network, hasUsableCache = false)
+                        } else {
+                            refresh.await()
+                        }
+                }
+            val viewModel = incomeViewModel(repository, clock)
+
+            advanceUntilIdle()
+            assertEquals(IncomeUiState.Error(FinanceFailureReason.Network), viewModel.state.value)
+
+            viewModel.onIntent(IncomeIntent.NetworkRecovered)
+            runCurrent()
+            assertEquals(IncomeUiState.Loading, viewModel.state.value)
+
+            refresh.complete(FinanceRefreshResult.Success)
+            advanceUntilIdle()
+            assertEquals(IncomeUiState.Empty(), viewModel.state.value)
+        }
+
+    @Test
     fun `cached income stays visible while initial refresh is running`() =
         runTest {
             val cached = incomeTransaction()

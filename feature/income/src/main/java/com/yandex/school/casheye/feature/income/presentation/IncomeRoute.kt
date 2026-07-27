@@ -22,6 +22,8 @@ fun IncomeRoute(
     snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
     onTransactionClick: (Int) -> Unit = {},
+    networkRecoveryRefreshId: Long? = null,
+    onNetworkRecoveryRefreshConsumed: (Long) -> Unit = {},
     viewModel: IncomeViewModel = metroViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -34,6 +36,12 @@ fun IncomeRoute(
 
     LaunchedEffect(selectedDate, viewModel) {
         viewModel.onIntent(IncomeIntent.SelectDate(selectedDate))
+    }
+
+    LaunchedEffect(networkRecoveryRefreshId, viewModel) {
+        val refreshId = networkRecoveryRefreshId ?: return@LaunchedEffect
+        viewModel.onIntent(IncomeIntent.NetworkRecovered)
+        onNetworkRecoveryRefreshConsumed(refreshId)
     }
 
     LaunchedEffect(viewModel, snackbarHostState) {

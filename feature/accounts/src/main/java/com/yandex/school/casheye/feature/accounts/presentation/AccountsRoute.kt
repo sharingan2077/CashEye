@@ -21,6 +21,8 @@ fun AccountsRoute(
     snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
     onAccountClick: (Int) -> Unit = {},
+    networkRecoveryRefreshId: Long? = null,
+    onNetworkRecoveryRefreshConsumed: (Long) -> Unit = {},
     viewModel: AccountsViewModel = metroViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -28,6 +30,12 @@ fun AccountsRoute(
     val retryLabel = stringResource(R.string.retry)
     val accountDeletedMessage = stringResource(R.string.account_deleted)
     val deleteErrorMessage = stringResource(R.string.error_delete_account)
+
+    LaunchedEffect(networkRecoveryRefreshId, viewModel) {
+        val refreshId = networkRecoveryRefreshId ?: return@LaunchedEffect
+        viewModel.onIntent(AccountsIntent.NetworkRecovered)
+        onNetworkRecoveryRefreshConsumed(refreshId)
+    }
     val resources = LocalResources.current
 
     DismissSnackbarOnDispose(snackbarHostState)

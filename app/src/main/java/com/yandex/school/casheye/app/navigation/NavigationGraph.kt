@@ -25,6 +25,8 @@ internal fun NavigationContent(
     snackbarHostState: SnackbarHostState,
     navigator: Navigator,
     selectedDate: LocalDate,
+    networkRecoveryRefresh: NetworkRecoveryRefresh?,
+    onNetworkRecoveryRefreshConsumed: (Long) -> Unit,
     onEditExpense: (Int) -> Unit,
     onEditIncome: (Int) -> Unit,
     onEditAccount: (Int) -> Unit,
@@ -49,6 +51,9 @@ internal fun NavigationContent(
                             selectedDate = selectedDate,
                             snackbarHostState = snackbarHostState,
                             onTransactionClick = onEditExpense,
+                            networkRecoveryRefreshId =
+                                networkRecoveryRefresh?.takeIf { it.route == Route.Expenses }?.id,
+                            onNetworkRecoveryRefreshConsumed = onNetworkRecoveryRefreshConsumed,
                         )
                     }
                     entry<Route.Income> {
@@ -56,18 +61,27 @@ internal fun NavigationContent(
                             selectedDate = selectedDate,
                             snackbarHostState = snackbarHostState,
                             onTransactionClick = onEditIncome,
+                            networkRecoveryRefreshId =
+                                networkRecoveryRefresh?.takeIf { it.route == Route.Income }?.id,
+                            onNetworkRecoveryRefreshConsumed = onNetworkRecoveryRefreshConsumed,
                         )
                     }
                     entry<Route.Account> {
                         AccountsRoute(
                             snackbarHostState = snackbarHostState,
                             onAccountClick = onEditAccount,
+                            networkRecoveryRefreshId =
+                                networkRecoveryRefresh?.takeIf { it.route == Route.Account }?.id,
+                            onNetworkRecoveryRefreshConsumed = onNetworkRecoveryRefreshConsumed,
                         )
                     }
                     entry<Route.Analytics> { route ->
                         AnalyticsRoute(
                             entryPoint = route.entryPoint.toFeatureEntryPoint(),
                             snackbarHostState = snackbarHostState,
+                            networkRecoveryRefreshId =
+                                networkRecoveryRefresh?.takeIf { it.route == route }?.id,
+                            onNetworkRecoveryRefreshConsumed = onNetworkRecoveryRefreshConsumed,
                         )
                     }
                 },
