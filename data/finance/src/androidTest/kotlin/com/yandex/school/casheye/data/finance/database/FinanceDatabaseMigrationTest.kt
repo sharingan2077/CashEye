@@ -1,7 +1,6 @@
 package com.yandex.school.casheye.data.finance.database
 
 import androidx.room.testing.MigrationTestHelper
-import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
@@ -15,8 +14,7 @@ class FinanceDatabaseMigrationTest {
     val helper =
         MigrationTestHelper(
             InstrumentationRegistry.getInstrumentation(),
-            FinanceDatabase::class.java.canonicalName,
-            FrameworkSQLiteOpenHelperFactory(),
+            FinanceDatabase::class.java,
         )
 
     @Test
