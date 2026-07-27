@@ -16,6 +16,8 @@
     <string name="error_invalid_balance">Enter a valid balance</string>
     <string name="error_select_currency">Select a currency</string>
     <string name="error_save_account">Could not save account</string>
+    <string name="error_account_currency_has_transactions">You cannot change an account currency while it has transactions</string>
+    <string name="error_account_currency_history_unavailable">Connect to the internet to verify this account has no transactions</string>
     <string name="delete_account">Delete account</string>
     <string name="account_deleted">Account deleted</string>
     <string name="error_delete_account">Could not delete account</string>

@@ -16,6 +16,8 @@
     <string name="error_invalid_balance">Introduce un saldo válido</string>
     <string name="error_select_currency">Selecciona una moneda</string>
     <string name="error_save_account">No se pudo guardar la cuenta</string>
+    <string name="error_account_currency_has_transactions">No puedes cambiar la moneda de una cuenta que tiene transacciones</string>
+    <string name="error_account_currency_history_unavailable">Conéctate a Internet para comprobar que esta cuenta no tiene transacciones</string>
     <string name="delete_account">Eliminar cuenta</string>
     <string name="account_deleted">Cuenta eliminada</string>
     <string name="error_delete_account">No se pudo eliminar la cuenta</string>

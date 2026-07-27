@@ -15,6 +15,14 @@ sealed interface EditorResult<out T> {
     ) : EditorResult<Nothing>
 }
 
+sealed interface AccountCurrencyChangeEligibility {
+    data object Allowed : AccountCurrencyChangeEligibility
+
+    data object HasTransactions : AccountCurrencyChangeEligibility
+
+    data object HistoryUnavailable : AccountCurrencyChangeEligibility
+}
+
 data class SaveTransactionCommand(
     val id: Int?,
     val accountId: Int,

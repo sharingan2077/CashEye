@@ -4,7 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import com.yandex.school.casheye.domain.finance.GetAccountUseCase
+import com.yandex.school.casheye.domain.finance.GetAccountCurrencyChangeEligibilityUseCase
 import com.yandex.school.casheye.domain.finance.SaveAccountUseCase
+import com.yandex.school.casheye.domain.finance.editor.AccountCurrencyChangeEligibility
 import com.yandex.school.casheye.domain.finance.editor.EditorResult
 import com.yandex.school.casheye.domain.finance.editor.SaveAccountCommand
 import com.yandex.school.casheye.feature.accounts.R
@@ -18,6 +20,7 @@ import kotlinx.coroutines.launch
 @Inject
 class AccountEditorViewModel(
     private val getAccount: GetAccountUseCase,
+    private val getAccountCurrencyChangeEligibility: GetAccountCurrencyChangeEligibilityUseCase,
     private val saveAccount: SaveAccountUseCase,
 ) : ViewModel() {
     private val _state = MutableStateFlow(AccountEditorUiState())
@@ -30,7 +33,8 @@ class AccountEditorViewModel(
             is AccountEditorIntent.Open -> load(intent.accountId)
             is AccountEditorIntent.NameChanged -> _state.value = _state.value.copy(name = intent.value, error = null)
             is AccountEditorIntent.BalanceChanged -> updateBalance(intent.value)
-            is AccountEditorIntent.CurrencyChanged -> _state.value = _state.value.copy(currency = intent.value)
+            is AccountEditorIntent.CurrencyChanged -> _state.value = _state.value.copy(currency = intent.value, error = null)
+            AccountEditorIntent.CurrencyChangeRequested -> requestCurrencyChange()
             is AccountEditorIntent.EmojiChanged -> _state.value = _state.value.copy(emoji = intent.value)
             AccountEditorIntent.Save -> save()
         }
@@ -74,6 +78,33 @@ class AccountEditorViewModel(
             normalized.substringAfter('.', "").length <= 2
         ) {
             _state.value = _state.value.copy(balance = normalized, error = null)
+        }
+    }
+
+    private fun requestCurrencyChange() {
+        val accountId = _state.value.editingId ?: return
+        if (_state.value.isCheckingCurrency) return
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isCheckingCurrency = true, error = null)
+            when (val result = getAccountCurrencyChangeEligibility(accountId)) {
+                is EditorResult.Success -> {
+                    when (result.value) {
+                        AccountCurrencyChangeEligibility.Allowed -> _effects.emit(AccountEditorEffect.OpenCurrencySelector)
+                        AccountCurrencyChangeEligibility.HasTransactions -> {
+                            _state.value = _state.value.copy(error = R.string.error_account_currency_has_transactions)
+                        }
+
+                        AccountCurrencyChangeEligibility.HistoryUnavailable -> {
+                            _state.value = _state.value.copy(error = R.string.error_account_currency_history_unavailable)
+                        }
+                    }
+                }
+
+                is EditorResult.Failure -> {
+                    _state.value = _state.value.copy(error = result.reason.editorMessage())
+                }
+            }
+            _state.value = _state.value.copy(isCheckingCurrency = false)
         }
     }
 

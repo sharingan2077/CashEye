@@ -119,7 +119,15 @@ internal abstract class OfflineWriteDao {
         now: Instant,
     ): LocalWriteResult {
         val localId = requireNotNull(command.id) { "Offline account update requires an id" }
-        check(accountById(localId) != null) { "Account $localId was not found" }
+        val existing = checkNotNull(accountById(localId)) { "Account $localId was not found" }
+        if (existing.currency != command.currency.isoCode) {
+            check(transactionsByAccount(localId).isEmpty()) {
+                "Cannot change an account currency while it has transactions"
+            }
+            check(localId < 0 || isAccountTransactionHistoryVerified(localId)) {
+                "Cannot change an account currency until its transaction history is verified"
+            }
+        }
         updateAccountRow(
             AccountEntity(
                 id = localId,
@@ -477,6 +485,9 @@ internal abstract class OfflineWriteDao {
 
     @Query("SELECT * FROM transactions WHERE account_id = :accountId")
     protected abstract suspend fun transactionsByAccount(accountId: Int): List<TransactionEntity>
+
+    @Query("SELECT EXISTS(SELECT 1 FROM account_transaction_history_verifications WHERE account_id = :accountId)")
+    protected abstract suspend fun isAccountTransactionHistoryVerified(accountId: Int): Boolean
 
     @Query("SELECT * FROM categories WHERE id = :id")
     protected abstract suspend fun categoryById(id: Int): CategoryEntity?

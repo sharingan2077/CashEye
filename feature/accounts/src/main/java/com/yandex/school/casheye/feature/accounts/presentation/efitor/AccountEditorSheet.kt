@@ -21,6 +21,7 @@ import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -57,6 +58,8 @@ fun AccountEditorSheet(
     onNameChange: (String) -> Unit,
     onBalanceChange: (String) -> Unit,
     onCurrencyChange: (String) -> Unit,
+    currencySelectionRequest: Int,
+    onCurrencyRequested: () -> Unit,
     onEmojiChange: (String) -> Unit,
     onSave: () -> Unit,
     onDismiss: () -> Unit,
@@ -64,6 +67,9 @@ fun AccountEditorSheet(
     var nested by remember { mutableStateOf<AccountNestedSheet?>(null) }
     var shouldRequestAmountFocus by remember { mutableStateOf(true) }
     val currentNested by rememberUpdatedState(nested)
+    LaunchedEffect(currencySelectionRequest) {
+        if (currencySelectionRequest > 0) nested = AccountNestedSheet.Currency
+    }
     val sheetState =
         rememberModalBottomSheetState(
             skipPartiallyExpanded = true,
@@ -178,7 +184,7 @@ fun AccountEditorSheet(
                         value = currencyShortLabel(currency),
                         onClick = {
                             clearPrimaryFocus()
-                            nested = AccountNestedSheet.Currency
+                            if (isEditing) onCurrencyRequested() else nested = AccountNestedSheet.Currency
                         },
                         showDivider = false,
                     )

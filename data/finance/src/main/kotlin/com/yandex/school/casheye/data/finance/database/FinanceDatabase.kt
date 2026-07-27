@@ -6,12 +6,14 @@ import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.yandex.school.casheye.data.finance.database.dao.AccountDao
+import com.yandex.school.casheye.data.finance.database.dao.AccountTransactionHistoryVerificationDao
 import com.yandex.school.casheye.data.finance.database.dao.CategoryDao
 import com.yandex.school.casheye.data.finance.database.dao.ExchangeRateDao
 import com.yandex.school.casheye.data.finance.database.dao.OfflineWriteDao
 import com.yandex.school.casheye.data.finance.database.dao.PendingOperationDao
 import com.yandex.school.casheye.data.finance.database.dao.TransactionDao
 import com.yandex.school.casheye.data.finance.database.entity.AccountEntity
+import com.yandex.school.casheye.data.finance.database.entity.AccountTransactionHistoryVerificationEntity
 import com.yandex.school.casheye.data.finance.database.entity.CategoryEntity
 import com.yandex.school.casheye.data.finance.database.entity.ExchangeRateCoverageEntity
 import com.yandex.school.casheye.data.finance.database.entity.ExchangeRateEntity
@@ -21,18 +23,21 @@ import com.yandex.school.casheye.data.finance.database.entity.TransactionEntity
 @Database(
     entities = [
         AccountEntity::class,
+        AccountTransactionHistoryVerificationEntity::class,
         CategoryEntity::class,
         TransactionEntity::class,
         PendingOperationEntity::class,
         ExchangeRateEntity::class,
         ExchangeRateCoverageEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = true,
 )
 @TypeConverters(FinanceConverters::class)
 internal abstract class FinanceDatabase : RoomDatabase() {
     abstract fun accountDao(): AccountDao
+
+    abstract fun accountTransactionHistoryVerificationDao(): AccountTransactionHistoryVerificationDao
 
     abstract fun categoryDao(): CategoryDao
 
@@ -44,6 +49,23 @@ internal abstract class FinanceDatabase : RoomDatabase() {
 
     abstract fun exchangeRateDao(): ExchangeRateDao
 }
+
+internal val MIGRATION_2_3 =
+    object : Migration(2, 3) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS account_transaction_history_verifications (
+                    account_id INTEGER NOT NULL,
+                    verified_at INTEGER NOT NULL,
+                    PRIMARY KEY(account_id),
+                    FOREIGN KEY(account_id) REFERENCES accounts(id)
+                        ON UPDATE CASCADE ON DELETE CASCADE
+                )
+                """.trimIndent(),
+            )
+        }
+    }
 
 internal val MIGRATION_1_2 =
     object : Migration(1, 2) {

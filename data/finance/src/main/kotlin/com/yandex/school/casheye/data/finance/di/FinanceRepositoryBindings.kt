@@ -25,6 +25,7 @@ import com.yandex.school.casheye.domain.finance.FinanceQueryRepository
 import com.yandex.school.casheye.domain.finance.FinanceRepository
 import com.yandex.school.casheye.domain.finance.GetAccountTransactionCountUseCase
 import com.yandex.school.casheye.domain.finance.GetAccountUseCase
+import com.yandex.school.casheye.domain.finance.GetAccountCurrencyChangeEligibilityUseCase
 import com.yandex.school.casheye.domain.finance.GetAccountsUseCase
 import com.yandex.school.casheye.domain.finance.GetAnalyticsUseCase
 import com.yandex.school.casheye.domain.finance.GetDailySummaryUseCase
@@ -177,6 +178,12 @@ object FinanceUseCaseBindings {
     @Provides
     fun provideSaveAccountUseCase(repository: FinanceEditorRepository): SaveAccountUseCase =
         SaveAccountUseCase(repository)
+
+    @Provides
+    fun provideGetAccountCurrencyChangeEligibilityUseCase(
+        repository: FinanceEditorRepository,
+    ): GetAccountCurrencyChangeEligibilityUseCase =
+        GetAccountCurrencyChangeEligibilityUseCase(repository)
 
     @Provides
     fun provideGetAccountTransactionCountUseCase(

@@ -16,6 +16,8 @@
     <string name="error_invalid_balance">Введите корректный баланс</string>
     <string name="error_select_currency">Выберите валюту</string>
     <string name="error_save_account">Не удалось сохранить счёт</string>
+    <string name="error_account_currency_has_transactions">Нельзя изменить валюту счёта, пока в нём есть операции</string>
+    <string name="error_account_currency_history_unavailable">Подключитесь к интернету, чтобы проверить, что у счёта нет операций</string>
     <string name="delete_account">Удалить счёт</string>
     <string name="account_deleted">Счёт удалён</string>
     <string name="error_delete_account">Не удалось удалить счёт</string>

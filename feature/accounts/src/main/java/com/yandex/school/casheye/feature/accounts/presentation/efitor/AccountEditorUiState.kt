@@ -6,6 +6,7 @@ import com.yandex.school.casheye.core.model.CurrencyCode
 data class AccountEditorUiState(
     val isLoading: Boolean = true,
     val isSaving: Boolean = false,
+    val isCheckingCurrency: Boolean = false,
     val editingId: Int? = null,
     val name: String = "",
     val balance: String = "",
@@ -31,6 +32,8 @@ sealed interface AccountEditorIntent {
         val value: CurrencyCode,
     ) : AccountEditorIntent
 
+    data object CurrencyChangeRequested : AccountEditorIntent
+
     data class EmojiChanged(
         val value: String,
     ) : AccountEditorIntent
@@ -40,4 +43,6 @@ sealed interface AccountEditorIntent {
 
 sealed interface AccountEditorEffect {
     data object Saved : AccountEditorEffect
+
+    data object OpenCurrencySelector : AccountEditorEffect
 }

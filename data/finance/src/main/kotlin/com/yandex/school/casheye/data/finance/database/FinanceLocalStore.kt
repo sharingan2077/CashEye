@@ -8,6 +8,7 @@ import com.yandex.school.casheye.core.model.Category
 import com.yandex.school.casheye.core.model.Transaction
 import com.yandex.school.casheye.data.finance.database.entity.PendingEntityType
 import com.yandex.school.casheye.data.finance.database.entity.PendingOperationEntity
+import com.yandex.school.casheye.data.finance.database.entity.AccountTransactionHistoryVerificationEntity
 import com.yandex.school.casheye.data.finance.database.mapper.toDomain
 import com.yandex.school.casheye.data.finance.database.mapper.toEntity
 import com.yandex.school.casheye.data.finance.dto.AccountDto
@@ -70,6 +71,14 @@ interface FinanceLocalStore {
 
     suspend fun cacheTransaction(transaction: TransactionResponseDto)
 
+    suspend fun cacheCompleteAccountTransactionHistory(
+        accountId: Int,
+        transactions: List<TransactionResponseDto>,
+        verifiedAt: Instant,
+    )
+
+    suspend fun isAccountTransactionHistoryVerified(id: Int): Boolean
+
     suspend fun saveAccount(
         command: SaveAccountCommand,
         now: Instant,
@@ -104,7 +113,7 @@ class FinanceDatabaseProvider(
                 context.applicationContext,
                 FinanceDatabase::class.java,
                 DATABASE_NAME,
-            ).addMigrations(MIGRATION_1_2)
+            ).addMigrations(MIGRATION_1_2, MIGRATION_2_3)
             .build()
 
     private companion object {
@@ -266,6 +275,28 @@ class RoomFinanceLocalStore(
         }
     }
 
+    override suspend fun cacheCompleteAccountTransactionHistory(
+        accountId: Int,
+        transactions: List<TransactionResponseDto>,
+        verifiedAt: Instant,
+    ) {
+        database.withTransaction {
+            for (transaction in transactions) {
+                cacheTransaction(transaction)
+            }
+            if (database.accountDao().getById(accountId) != null) {
+                database
+                    .accountTransactionHistoryVerificationDao()
+                    .upsert(
+                        AccountTransactionHistoryVerificationEntity(
+                            accountId = accountId,
+                            verifiedAt = verifiedAt.toEpochMilli(),
+                        ),
+                    )
+            }
+        }
+    }
+
     private suspend fun pendingAccountIds(): Set<Int> =
         database.pendingOperationDao().run {
             getPendingEntityIds(PendingEntityType.ACCOUNT).toSet() + getPendingRelatedAccountIds().filterNotNull()
@@ -294,6 +325,9 @@ class RoomFinanceLocalStore(
     }
 
     override suspend fun getAccountTransactionCount(id: Int): Int = database.transactionDao().countByAccountId(id)
+
+    override suspend fun isAccountTransactionHistoryVerified(id: Int): Boolean =
+        database.accountTransactionHistoryVerificationDao().isVerified(id)
 
     override suspend fun deleteTransaction(
         id: Int,

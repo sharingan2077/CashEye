@@ -4,6 +4,7 @@ import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.Category
 import com.yandex.school.casheye.core.model.Transaction
 import com.yandex.school.casheye.domain.finance.editor.EditorResult
+import com.yandex.school.casheye.domain.finance.editor.AccountCurrencyChangeEligibility
 import com.yandex.school.casheye.domain.finance.editor.SaveAccountCommand
 import com.yandex.school.casheye.domain.finance.editor.SaveTransactionCommand
 import kotlinx.coroutines.flow.Flow
@@ -42,6 +43,9 @@ interface FinanceEditorRepository {
     suspend fun getAccount(id: Int): EditorResult<Account> = EditorResult.Failure(FinanceFailureReason.Unknown)
 
     suspend fun saveAccount(command: SaveAccountCommand): EditorResult<Unit> =
+        EditorResult.Failure(FinanceFailureReason.Unknown)
+
+    suspend fun getAccountCurrencyChangeEligibility(id: Int): EditorResult<AccountCurrencyChangeEligibility> =
         EditorResult.Failure(FinanceFailureReason.Unknown)
 
     suspend fun getAccountTransactionCount(id: Int): EditorResult<Int> =

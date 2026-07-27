@@ -16,6 +16,8 @@
     <string name="error_invalid_balance">Saisissez un solde valide</string>
     <string name="error_select_currency">Sélectionnez une devise</string>
     <string name="error_save_account">Impossible d’enregistrer le compte</string>
+    <string name="error_account_currency_has_transactions">Impossible de changer la devise d’un compte ayant des transactions</string>
+    <string name="error_account_currency_history_unavailable">Connectez-vous à Internet pour vérifier que ce compte n’a pas de transactions</string>
     <string name="delete_account">Supprimer le compte</string>
     <string name="account_deleted">Compte supprimé</string>
     <string name="error_delete_account">Impossible de supprimer le compte</string>

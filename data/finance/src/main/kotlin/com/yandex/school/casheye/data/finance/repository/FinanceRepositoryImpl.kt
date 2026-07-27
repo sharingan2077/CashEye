@@ -13,6 +13,7 @@ import com.yandex.school.casheye.domain.finance.FinanceRefreshResult
 import com.yandex.school.casheye.domain.finance.FinanceRepository
 import com.yandex.school.casheye.domain.finance.TransactionsQuery
 import com.yandex.school.casheye.domain.finance.editor.EditorResult
+import com.yandex.school.casheye.domain.finance.editor.AccountCurrencyChangeEligibility
 import com.yandex.school.casheye.domain.finance.editor.SaveAccountCommand
 import com.yandex.school.casheye.domain.finance.editor.SaveTransactionCommand
 import kotlinx.coroutines.CancellationException
@@ -128,6 +129,36 @@ class FinanceRepositoryImpl(
         editorRequest(ioDispatcher) {
             localStore.saveAccount(command, Instant.now())
             scheduleSync()
+        }
+
+    override suspend fun getAccountCurrencyChangeEligibility(
+        id: Int,
+    ): EditorResult<AccountCurrencyChangeEligibility> =
+        editorRequest(ioDispatcher) {
+            if (id > 0) {
+                try {
+                    val transactions =
+                        retryPolicy.execute {
+                            api.getTransactions(
+                                accountId = id,
+                                startDate = EARLIEST_TRANSACTION_DATE,
+                                endDate = LocalDate.now().toString(),
+                            )
+                        }
+                    localStore.cacheCompleteAccountTransactionHistory(id, transactions, Instant.now())
+                } catch (error: CancellationException) {
+                    throw error
+                } catch (_: Exception) {
+                    if (!localStore.isAccountTransactionHistoryVerified(id)) {
+                        return@editorRequest AccountCurrencyChangeEligibility.HistoryUnavailable
+                    }
+                }
+            }
+            if (localStore.getAccountTransactionCount(id) > 0) {
+                AccountCurrencyChangeEligibility.HasTransactions
+            } else {
+                AccountCurrencyChangeEligibility.Allowed
+            }
         }
 
     override suspend fun getAccountTransactionCount(id: Int): EditorResult<Int> =

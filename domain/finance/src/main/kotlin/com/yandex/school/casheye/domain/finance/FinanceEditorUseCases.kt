@@ -2,6 +2,7 @@ package com.yandex.school.casheye.domain.finance
 
 import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.domain.finance.editor.EditorResult
+import com.yandex.school.casheye.domain.finance.editor.AccountCurrencyChangeEligibility
 import com.yandex.school.casheye.domain.finance.editor.SaveAccountCommand
 import com.yandex.school.casheye.domain.finance.editor.SaveTransactionCommand
 
@@ -49,6 +50,13 @@ class SaveAccountUseCase(
     private val repository: FinanceEditorRepository,
 ) {
     suspend operator fun invoke(command: SaveAccountCommand) = repository.saveAccount(command)
+}
+
+class GetAccountCurrencyChangeEligibilityUseCase(
+    private val repository: FinanceEditorRepository,
+) {
+    suspend operator fun invoke(id: Int): EditorResult<AccountCurrencyChangeEligibility> =
+        repository.getAccountCurrencyChangeEligibility(id)
 }
 
 class GetAccountTransactionCountUseCase(

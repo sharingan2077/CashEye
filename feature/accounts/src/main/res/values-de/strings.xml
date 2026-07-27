@@ -16,6 +16,8 @@
     <string name="error_invalid_balance">Geben Sie einen gültigen Kontostand ein</string>
     <string name="error_select_currency">Wählen Sie eine Währung</string>
     <string name="error_save_account">Konto konnte nicht gespeichert werden</string>
+    <string name="error_account_currency_has_transactions">Die Währung eines Kontos mit Transaktionen kann nicht geändert werden</string>
+    <string name="error_account_currency_history_unavailable">Stellen Sie eine Internetverbindung her, um die Transaktionen dieses Kontos zu prüfen</string>
     <string name="delete_account">Konto löschen</string>
     <string name="account_deleted">Konto gelöscht</string>
     <string name="error_delete_account">Konto konnte nicht gelöscht werden</string>
