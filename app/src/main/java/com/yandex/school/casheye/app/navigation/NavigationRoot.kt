@@ -14,7 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yandex.school.casheye.R
-import com.yandex.school.casheye.core.designsystem.component.PastOrPresentDatePickerDialog
+import com.yandex.school.casheye.core.designsystem.component.datepicker.PastOrPresentDatePickerDialog
 import kotlinx.coroutines.flow.StateFlow
 import java.time.LocalDate
 

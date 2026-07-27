@@ -2,8 +2,8 @@ package com.yandex.school.casheye.feature.income.presentation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
-import com.yandex.school.casheye.core.designsystem.component.EditorOption
-import com.yandex.school.casheye.core.designsystem.component.TransactionEditorSheet
+import com.yandex.school.casheye.core.designsystem.component.editor.EditorOption
+import com.yandex.school.casheye.core.designsystem.component.editor.TransactionEditorSheet
 
 @Composable
 fun AddIncomeScreen(

@@ -1,4 +1,4 @@
-package com.yandex.school.casheye.core.designsystem.component
+package com.yandex.school.casheye.core.designsystem.component.datepicker
 
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SelectableDates

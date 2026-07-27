@@ -2,7 +2,6 @@ package com.yandex.school.casheye.feature.accounts.presentation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
-import com.yandex.school.casheye.core.designsystem.component.AccountEditorSheet
 import com.yandex.school.casheye.core.model.CurrencyCode
 
 @Composable

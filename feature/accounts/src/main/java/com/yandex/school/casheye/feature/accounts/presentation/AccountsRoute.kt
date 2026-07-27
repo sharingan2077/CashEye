@@ -8,9 +8,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.yandex.school.casheye.core.designsystem.component.DismissSnackbarOnDispose
-import com.yandex.school.casheye.core.designsystem.component.showRetrySnackbar
-import com.yandex.school.casheye.core.designsystem.component.showSuccessSnackbar
+import com.yandex.school.casheye.core.designsystem.component.snackbar.DismissSnackbarOnDispose
+import com.yandex.school.casheye.core.designsystem.component.snackbar.showRetrySnackbar
+import com.yandex.school.casheye.core.designsystem.component.snackbar.showSuccessSnackbar
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import com.yandex.school.casheye.feature.accounts.R
 import dev.zacsweers.metrox.viewmodel.metroViewModel

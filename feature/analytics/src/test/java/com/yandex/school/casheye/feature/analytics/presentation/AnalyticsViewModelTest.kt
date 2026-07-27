@@ -21,7 +21,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -259,7 +258,7 @@ class AnalyticsViewModelTest {
             ),
         )
         assertEquals(
-            formatAmount(BigDecimal("15"), "RUB"),
+            "-${formatAmount(BigDecimal("15"), "RUB")}",
             formatAnalyticsDisplayAmount(
                 BigDecimal("15"),
                 AnalyticsType.Expenses,
@@ -268,7 +267,7 @@ class AnalyticsViewModelTest {
             ),
         )
         assertEquals(
-            formatAmount(BigDecimal("-15"), "RUB"),
+            formatAmount(BigDecimal("15"), "RUB"),
             formatAnalyticsDisplayAmount(
                 BigDecimal("15"),
                 AnalyticsType.Expenses,

@@ -1,4 +1,4 @@
-package com.yandex.school.casheye.core.designsystem.component
+package com.yandex.school.casheye.core.designsystem.component.money
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

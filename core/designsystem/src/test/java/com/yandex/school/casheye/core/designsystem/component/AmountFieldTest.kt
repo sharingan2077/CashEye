@@ -2,6 +2,9 @@ package com.yandex.school.casheye.core.designsystem.component
 
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
+import com.yandex.school.casheye.core.designsystem.component.editor.AmountFieldUpdate
+import com.yandex.school.casheye.core.designsystem.component.editor.formatAmount
+import com.yandex.school.casheye.core.designsystem.component.editor.updateAmountField
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.util.Locale

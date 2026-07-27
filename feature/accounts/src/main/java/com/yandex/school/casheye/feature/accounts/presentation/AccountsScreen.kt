@@ -35,10 +35,10 @@ import androidx.compose.ui.unit.dp
 import com.yandex.school.casheye.core.designsystem.component.DelayedCircularProgressIndicator
 import com.yandex.school.casheye.core.designsystem.component.ErrorState
 import com.yandex.school.casheye.core.designsystem.component.ErrorStateType
-import com.yandex.school.casheye.core.designsystem.component.MoneyListItem
-import com.yandex.school.casheye.core.designsystem.component.NativeMoneySummary
 import com.yandex.school.casheye.core.designsystem.component.PullToRefreshContainer
 import com.yandex.school.casheye.core.designsystem.component.SwipeToRevealDeleteItem
+import com.yandex.school.casheye.core.designsystem.component.money.MoneyListItem
+import com.yandex.school.casheye.core.designsystem.component.money.NativeMoneySummary
 import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
 import com.yandex.school.casheye.core.format.formatAmount
 import com.yandex.school.casheye.core.model.Account

@@ -1,5 +1,6 @@
 package com.yandex.school.casheye.core.designsystem.component
 
+import com.yandex.school.casheye.core.designsystem.component.money.currencySymbol
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

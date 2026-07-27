@@ -1,6 +1,7 @@
-package com.yandex.school.casheye.core.designsystem.component
+package com.yandex.school.casheye.feature.accounts.presentation
 
 import androidx.activity.compose.BackHandler
+import androidx.annotation.StringRes
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -8,13 +9,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -37,6 +35,14 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.yandex.school.casheye.core.designsystem.R
+import com.yandex.school.casheye.core.designsystem.component.editor.EditorModalSheet
+import com.yandex.school.casheye.core.designsystem.component.editor.EditorRow
+import com.yandex.school.casheye.core.designsystem.component.editor.EditorSelectionRow
+import com.yandex.school.casheye.core.designsystem.component.editor.EditorSheetTitle
+import com.yandex.school.casheye.core.designsystem.component.editor.EditorTextContent
+import com.yandex.school.casheye.core.designsystem.component.editor.FinanceEditorContent
+import com.yandex.school.casheye.core.designsystem.component.money.currencySymbol
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -243,43 +249,19 @@ private fun EmojiOption(
 }
 
 @Composable
-internal fun EditorAccountContent(
-    accounts: List<EditorOption>,
-    selectedId: Int?,
-    onSelect: (EditorOption) -> Unit,
-) {
-    Column(Modifier.fillMaxWidth()) {
-        EditorSheetTitle(stringResource(R.string.finance_editor_accounts))
-        LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = 480.dp)) {
-            itemsIndexed(accounts, key = { _, account -> account.id }) { index, account ->
-                EditorSelectionRow(
-                    emoji = account.emoji,
-                    title = account.label,
-                    subtitle = null,
-                    selected = account.id == selectedId,
-                    isLast = index == accounts.lastIndex,
-                    onClick = { onSelect(account) },
-                )
-            }
-        }
-        Spacer(Modifier.height(20.dp))
-    }
-}
-
-@Composable
 private fun CurrencyContent(
     selectedCurrency: String,
     onSelect: (String) -> Unit,
 ) {
     Column(Modifier.fillMaxWidth()) {
         EditorSheetTitle(stringResource(R.string.finance_editor_currency))
-        currencies.forEachIndexed { index, currency ->
+        accountCurrencies.forEachIndexed { index, currency ->
             EditorSelectionRow(
                 emoji = currency.flag,
                 title = stringResource(currency.titleRes),
                 subtitle = currency.code,
                 selected = currency.code == selectedCurrency,
-                isLast = index == currencies.lastIndex,
+                isLast = index == accountCurrencies.lastIndex,
                 onClick = { onSelect(currency.code) },
             )
         }
@@ -306,5 +288,34 @@ private val accountEmojis =
         "🧾",
         "💼",
     )
+
+private data class AccountCurrencyOption(
+    val code: String,
+    val flag: String,
+    @StringRes val titleRes: Int,
+)
+
+private val accountCurrencies =
+    listOf(
+        AccountCurrencyOption("RUB", "🇷🇺", R.string.finance_editor_currency_rub),
+        AccountCurrencyOption("USD", "🇺🇸", R.string.finance_editor_currency_usd),
+        AccountCurrencyOption("EUR", "🇪🇺", R.string.finance_editor_currency_eur),
+        AccountCurrencyOption("GBP", "🇬🇧", R.string.finance_editor_currency_gbp),
+        AccountCurrencyOption("CNY", "🇨🇳", R.string.finance_editor_currency_cny),
+    )
+
+@Composable
+private fun currencyShortLabel(currencyCode: String): String {
+    val titleRes =
+        when (currencyCode.uppercase(Locale.ROOT)) {
+            "RUB" -> R.string.finance_editor_currency_rub_short
+            "USD" -> R.string.finance_editor_currency_usd_short
+            "EUR" -> R.string.finance_editor_currency_eur_short
+            "GBP" -> R.string.finance_editor_currency_gbp_short
+            "CNY" -> R.string.finance_editor_currency_cny_short
+            else -> return currencyCode.uppercase(Locale.ROOT)
+        }
+    return stringResource(titleRes)
+}
 
 private enum class AccountNestedSheet { Name, Emoji, Currency }
