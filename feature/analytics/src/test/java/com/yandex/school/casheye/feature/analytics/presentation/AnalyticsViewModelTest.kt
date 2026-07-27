@@ -245,7 +245,7 @@ class AnalyticsViewModelTest {
     }
 
     @Test
-    fun `amount signs follow transaction type for every filter`() {
+    fun `amount signs appear only for all filter`() {
         assertEquals(BigDecimal("-15"), signedAnalyticsAmount(BigDecimal("15"), AnalyticsType.Expenses))
         assertEquals(BigDecimal("15"), signedAnalyticsAmount(BigDecimal("15"), AnalyticsType.Income))
         assertEquals(BigDecimal("-5"), signedAnalyticsAmount(BigDecimal("-5"), AnalyticsType.All))
@@ -259,7 +259,7 @@ class AnalyticsViewModelTest {
             ),
         )
         assertEquals(
-            formatAmount(BigDecimal("-15"), "RUB"),
+            formatAmount(BigDecimal("15"), "RUB"),
             formatAnalyticsDisplayAmount(
                 BigDecimal("15"),
                 AnalyticsType.Expenses,
@@ -277,11 +277,38 @@ class AnalyticsViewModelTest {
             ),
         )
         assertEquals(
-            "+${formatAmount(BigDecimal("15"), "RUB")}",
+            "+${formatAmount(BigDecimal("5"), "RUB")}",
+            formatAnalyticsDisplayAmount(
+                BigDecimal("5"),
+                AnalyticsType.All,
+                AnalyticsType.All,
+                "RUB",
+            ),
+        )
+        assertEquals(
+            formatAmount(BigDecimal("-5"), "RUB"),
+            formatAnalyticsDisplayAmount(
+                BigDecimal("-5"),
+                AnalyticsType.All,
+                AnalyticsType.All,
+                "RUB",
+            ),
+        )
+        assertEquals(
+            formatAmount(BigDecimal("15"), "RUB"),
             formatAnalyticsDisplayAmount(
                 BigDecimal("15"),
                 AnalyticsType.Income,
                 AnalyticsType.Income,
+                "RUB",
+            ),
+        )
+        assertEquals(
+            formatAmount(BigDecimal("15"), "RUB"),
+            formatAnalyticsDisplayAmount(
+                BigDecimal("-15"),
+                AnalyticsType.All,
+                AnalyticsType.Expenses,
                 "RUB",
             ),
         )

@@ -278,15 +278,12 @@ internal fun formatAnalyticsDisplayAmount(
     amountType: AnalyticsType,
     selectedType: AnalyticsType,
     currencyCode: String,
-): String {
-    val effectiveType =
-        if (amountType == AnalyticsType.All && selectedType != AnalyticsType.All) {
-            selectedType
-        } else {
-            amountType
-        }
-    return formatAnalyticsAmount(amount, effectiveType, currencyCode)
-}
+): String =
+    if (selectedType == AnalyticsType.All) {
+        formatAnalyticsAmount(amount, amountType, currencyCode)
+    } else {
+        formatAmount(amount.abs(), currencyCode)
+    }
 
 internal fun formatAnalyticsAmount(
     amount: BigDecimal,
