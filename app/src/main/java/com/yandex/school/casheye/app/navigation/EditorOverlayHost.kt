@@ -40,7 +40,6 @@ internal fun EditorOverlayHost(
         }
 
         null -> {
-            Unit
         }
     }
 }

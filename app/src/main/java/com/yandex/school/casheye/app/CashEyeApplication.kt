@@ -55,7 +55,7 @@ class CashEyeApplication :
         applicationScope.launch {
             var wasOnline = initialOnline
             appGraph.networkMonitor.isOnline.collect { isOnline ->
-                if (wasOnline == false && isOnline) {
+                if (!wasOnline && isOnline) {
                     appGraph.financeSyncScheduler.enqueueImmediateSync()
                     appGraph.exchangeRateRefreshScheduler.enqueueImmediateRefresh()
                 }

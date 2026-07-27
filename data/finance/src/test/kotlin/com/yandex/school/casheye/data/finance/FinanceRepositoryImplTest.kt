@@ -500,7 +500,7 @@ private class FakeFinanceApi(
 
     override suspend fun updateTransaction(
         id: Int,
-        request: com.yandex.school.casheye.data.finance.dto.TransactionRequestDto,
+        request: TransactionRequestDto,
     ) = transactionDto(id, request.amount, request.transactionDate)
 
     override suspend fun deleteTransaction(id: Int) = Unit
@@ -544,12 +544,11 @@ private class ThrowingFinanceApi(
 
     override suspend fun getTransaction(id: Int) = throw error
 
-    override suspend fun createTransaction(request: com.yandex.school.casheye.data.finance.dto.TransactionRequestDto) =
-        throw error
+    override suspend fun createTransaction(request: TransactionRequestDto) = throw error
 
     override suspend fun updateTransaction(
         id: Int,
-        request: com.yandex.school.casheye.data.finance.dto.TransactionRequestDto,
+        request: TransactionRequestDto,
     ) = throw error
 
     override suspend fun deleteTransaction(id: Int) = throw error

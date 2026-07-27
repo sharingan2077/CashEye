@@ -18,8 +18,6 @@ import com.yandex.school.casheye.data.finance.database.model.LocalWriteResult
 import com.yandex.school.casheye.data.finance.database.model.TransactionCommandSnapshot
 import com.yandex.school.casheye.domain.finance.SaveAccountCommand
 import com.yandex.school.casheye.domain.finance.SaveTransactionCommand
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.math.BigDecimal
 import java.time.Instant

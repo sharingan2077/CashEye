@@ -196,16 +196,16 @@ internal class RoomExchangeRateRepository(
         mapNotNull { CurrencyCode.fromIsoCodeOrNull(it.quoteCurrency) }.toSet().containsAll(QUOTE_CURRENCIES)
 
     private fun Throwable.toRefreshFailure(cachedDataAvailable: Boolean): ExchangeRateRefreshResult =
-        when {
-            this is CancellationException -> {
+        when (this) {
+            is CancellationException -> {
                 throw this
             }
 
-            this is IOException -> {
+            is IOException -> {
                 ExchangeRateRefreshResult.TemporaryFailure(cachedDataAvailable, this)
             }
 
-            this is HttpException && code() in 500..599 -> {
+            is HttpException if code() in 500..599 -> {
                 ExchangeRateRefreshResult.TemporaryFailure(cachedDataAvailable, this)
             }
 

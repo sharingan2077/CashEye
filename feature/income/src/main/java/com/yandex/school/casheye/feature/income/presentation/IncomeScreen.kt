@@ -42,8 +42,8 @@ import com.yandex.school.casheye.feature.income.R
 fun IncomeScreen(
     state: IncomeUiState,
     onIntent: (IncomeIntent) -> Unit,
-    onTransactionClick: (Int) -> Unit = {},
     modifier: Modifier = Modifier,
+    onTransactionClick: (Int) -> Unit = {},
 ) {
     PullToRefreshContainer(
         isRefreshing = state.isRefreshing,

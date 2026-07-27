@@ -5,7 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yandex.school.casheye.core.designsystem.component.DismissSnackbarOnDispose
@@ -28,7 +28,7 @@ fun AccountsRoute(
     val retryLabel = stringResource(R.string.retry)
     val accountDeletedMessage = stringResource(R.string.account_deleted)
     val deleteErrorMessage = stringResource(R.string.error_delete_account)
-    val resources = LocalContext.current.resources
+    val resources = LocalResources.current
 
     DismissSnackbarOnDispose(snackbarHostState)
 

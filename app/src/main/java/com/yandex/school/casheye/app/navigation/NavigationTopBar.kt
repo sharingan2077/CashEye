@@ -38,7 +38,6 @@ import com.yandex.school.casheye.R
 import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

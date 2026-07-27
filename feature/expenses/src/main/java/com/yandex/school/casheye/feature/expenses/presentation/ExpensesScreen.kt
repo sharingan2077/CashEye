@@ -42,8 +42,8 @@ import com.yandex.school.casheye.feature.expenses.R
 fun ExpenseScreen(
     state: ExpensesUiState,
     onIntent: (ExpensesIntent) -> Unit,
-    onTransactionClick: (Int) -> Unit = {},
     modifier: Modifier = Modifier,
+    onTransactionClick: (Int) -> Unit = {},
 ) {
     PullToRefreshContainer(
         isRefreshing = state.isRefreshing,
