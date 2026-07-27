@@ -169,7 +169,7 @@ private fun CustomPeriodActions(
     valid: Boolean,
     startDate: LocalDate?,
     endDate: LocalDate?,
-    onIntent: (com.yandex.school.casheye.feature.analytics.presentation.AnalyticsIntent) -> Unit,
+    onIntent: (AnalyticsIntent) -> Unit,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(start = 24.dp, top = 12.dp, end = 24.dp, bottom = 16.dp),
@@ -178,7 +178,7 @@ private fun CustomPeriodActions(
     ) {
         TextButton(onClick = {
             onIntent(
-                _root_ide_package_.com.yandex.school.casheye.feature.analytics.presentation.AnalyticsIntent.DismissSheet,
+                AnalyticsIntent.DismissSheet,
             )
         }) { Text(stringResource(R.string.cancel)) }
         Spacer(modifier = Modifier.width(12.dp))
@@ -189,14 +189,14 @@ private fun CustomPeriodActions(
             modifier = Modifier.height(40.dp).width(124.dp),
             onClick = {
                 onIntent(
-                    _root_ide_package_.com.yandex.school.casheye.feature.analytics.presentation.AnalyticsIntent
+                    AnalyticsIntent
                         .UpdateCustomPeriod(
                             startDate,
                             endDate,
                         ),
                 )
                 onIntent(
-                    _root_ide_package_.com.yandex.school.casheye.feature.analytics.presentation.AnalyticsIntent.ApplyCustomPeriod,
+                    AnalyticsIntent.ApplyCustomPeriod,
                 )
             },
         ) { Text(stringResource(R.string.apply)) }

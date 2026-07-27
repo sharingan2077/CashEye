@@ -5,4 +5,5 @@ data class EditorOption(
     val label: String,
     val emoji: String = "",
     val currencyCode: String? = null,
+    val subtitle: String? = null,
 )

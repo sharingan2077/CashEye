@@ -217,6 +217,18 @@ Before using the Read tool on any file longer than 500 lines, first run
 slice via offset/limit. Never bulk-read large files.
 ```
 
+## Kotlin imports and package moves
+
+- Never leave the IDE pseudo-prefix `_root_ide_package_` in source files.
+- Use regular Kotlin imports and short type names instead of fully qualified names in code whenever
+  an import can resolve the type.
+- After moving Kotlin files or changing package declarations, update imports in every affected
+  file.
+- Before completing a package refactor, search all tracked source files for
+  `_root_ide_package_` and replace every occurrence with a correct import and short type name.
+- Use a fully qualified name in code only to resolve a real short-name conflict, and explain that
+  exception in the final response.
+
 ## Kotlin and coroutines conventions
 
 - Prefer type-safe Kotlin duration APIs:

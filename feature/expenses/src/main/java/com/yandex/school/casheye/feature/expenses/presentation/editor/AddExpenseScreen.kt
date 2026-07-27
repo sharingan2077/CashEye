@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.yandex.school.casheye.core.designsystem.component.editor.EditorOption
 import com.yandex.school.casheye.core.designsystem.component.editor.TransactionEditorSheet
+import com.yandex.school.casheye.core.format.formatAmount
 
 @Composable
 fun AddExpenseScreen(
@@ -11,6 +12,16 @@ fun AddExpenseScreen(
     onIntent: (AddExpenseIntent) -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val accountOptions =
+        state.accounts.map {
+            EditorOption(
+                id = it.id,
+                label = it.name,
+                emoji = it.emoji,
+                currencyCode = it.currency.isoCode,
+                subtitle = formatAmount(it.balance, it.currency.isoCode),
+            )
+        }
     TransactionEditorSheet(
         amount = state.amount,
         category =
@@ -19,11 +30,8 @@ fun AddExpenseScreen(
                     it.id == state.selectedCategoryId
                 }?.let { EditorOption(it.id, it.name, it.emoji) },
         categories = state.categories.map { EditorOption(it.id, it.name, it.emoji) },
-        account =
-            state.accounts.firstOrNull { it.id == state.selectedAccountId }?.let {
-                EditorOption(it.id, it.name, it.emoji, it.currency.isoCode)
-            },
-        accounts = state.accounts.map { EditorOption(it.id, it.name, it.emoji, it.currency.isoCode) },
+        account = accountOptions.firstOrNull { it.id == state.selectedAccountId },
+        accounts = accountOptions,
         date = state.date,
         time = state.time,
         comment = state.comment,

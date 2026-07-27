@@ -189,13 +189,25 @@ fun EditorSelectionRow(
                 }
             },
             modifier = Modifier.clickable(onClick = onClick),
-            height = 56.dp,
+            height = if (subtitle == null) 56.dp else 72.dp,
             rowHorizontalPadding = 20.dp,
             contentHorizontalPadding = 12.dp,
         ) {
             Column {
-                Text(text = title, style = MaterialTheme.typography.titleMedium)
-                subtitle?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                subtitle?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodySmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
         }
         if (!isLast) HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp))
@@ -218,7 +230,7 @@ fun EditorTextContent(
         awaitFrame()
         focusRequester.requestFocus()
     }
-    Column(Modifier.fillMaxWidth().imePadding().padding(horizontal = 20.dp, vertical = 12.dp)) {
+    Column(Modifier.fillMaxWidth().imePadding()) {
         EditorSheetTitle(title)
         OutlinedTextField(
             value = draft,
@@ -228,13 +240,14 @@ fun EditorTextContent(
                 Modifier
                     .fillMaxWidth()
                     .focusRequester(focusRequester)
-                    .heightIn(min = if (singleLine) 56.dp else 128.dp),
+                    .heightIn(min = if (singleLine) 56.dp else 128.dp)
+                    .padding(horizontal = 20.dp),
             singleLine = singleLine,
             minLines = if (singleLine) 1 else 4,
             maxLines = if (singleLine) 1 else 4,
         )
         Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 8.dp),
+            modifier = Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 8.dp, end = 24.dp),
             horizontalArrangement = Arrangement.End,
         ) {
             TextButton(

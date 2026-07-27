@@ -14,6 +14,16 @@ import com.yandex.school.casheye.core.model.CurrencyCode
 import com.yandex.school.casheye.core.model.MoneyAmount
 import com.yandex.school.casheye.core.model.Transaction
 import com.yandex.school.casheye.domain.finance.AnalyticsTransaction
+import com.yandex.school.casheye.feature.analytics.presentation.AnalyticsCategorySummary
+import com.yandex.school.casheye.feature.analytics.presentation.AnalyticsFilters
+import com.yandex.school.casheye.feature.analytics.presentation.AnalyticsPeriod
+import com.yandex.school.casheye.feature.analytics.presentation.AnalyticsPeriodPreset
+import com.yandex.school.casheye.feature.analytics.presentation.AnalyticsScreen
+import com.yandex.school.casheye.feature.analytics.presentation.AnalyticsScreenData
+import com.yandex.school.casheye.feature.analytics.presentation.AnalyticsSheet
+import com.yandex.school.casheye.feature.analytics.presentation.AnalyticsType
+import com.yandex.school.casheye.feature.analytics.presentation.AnalyticsTypeSummary
+import com.yandex.school.casheye.feature.analytics.presentation.AnalyticsUiState
 import java.math.BigDecimal
 import java.time.Instant
 import java.time.LocalDate
@@ -54,17 +64,15 @@ private fun AnalyticsScreenPreview() {
 @Composable
 private fun AnalyticsDetailsPreview() {
     AnalyticsPreview(
-        activeSheet = _root_ide_package_.com.yandex.school.casheye.feature.analytics.presentation.AnalyticsSheet.Details,
+        activeSheet = AnalyticsSheet.Details,
     )
 }
 
 @Composable
-private fun AnalyticsPreview(
-    activeSheet: com.yandex.school.casheye.feature.analytics.presentation.AnalyticsSheet? = null,
-) {
+private fun AnalyticsPreview(activeSheet: AnalyticsSheet? = null) {
     CashEyeTheme(dynamicColor = false) {
         Surface(color = MaterialTheme.colorScheme.surface) {
-            _root_ide_package_.com.yandex.school.casheye.feature.analytics.presentation.AnalyticsScreen(
+            AnalyticsScreen(
                 state = analyticsPreviewState(activeSheet),
                 onIntent = {},
             )
@@ -72,9 +80,7 @@ private fun AnalyticsPreview(
     }
 }
 
-private fun analyticsPreviewState(
-    activeSheet: com.yandex.school.casheye.feature.analytics.presentation.AnalyticsSheet?,
-): com.yandex.school.casheye.feature.analytics.presentation.AnalyticsUiState.Content {
+private fun analyticsPreviewState(activeSheet: AnalyticsSheet?): AnalyticsUiState.Content {
     val accounts =
         listOf(
             Account(1, "Основной счёт", "💳", BigDecimal("75240"), CurrencyCode.RUB),
@@ -88,16 +94,16 @@ private fun analyticsPreviewState(
             Category(104, "Подписки", "📱", false),
         )
     val period =
-        _root_ide_package_.com.yandex.school.casheye.feature.analytics.presentation.AnalyticsPeriod(
+        AnalyticsPeriod(
             startDate = LocalDate.of(2026, 7, 1),
             endDate = LocalDate.of(2026, 7, 20),
-            preset = _root_ide_package_.com.yandex.school.casheye.feature.analytics.presentation.AnalyticsPeriodPreset.Month,
+            preset = AnalyticsPeriodPreset.Month,
         )
     val data =
-        _root_ide_package_.com.yandex.school.casheye.feature.analytics.presentation.AnalyticsScreenData(
+        AnalyticsScreenData(
             filters =
-                _root_ide_package_.com.yandex.school.casheye.feature.analytics.presentation.AnalyticsFilters(
-                    type = _root_ide_package_.com.yandex.school.casheye.feature.analytics.presentation.AnalyticsType.Expenses,
+                AnalyticsFilters(
+                    type = AnalyticsType.Expenses,
                     period = period,
                     accountId = accounts.first().id,
                 ),
@@ -106,7 +112,7 @@ private fun analyticsPreviewState(
             categories = categories,
             activeSheet = activeSheet,
         )
-    return _root_ide_package_.com.yandex.school.casheye.feature.analytics.presentation.AnalyticsUiState.Content(
+    return AnalyticsUiState.Content(
         data = data,
         total = BigDecimal("18750"),
         currencyCode = CurrencyCode.RUB.isoCode,
@@ -119,23 +125,23 @@ private fun analyticsPreviewState(
         unconvertedTransactions = emptyList(),
         categorySummaries =
             listOf(
-                _root_ide_package_.com.yandex.school.casheye.feature.analytics.presentation.AnalyticsCategorySummary(
+                AnalyticsCategorySummary(
                     categories[0],
                     BigDecimal("10420"),
                 ),
-                _root_ide_package_.com.yandex.school.casheye.feature.analytics.presentation.AnalyticsCategorySummary(
+                AnalyticsCategorySummary(
                     categories[1],
                     BigDecimal("3430"),
                 ),
-                _root_ide_package_.com.yandex.school.casheye.feature.analytics.presentation.AnalyticsCategorySummary(
+                AnalyticsCategorySummary(
                     categories[2],
                     BigDecimal("4900"),
                 ),
             ),
         typeSummaries =
             listOf(
-                _root_ide_package_.com.yandex.school.casheye.feature.analytics.presentation.AnalyticsTypeSummary(
-                    _root_ide_package_.com.yandex.school.casheye.feature.analytics.presentation.AnalyticsType.Expenses,
+                AnalyticsTypeSummary(
+                    AnalyticsType.Expenses,
                     BigDecimal("18750"),
                 ),
             ),

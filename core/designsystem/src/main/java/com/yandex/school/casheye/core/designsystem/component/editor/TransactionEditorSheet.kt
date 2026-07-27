@@ -2,6 +2,8 @@ package com.yandex.school.casheye.core.designsystem.component.editor
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -262,8 +264,16 @@ internal fun EditorAmountField(
         }
     }
 
+    val amountInteractionSource = remember { MutableInteractionSource() }
     Box(
-        modifier = modifier.fillMaxWidth(),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .clickable(
+                    interactionSource = amountInteractionSource,
+                    indication = null,
+                    onClick = { focusRequester.requestFocus() },
+                ),
         contentAlignment = Alignment.Center,
     ) {
         Column(
@@ -559,7 +569,7 @@ private fun EditorAccountContent(
                 EditorSelectionRow(
                     emoji = account.emoji,
                     title = account.label,
-                    subtitle = null,
+                    subtitle = account.subtitle,
                     selected = account.id == selectedId,
                     isLast = index == accounts.lastIndex,
                     onClick = { onSelect(account) },
