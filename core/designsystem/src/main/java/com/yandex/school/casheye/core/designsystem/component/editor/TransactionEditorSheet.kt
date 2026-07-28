@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.DatePicker
@@ -29,7 +28,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -127,7 +125,6 @@ fun TransactionEditorSheet(
                     title = stringResource(R.string.finance_editor_categories),
                     options = categories,
                     selectedId = category?.id,
-                    searchable = true,
                     onSelect = {
                         onCategoryChange(it)
                         nested = null
@@ -522,43 +519,18 @@ private fun EditorOptionContent(
     title: String,
     options: List<EditorOption>,
     selectedId: Int?,
-    searchable: Boolean,
     onSelect: (EditorOption) -> Unit,
 ) {
     var query by remember { mutableStateOf("") }
-    val visibleOptions = remember(options, query) { options.filter { it.label.contains(query, ignoreCase = true) } }
-    Column(modifier = Modifier.fillMaxWidth()) {
-        EditorSheetTitle(title)
-        if (searchable) {
-            OutlinedTextField(
-                value = query,
-                onValueChange = { query = it },
-                placeholder = { Text(stringResource(R.string.finance_editor_find_category)) },
-                leadingIcon = {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_editor_search),
-                        contentDescription = null,
-                    )
-                },
-                singleLine = true,
-                shape = RoundedCornerShape(28.dp),
-                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp, start = 20.dp, end = 20.dp),
-            )
-        }
-        LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = 480.dp)) {
-            itemsIndexed(visibleOptions, key = { _, option -> option.id }) { index, option ->
-                EditorSelectionRow(
-                    emoji = option.emoji,
-                    title = option.label,
-                    subtitle = null,
-                    selected = option.id == selectedId,
-                    isLast = index == visibleOptions.lastIndex,
-                    onClick = { onSelect(option) },
-                )
-            }
-        }
-        Spacer(Modifier.height(20.dp))
-    }
+    EditorOptionSelectionContent(
+        title = title,
+        options = options,
+        selectedId = selectedId,
+        query = query,
+        onQueryChange = { query = it },
+        onSelect = onSelect,
+    )
+    Spacer(Modifier.height(20.dp))
 }
 
 @Composable
