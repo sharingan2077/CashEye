@@ -22,7 +22,7 @@
     <string name="settings_biometrics">Biométrie</string>
     <string name="settings_pin_set">Définir le code PIN</string>
     <string name="settings_pin_change">Modifier le code PIN</string>
-    <string name="settings_pin_hint">Saisissez quatre chiffres</string>
+    <string name="settings_pin_hint">Saisissez un nouveau code PIN</string>
     <string name="settings_pin_disable">Désactiver le code PIN</string>
     <string name="settings_biometrics_pin_required">Définissez un code PIN avant d’activer la biométrie.</string>
     <string name="settings_biometrics_unavailable">Configurez la biométrie dans les réglages système Android pour activer cette option.</string>

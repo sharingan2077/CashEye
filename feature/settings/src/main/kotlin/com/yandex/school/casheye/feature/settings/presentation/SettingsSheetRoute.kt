@@ -178,23 +178,27 @@ private fun ColumnScope.PinContent(
         text = stringResource(R.string.settings_pin_hint),
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
+        modifier = Modifier.padding(start = 20.dp, top = 24.dp, end = 20.dp, bottom = 16.dp),
     )
     Box(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
+        modifier = Modifier.fillMaxWidth().padding(start = 20.dp, top = 14.dp, end = 20.dp, bottom = 14.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             repeat(4) { index ->
                 Box(
                     modifier =
-                        Modifier
-                            .size(48.dp)
-                            .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape),
+                        if (index < value.length) {
+                            Modifier
+                                .size(16.dp)
+                                .background(MaterialTheme.colorScheme.primary, CircleShape)
+                        } else {
+                            Modifier
+                                .size(16.dp)
+                                .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                        },
                     contentAlignment = Alignment.Center,
-                ) {
-                    Text(if (index < value.length) "•" else "")
-                }
+                ) {}
             }
         }
         BasicTextField(
@@ -565,10 +569,11 @@ private fun LanguageOption(
         Text(text = flag, style = MaterialTheme.typography.titleMedium)
         Text(text = label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
         if (selected) {
-            Text(
-                text = "✓",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary,
+            Icon(
+                painter = painterResource(com.yandex.school.casheye.core.designsystem.R.drawable.ic_editor_check),
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+                tint = MaterialTheme.colorScheme.primary,
             )
         }
     }

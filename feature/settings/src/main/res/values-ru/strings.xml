@@ -22,7 +22,7 @@
     <string name="settings_biometrics">Биометрия</string>
     <string name="settings_pin_set">Установить ПИН-код</string>
     <string name="settings_pin_change">Изменить ПИН-код</string>
-    <string name="settings_pin_hint">Введите четыре цифры</string>
+    <string name="settings_pin_hint">Введите новый ПИН-код</string>
     <string name="settings_pin_disable">Отключить ПИН-код</string>
     <string name="settings_biometrics_pin_required">Перед включением биометрии установите ПИН-код.</string>
     <string name="settings_biometrics_unavailable">Настройте биометрию в системных настройках Android, чтобы включить этот параметр.</string>

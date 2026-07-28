@@ -22,7 +22,7 @@
     <string name="settings_biometrics">Biometrics</string>
     <string name="settings_pin_set">Set PIN code</string>
     <string name="settings_pin_change">Change PIN code</string>
-    <string name="settings_pin_hint">Enter four digits</string>
+    <string name="settings_pin_hint">Enter a new PIN code</string>
     <string name="settings_pin_disable">Disable PIN code</string>
     <string name="settings_biometrics_pin_required">Set a PIN code before enabling biometrics.</string>
     <string name="settings_biometrics_unavailable">Configure biometrics in Android system settings to enable this option.</string>
