@@ -13,19 +13,18 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -43,14 +42,20 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.yandex.school.casheye.core.designsystem.component.ListItem
 import com.yandex.school.casheye.core.designsystem.component.editor.CurrencySelectionContent
-import com.yandex.school.casheye.core.designsystem.component.editor.EditorSelectionRow
+import com.yandex.school.casheye.core.designsystem.component.editor.EditorOption
+import com.yandex.school.casheye.core.designsystem.component.editor.EditorOptionSelectionContent
 import com.yandex.school.casheye.core.designsystem.component.editor.EditorSheetTitle
 import com.yandex.school.casheye.core.model.CurrencyCode
 import com.yandex.school.casheye.domain.settings.AppLanguage
@@ -110,6 +115,7 @@ private fun SettingsSheet(
         },
         sheetState = sheetState,
         dragHandle = { SettingsSheetHandle() },
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
     ) {
         BackHandler(enabled = state.destination != SettingsDestination.Root) {
             onIntent(SettingsIntent.BackToRoot)
@@ -191,7 +197,7 @@ private fun ColumnScope.PinContent(
                 }
             }
         }
-        androidx.compose.foundation.text.BasicTextField(
+        BasicTextField(
             value = value,
             onValueChange = { input ->
                 val digits = input.filter(Char::isDigit).take(4)
@@ -295,36 +301,36 @@ private fun ColumnScope.SettingsRootContent(onIntent: (SettingsIntent) -> Unit) 
     )
     SettingsGroup(title = stringResource(R.string.settings_wallet)) {
         SettingsRow(
-            symbol = "₽",
+            painter = painterResource(R.drawable.ic_settings_currency),
             label = stringResource(R.string.settings_currency),
             onClick = { onIntent(SettingsIntent.OpenDestination(SettingsDestination.Currency)) },
         )
         SettingsRow(
-            symbol = "≡",
+            painter = painterResource(R.drawable.ic_settings_category),
             label = stringResource(R.string.settings_articles),
             onClick = { onIntent(SettingsIntent.OpenDestination(SettingsDestination.Articles)) },
         )
     }
     SettingsGroup(title = stringResource(R.string.settings_interface)) {
         SettingsRow(
-            symbol = "◐",
+            painter = painterResource(R.drawable.ic_settings_theme),
             label = stringResource(R.string.settings_appearance),
             onClick = { onIntent(SettingsIntent.OpenDestination(SettingsDestination.Appearance)) },
         )
         SettingsRow(
-            symbol = "◎",
+            painter = painterResource(R.drawable.icon_settings_language),
             label = stringResource(R.string.settings_language),
             onClick = { onIntent(SettingsIntent.OpenDestination(SettingsDestination.Language)) },
         )
     }
     SettingsGroup(title = stringResource(R.string.settings_security)) {
         SettingsRow(
-            symbol = "•",
+            painter = painterResource(R.drawable.icon_settings_pin),
             label = stringResource(R.string.settings_pin),
             onClick = { onIntent(SettingsIntent.OpenDestination(SettingsDestination.Pin)) },
         )
         SettingsRow(
-            symbol = "⌁",
+            painter = painterResource(R.drawable.icon_settings_biometrics),
             label = stringResource(R.string.settings_biometrics),
             onClick = { onIntent(SettingsIntent.OpenDestination(SettingsDestination.Biometrics)) },
         )
@@ -349,72 +355,59 @@ private fun ColumnScope.ArticlesContent(
     state: SettingsUiState,
     onIntent: (SettingsIntent) -> Unit,
 ) {
-    EditorSheetTitle(stringResource(R.string.settings_articles))
-    OutlinedTextField(
-        value = state.articlesQuery,
-        onValueChange = { onIntent(SettingsIntent.ArticlesQueryChanged(it)) },
-        placeholder = { Text(stringResource(R.string.settings_articles_search)) },
-        singleLine = true,
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
-    )
-    when {
-        state.isArticlesLoading && state.articles.isEmpty() -> {
-            Box(
-                modifier = Modifier.fillMaxWidth().padding(32.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                CircularProgressIndicator()
-            }
-        }
+    EditorOptionSelectionContent(
+        title = stringResource(R.string.settings_articles),
+        options = state.articles.map { EditorOption(it.id, it.name, it.emoji) },
+        selectedId = null,
+        query = state.articlesQuery,
+        onQueryChange = { onIntent(SettingsIntent.ArticlesQueryChanged(it)) },
+        onSelect = {},
+        emptyContent = {
+            when {
+                state.isArticlesLoading && state.articles.isEmpty() -> {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(32.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                }
 
-        state.articlesError != null && state.articles.isEmpty() -> {
-            Text(
-                text = stringResource(R.string.settings_articles_load_error),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.error,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .clickable { onIntent(SettingsIntent.LoadArticles) }
-                        .padding(20.dp),
-            )
-        }
+                state.articlesError != null && state.articles.isEmpty() -> {
+                    Text(
+                        text = stringResource(R.string.settings_articles_load_error),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable { onIntent(SettingsIntent.LoadArticles) }
+                                .padding(20.dp),
+                    )
+                }
 
-        state.visibleArticles.isEmpty() -> {
-            Text(
-                text = stringResource(R.string.settings_articles_empty),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(20.dp),
-            )
-        }
-
-        else -> {
-            LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = 480.dp)) {
-                itemsIndexed(state.visibleArticles, key = { _, category -> category.id }) { index, category ->
-                    EditorSelectionRow(
-                        emoji = category.emoji,
-                        title = category.name,
-                        subtitle = null,
-                        selected = false,
-                        isLast = index == state.visibleArticles.lastIndex,
-                        onClick = {},
+                else -> {
+                    Text(
+                        text = stringResource(R.string.settings_articles_empty),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(20.dp),
                     )
                 }
             }
-            if (state.articlesError != null) {
-                Text(
-                    text = stringResource(R.string.settings_articles_load_error),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .clickable { onIntent(SettingsIntent.LoadArticles) }
-                            .padding(horizontal = 20.dp, vertical = 8.dp),
-                )
-            }
-        }
+        },
+    )
+    if (state.articles.isNotEmpty() && state.articlesError != null) {
+        Text(
+            text = stringResource(R.string.settings_articles_load_error),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.error,
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .clickable { onIntent(SettingsIntent.LoadArticles) }
+                    .padding(horizontal = 20.dp, vertical = 8.dp),
+        )
     }
     Spacer(Modifier.height(20.dp))
 }
@@ -426,12 +419,12 @@ private fun ColumnScope.AppearanceContent(
 ) {
     EditorSheetTitle(stringResource(R.string.settings_appearance))
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 20.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         ThemeOption(
             label = stringResource(R.string.settings_theme_light),
-            symbol = "☼",
+            painter = painterResource(R.drawable.ic_settings_sun),
             mode = ThemeMode.LIGHT,
             selected = state.settings.themeMode == ThemeMode.LIGHT,
             modifier = Modifier.weight(1f),
@@ -439,7 +432,7 @@ private fun ColumnScope.AppearanceContent(
         )
         ThemeOption(
             label = stringResource(R.string.settings_theme_dark),
-            symbol = "☾",
+            painter = painterResource(R.drawable.ic_settings_moon),
             mode = ThemeMode.DARK,
             selected = state.settings.themeMode == ThemeMode.DARK,
             modifier = Modifier.weight(1f),
@@ -447,7 +440,7 @@ private fun ColumnScope.AppearanceContent(
         )
         ThemeOption(
             label = stringResource(R.string.settings_theme_system),
-            symbol = "▣",
+            painter = painterResource(R.drawable.ic_settings_monitor),
             mode = ThemeMode.SYSTEM,
             selected = state.settings.themeMode == ThemeMode.SYSTEM,
             modifier = Modifier.weight(1f),
@@ -460,44 +453,55 @@ private fun ColumnScope.AppearanceContent(
 @Composable
 private fun ThemeOption(
     label: String,
-    symbol: String,
+    painter: Painter,
     mode: ThemeMode,
     selected: Boolean,
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
-    val borderColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
-    val previewColor =
-        when (mode) {
-            ThemeMode.LIGHT -> MaterialTheme.colorScheme.surface
-            ThemeMode.DARK -> MaterialTheme.colorScheme.inverseSurface
-            ThemeMode.SYSTEM -> MaterialTheme.colorScheme.surfaceVariant
-        }
+    val borderColor = if (selected) MaterialTheme.colorScheme.primary else Color(0xFFE0E0E0)
+    val optionShape = RoundedCornerShape(16.dp)
+    val previewShape = RoundedCornerShape(8.dp)
     Column(
         modifier =
             modifier
-                .border(1.dp, borderColor, MaterialTheme.shapes.medium)
-                .clip(MaterialTheme.shapes.medium)
+                .border(2.dp, borderColor, optionShape)
+                .clip(optionShape)
                 .background(MaterialTheme.colorScheme.surface)
                 .clickable(role = Role.RadioButton, onClick = onClick)
-                .padding(10.dp),
+                .padding(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Box(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .height(64.dp)
-                    .clip(MaterialTheme.shapes.small)
-                    .background(previewColor),
+                    .height(60.dp)
+                    .border(1.dp, Color(0xFFE0E0E0), previewShape)
+                    .clip(previewShape)
+                    .background(
+                        when (mode) {
+                            ThemeMode.LIGHT -> Brush.verticalGradient(listOf(Color.White, Color.White))
+                            ThemeMode.DARK -> Brush.verticalGradient(listOf(Color(0xFF1C1B1F), Color(0xFF1C1B1F)))
+                            ThemeMode.SYSTEM -> Brush.verticalGradient(listOf(Color.White, Color.Black))
+                        },
+                    ),
         )
-        Text(
-            text = "$symbol $label",
-            style = MaterialTheme.typography.labelMedium,
-            color = if (selected) borderColor else MaterialTheme.colorScheme.onSurface,
-            textAlign = TextAlign.Center,
-        )
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            Icon(
+                painter = painter,
+                contentDescription = null,
+                modifier = Modifier.size(16.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
+            )
+        }
     }
 }
 
@@ -591,48 +595,52 @@ private fun SettingsGroup(
 
 @Composable
 private fun SettingsRow(
-    symbol: String,
+    painter: Painter,
     label: String,
     onClick: () -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
-    Row(
+    ListItem(
+        rowHorizontalPadding = 20.dp,
+        height = 64.dp,
         modifier =
             Modifier
-                .fillMaxWidth()
                 .clickable(
                     interactionSource = interactionSource,
                     indication = null,
                     role = Role.Button,
                     onClick = onClick,
-                ).padding(horizontal = 20.dp, vertical = 16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        Box(
-            modifier =
-                Modifier
-                    .size(32.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = symbol,
-                color = MaterialTheme.colorScheme.primary,
-                style = MaterialTheme.typography.labelLarge,
-                textAlign = TextAlign.Center,
+                ),
+        lead = {
+            Box(
+                modifier =
+                    Modifier
+                        .size(32.dp)
+                        .border(width = 1.dp, color = MaterialTheme.colorScheme.outline, shape = CircleShape)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surface),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    painter = painter,
+                    modifier = Modifier.size(20.dp),
+                    tint = MaterialTheme.colorScheme.primary,
+                    contentDescription = null,
+                )
+            }
+        },
+        trail = {
+            Icon(
+                painter = painterResource(R.drawable.ic_chevron_right),
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-        }
+        },
+    ) {
         Text(
             text = label,
             style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.weight(1f),
-        )
-        Text(
-            text = "›",
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
