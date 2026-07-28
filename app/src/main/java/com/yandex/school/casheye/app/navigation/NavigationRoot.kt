@@ -68,7 +68,7 @@ fun NavigationRoot(
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
     val selectedDate = LocalDate.ofEpochDay(selectedDateEpochDay).coerceAtMost(LocalDate.now())
     var editorTarget by remember { mutableStateOf<EditorTarget?>(null) }
-    var showSettings by rememberSaveable { mutableStateOf(false) }
+    var showSettings by remember { mutableStateOf(false) }
 
     NavigationScaffold(
         modifier = modifier,

@@ -7,6 +7,8 @@ import com.yandex.school.casheye.domain.finance.currency.ObserveReportingCurrenc
 import com.yandex.school.casheye.domain.finance.currency.SetReportingCurrencyUseCase
 import com.yandex.school.casheye.domain.finance.editor.EditorResult
 import com.yandex.school.casheye.domain.settings.ObserveSettingsUseCase
+import com.yandex.school.casheye.domain.settings.SetLanguageUseCase
+import com.yandex.school.casheye.domain.settings.SetThemeModeUseCase
 import dev.zacsweers.metro.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,6 +19,8 @@ class SettingsViewModel(
     observeSettings: ObserveSettingsUseCase,
     observeReportingCurrency: ObserveReportingCurrencyUseCase,
     private val setReportingCurrency: SetReportingCurrencyUseCase,
+    private val setThemeMode: SetThemeModeUseCase,
+    private val setLanguage: SetLanguageUseCase,
     private val getCategories: GetEditorCategoriesUseCase,
 ) : ViewModel() {
     private val _state = MutableStateFlow(SettingsUiState())
@@ -45,6 +49,14 @@ class SettingsViewModel(
             is SettingsIntent.SelectReportingCurrency -> {
                 _state.value = _state.value.copy(destination = SettingsDestination.Root)
                 viewModelScope.launch { setReportingCurrency(intent.currency) }
+            }
+
+            is SettingsIntent.SelectThemeMode -> {
+                viewModelScope.launch { setThemeMode(intent.mode) }
+            }
+
+            is SettingsIntent.SelectLanguage -> {
+                viewModelScope.launch { setLanguage(intent.language) }
             }
 
             is SettingsIntent.ArticlesQueryChanged -> {

@@ -12,6 +12,7 @@ import com.yandex.school.casheye.data.finance.sync.ExchangeRateRefresher
 import com.yandex.school.casheye.data.finance.sync.FinanceSyncScheduler
 import com.yandex.school.casheye.data.finance.sync.FinanceSyncer
 import com.yandex.school.casheye.data.settings.di.SettingsRepositoryBindings
+import com.yandex.school.casheye.domain.settings.ObserveSettingsUseCase
 import com.yandex.school.casheye.feature.accounts.di.AccountsViewModelBindings
 import com.yandex.school.casheye.feature.analytics.di.AnalyticsViewModelBindings
 import com.yandex.school.casheye.feature.expenses.di.ExpensesViewModelBindings
@@ -40,6 +41,8 @@ import dev.zacsweers.metrox.viewmodel.ViewModelGraph
 )
 interface AppGraph : ViewModelGraph {
     val networkMonitor: NetworkMonitor
+
+    val observeSettings: ObserveSettingsUseCase
 
     val financeSyncer: FinanceSyncer
 

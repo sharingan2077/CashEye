@@ -2,6 +2,7 @@ package com.yandex.school.casheye.feature.settings.presentation
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -44,6 +45,8 @@ import com.yandex.school.casheye.core.designsystem.component.editor.CurrencySele
 import com.yandex.school.casheye.core.designsystem.component.editor.EditorSelectionRow
 import com.yandex.school.casheye.core.designsystem.component.editor.EditorSheetTitle
 import com.yandex.school.casheye.core.model.CurrencyCode
+import com.yandex.school.casheye.domain.settings.AppLanguage
+import com.yandex.school.casheye.domain.settings.ThemeMode
 import com.yandex.school.casheye.feature.settings.R
 import dev.zacsweers.metrox.viewmodel.metroViewModel
 
@@ -101,6 +104,8 @@ private fun SettingsSheet(
             SettingsDestination.Root -> SettingsRootContent(onIntent)
             SettingsDestination.Currency -> CurrencyContent(state, onIntent)
             SettingsDestination.Articles -> ArticlesContent(state, onIntent)
+            SettingsDestination.Appearance -> AppearanceContent(state, onIntent)
+            SettingsDestination.Language -> LanguageContent(state, onIntent)
             else -> SettingsPlaceholderContent(destination = state.destination)
         }
     }
@@ -256,6 +261,158 @@ private fun ColumnScope.ArticlesContent(
         }
     }
     Spacer(Modifier.height(20.dp))
+}
+
+@Composable
+private fun ColumnScope.AppearanceContent(
+    state: SettingsUiState,
+    onIntent: (SettingsIntent) -> Unit,
+) {
+    EditorSheetTitle(stringResource(R.string.settings_appearance))
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 20.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        ThemeOption(
+            label = stringResource(R.string.settings_theme_light),
+            symbol = "☼",
+            mode = ThemeMode.LIGHT,
+            selected = state.settings.themeMode == ThemeMode.LIGHT,
+            modifier = Modifier.weight(1f),
+            onClick = { onIntent(SettingsIntent.SelectThemeMode(ThemeMode.LIGHT)) },
+        )
+        ThemeOption(
+            label = stringResource(R.string.settings_theme_dark),
+            symbol = "☾",
+            mode = ThemeMode.DARK,
+            selected = state.settings.themeMode == ThemeMode.DARK,
+            modifier = Modifier.weight(1f),
+            onClick = { onIntent(SettingsIntent.SelectThemeMode(ThemeMode.DARK)) },
+        )
+        ThemeOption(
+            label = stringResource(R.string.settings_theme_system),
+            symbol = "▣",
+            mode = ThemeMode.SYSTEM,
+            selected = state.settings.themeMode == ThemeMode.SYSTEM,
+            modifier = Modifier.weight(1f),
+            onClick = { onIntent(SettingsIntent.SelectThemeMode(ThemeMode.SYSTEM)) },
+        )
+    }
+    Spacer(Modifier.height(20.dp))
+}
+
+@Composable
+private fun ThemeOption(
+    label: String,
+    symbol: String,
+    mode: ThemeMode,
+    selected: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    val borderColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+    val previewColor =
+        when (mode) {
+            ThemeMode.LIGHT -> MaterialTheme.colorScheme.surface
+            ThemeMode.DARK -> MaterialTheme.colorScheme.inverseSurface
+            ThemeMode.SYSTEM -> MaterialTheme.colorScheme.surfaceVariant
+        }
+    Column(
+        modifier =
+            modifier
+                .border(1.dp, borderColor, MaterialTheme.shapes.medium)
+                .clip(MaterialTheme.shapes.medium)
+                .background(MaterialTheme.colorScheme.surface)
+                .clickable(role = Role.RadioButton, onClick = onClick)
+                .padding(10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(64.dp)
+                    .clip(MaterialTheme.shapes.small)
+                    .background(previewColor),
+        )
+        Text(
+            text = "$symbol $label",
+            style = MaterialTheme.typography.labelMedium,
+            color = if (selected) borderColor else MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+@Composable
+private fun ColumnScope.LanguageContent(
+    state: SettingsUiState,
+    onIntent: (SettingsIntent) -> Unit,
+) {
+    EditorSheetTitle(stringResource(R.string.settings_language))
+    LanguageOption(
+        flag = "🇷🇺",
+        label = stringResource(R.string.settings_language_russian),
+        selected = state.settings.language == AppLanguage.RUSSIAN,
+        onClick = { onIntent(SettingsIntent.SelectLanguage(AppLanguage.RUSSIAN)) },
+    )
+    LanguageOption(
+        flag = "🇬🇧",
+        label = stringResource(R.string.settings_language_english),
+        selected = state.settings.language == AppLanguage.ENGLISH,
+        onClick = { onIntent(SettingsIntent.SelectLanguage(AppLanguage.ENGLISH)) },
+    )
+    LanguageOption(
+        flag = "🇩🇪",
+        label = stringResource(R.string.settings_language_german),
+        selected = state.settings.language == AppLanguage.GERMAN,
+        onClick = { onIntent(SettingsIntent.SelectLanguage(AppLanguage.GERMAN)) },
+    )
+    LanguageOption(
+        flag = "🇫🇷",
+        label = stringResource(R.string.settings_language_french),
+        selected = state.settings.language == AppLanguage.FRENCH,
+        onClick = { onIntent(SettingsIntent.SelectLanguage(AppLanguage.FRENCH)) },
+    )
+    LanguageOption(
+        flag = "🇪🇸",
+        label = stringResource(R.string.settings_language_spanish),
+        selected = state.settings.language == AppLanguage.SPANISH,
+        isLast = true,
+        onClick = { onIntent(SettingsIntent.SelectLanguage(AppLanguage.SPANISH)) },
+    )
+    Spacer(Modifier.height(20.dp))
+}
+
+@Composable
+private fun LanguageOption(
+    flag: String,
+    label: String,
+    selected: Boolean,
+    isLast: Boolean = false,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable(role = Role.RadioButton, onClick = onClick)
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(text = flag, style = MaterialTheme.typography.titleMedium)
+        Text(text = label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+        if (selected) {
+            Text(
+                text = "✓",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
+    }
+    if (!isLast) HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp))
 }
 
 private fun String.toCurrencyCode() =

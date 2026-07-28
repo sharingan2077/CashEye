@@ -9,6 +9,14 @@
     <string name="settings_interface">INTERFAZ</string>
     <string name="settings_appearance">Tema</string>
     <string name="settings_language">Idioma</string>
+    <string name="settings_theme_light">Claro</string>
+    <string name="settings_theme_dark">Oscuro</string>
+    <string name="settings_theme_system">Sistema</string>
+    <string name="settings_language_russian">Русский</string>
+    <string name="settings_language_english">English</string>
+    <string name="settings_language_german">Deutsch</string>
+    <string name="settings_language_french">Français</string>
+    <string name="settings_language_spanish">Español</string>
     <string name="settings_security">SEGURIDAD</string>
     <string name="settings_pin">Código PIN</string>
     <string name="settings_biometrics">Biometría</string>

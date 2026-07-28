@@ -1,12 +1,20 @@
 package com.yandex.school.casheye.app
 
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.core.os.LocaleListCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yandex.school.casheye.app.navigation.NavigationRoot
 import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
+import com.yandex.school.casheye.domain.settings.AppSettings
+import com.yandex.school.casheye.domain.settings.ObserveSettingsUseCase
+import com.yandex.school.casheye.domain.settings.ThemeMode
 import com.yandex.school.casheye.feature.splash.presentation.SplashScreen
 import dev.zacsweers.metrox.viewmodel.LocalMetroViewModelFactory
 import dev.zacsweers.metrox.viewmodel.MetroViewModelFactory
@@ -16,12 +24,31 @@ import kotlinx.coroutines.flow.StateFlow
 internal fun CashEyeApp(
     metroViewModelFactory: MetroViewModelFactory,
     networkStatus: StateFlow<Boolean>,
+    observeSettings: ObserveSettingsUseCase,
     onSplashReady: () -> Unit,
 ) {
+    val settings by observeSettings().collectAsStateWithLifecycle(initialValue = null as AppSettings?)
+    val darkTheme =
+        when (settings?.themeMode) {
+            ThemeMode.LIGHT -> false
+            ThemeMode.DARK -> true
+            ThemeMode.SYSTEM,
+            null,
+            -> isSystemInDarkTheme()
+        }
+
+    LaunchedEffect(settings?.language) {
+        settings?.language?.let { language ->
+            AppCompatDelegate.setApplicationLocales(
+                LocaleListCompat.forLanguageTags(language.languageTag.orEmpty()),
+            )
+        }
+    }
+
     CompositionLocalProvider(
         LocalMetroViewModelFactory provides metroViewModelFactory,
     ) {
-        CashEyeTheme {
+        CashEyeTheme(darkTheme = darkTheme, dynamicColor = false) {
             if (SplashPlaybackState.hasFinished) {
                 NavigationRoot(networkStatus = networkStatus)
             } else {

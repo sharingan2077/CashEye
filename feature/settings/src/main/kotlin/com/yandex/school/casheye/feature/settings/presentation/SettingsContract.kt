@@ -3,7 +3,9 @@ package com.yandex.school.casheye.feature.settings.presentation
 import com.yandex.school.casheye.core.model.Category
 import com.yandex.school.casheye.core.model.CurrencyCode
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
+import com.yandex.school.casheye.domain.settings.AppLanguage
 import com.yandex.school.casheye.domain.settings.AppSettings
+import com.yandex.school.casheye.domain.settings.ThemeMode
 
 data class SettingsUiState(
     val settings: AppSettings = AppSettings(),
@@ -27,6 +29,14 @@ sealed interface SettingsIntent {
 
     data class SelectReportingCurrency(
         val currency: CurrencyCode,
+    ) : SettingsIntent
+
+    data class SelectThemeMode(
+        val mode: ThemeMode,
+    ) : SettingsIntent
+
+    data class SelectLanguage(
+        val language: AppLanguage,
     ) : SettingsIntent
 
     data class ArticlesQueryChanged(
