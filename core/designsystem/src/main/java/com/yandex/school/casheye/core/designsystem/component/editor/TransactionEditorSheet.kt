@@ -4,6 +4,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
@@ -20,18 +22,19 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimeInput
+import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberTimePickerState
@@ -56,6 +59,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.yandex.school.casheye.core.designsystem.R
 import com.yandex.school.casheye.core.designsystem.component.datepicker.rememberPastOrPresentSelectableDates
 import com.yandex.school.casheye.core.designsystem.component.money.currencySymbol
@@ -156,6 +160,17 @@ fun TransactionEditorSheet(
                 )
             }
 
+            TransactionNestedSheet.Time -> {
+                EditorTimeContent(
+                    time = time,
+                    onConfirm = {
+                        onTimeChange(it)
+                        nested = null
+                    },
+                    onDismiss = { nested = null },
+                )
+            }
+
             else -> {
                 FinanceEditorContent(
                     amount = amount,
@@ -223,16 +238,6 @@ fun TransactionEditorSheet(
             date = date,
             onConfirm = {
                 onDateChange(it)
-                nested = null
-            },
-            onDismiss = { nested = null },
-        )
-    }
-    if (nested == TransactionNestedSheet.Time) {
-        EditorTimeDialog(
-            time = time,
-            onConfirm = {
-                onTimeChange(it)
                 nested = null
             },
             onDismiss = { nested = null },
@@ -609,32 +614,79 @@ private fun EditorDateDialog(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun EditorTimeDialog(
+private fun EditorTimeContent(
     time: LocalTime,
     onConfirm: (LocalTime) -> Unit,
     onDismiss: () -> Unit,
 ) {
+    var isAnalogMode by remember { mutableStateOf(false) }
     val pickerState =
         rememberTimePickerState(
             initialHour = time.hour,
             initialMinute = time.minute,
             is24Hour = true,
         )
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.finance_editor_enter_time)) },
-        text = { TimeInput(state = pickerState) },
-        confirmButton = {
-            TextButton(onClick = { onConfirm(LocalTime.of(pickerState.hour, pickerState.minute)) }) {
-                Text(stringResource(R.string.finance_editor_done))
+    Column(Modifier.fillMaxWidth()) {
+        Text(
+            text = stringResource(R.string.finance_editor_enter_time),
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 20.dp),
+        )
+        if (isAnalogMode) {
+            TimePicker(
+                state = pickerState,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        } else {
+            TimeInput(
+                state = pickerState,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+            )
+        }
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(start = 12.dp, end = 24.dp, bottom = 20.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconButton(
+                modifier = Modifier.size(48.dp),
+                onClick = { isAnalogMode = !isAnalogMode },
+            ) {
+                Icon(
+                    painter =
+                        painterResource(
+                            if (isAnalogMode) {
+                                R.drawable.ic_editor_keyboard
+                            } else {
+                                R.drawable.ic_editor_time
+                            },
+                        ),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    contentDescription =
+                        stringResource(
+                            if (isAnalogMode) {
+                                R.string.finance_editor_switch_to_time_input
+                            } else {
+                                R.string.finance_editor_switch_to_time_picker
+                            },
+                        ),
+                    modifier = Modifier.size(24.dp),
+                )
             }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.finance_editor_cancel))
+            Row {
+                TextButton(onClick = onDismiss) {
+                    Text(stringResource(R.string.finance_editor_cancel))
+                }
+                TextButton(onClick = { onConfirm(LocalTime.of(pickerState.hour, pickerState.minute)) }) {
+                    Text(stringResource(R.string.finance_editor_apply))
+                }
             }
-        },
-    )
+        }
+    }
 }
 
 @Composable
@@ -652,5 +704,6 @@ private enum class TransactionNestedSheet { Category, Date, Time, Account, Comme
 private val TransactionNestedSheet?.isSheetContent: Boolean
     get() =
         this == TransactionNestedSheet.Category ||
+            this == TransactionNestedSheet.Time ||
             this == TransactionNestedSheet.Account ||
             this == TransactionNestedSheet.Comment

@@ -43,4 +43,6 @@
     <string name="date_picker_title">Sélectionner une date</string>
     <string name="finance_editor_comment_placeholder">Saisissez un commentaire</string>
     <string name="finance_editor_enter_time">Saisissez l’heure</string>
+    <string name="finance_editor_switch_to_time_picker">Passer au sélecteur d’heure avec cadran</string>
+    <string name="finance_editor_switch_to_time_input">Passer à la saisie textuelle de l’heure</string>
 </resources>

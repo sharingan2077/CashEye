@@ -43,4 +43,6 @@
     <string name="date_picker_title">Seleccionar fecha</string>
     <string name="finance_editor_comment_placeholder">Introduce un comentario</string>
     <string name="finance_editor_enter_time">Introduce la hora</string>
+    <string name="finance_editor_switch_to_time_picker">Cambiar al selector de hora con reloj</string>
+    <string name="finance_editor_switch_to_time_input">Cambiar a la entrada de hora por texto</string>
 </resources>

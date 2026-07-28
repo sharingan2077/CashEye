@@ -43,4 +43,6 @@
     <string name="date_picker_title">Выберите дату</string>
     <string name="finance_editor_comment_placeholder">Введите комментарий</string>
     <string name="finance_editor_enter_time">Введите время</string>
+    <string name="finance_editor_switch_to_time_picker">Перейти к выбору времени на циферблате</string>
+    <string name="finance_editor_switch_to_time_input">Перейти к текстовому вводу времени</string>
 </resources>

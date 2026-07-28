@@ -43,4 +43,6 @@
     <string name="date_picker_title">Datum auswählen</string>
     <string name="finance_editor_comment_placeholder">Kommentar eingeben</string>
     <string name="finance_editor_enter_time">Uhrzeit eingeben</string>
+    <string name="finance_editor_switch_to_time_picker">Zur Zeitauswahl mit Uhr wechseln</string>
+    <string name="finance_editor_switch_to_time_input">Zur Texteingabe der Uhrzeit wechseln</string>
 </resources>
