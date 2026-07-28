@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
@@ -13,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -29,6 +31,8 @@ fun EditorOptionSelectionContent(
     emptyContent: @Composable () -> Unit = {},
 ) {
     val visibleOptions = remember(options, query) { options.filter { it.label.contains(query, ignoreCase = true) } }
+    val listState = rememberLazyListState()
+    val gestureCoordinator = rememberSheetListGestureCoordinator(listState)
     Column(modifier = Modifier.fillMaxWidth()) {
         EditorSheetTitle(title)
         OutlinedTextField(
@@ -48,7 +52,16 @@ fun EditorOptionSelectionContent(
         if (visibleOptions.isEmpty()) {
             emptyContent()
         } else {
-            LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = 480.dp)) {
+            LazyColumn(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 480.dp)
+                        .nestedScroll(gestureCoordinator),
+                state = listState,
+                flingBehavior = gestureCoordinator,
+                overscrollEffect = null,
+            ) {
                 itemsIndexed(visibleOptions, key = { _, option -> option.id }) { index, option ->
                     EditorSelectionRow(
                         emoji = option.emoji,

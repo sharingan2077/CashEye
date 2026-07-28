@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.DatePicker
@@ -48,6 +49,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.painterResource
@@ -539,9 +541,20 @@ private fun EditorAccountContent(
     selectedId: Int?,
     onSelect: (EditorOption) -> Unit,
 ) {
+    val listState = rememberLazyListState()
+    val gestureCoordinator = rememberSheetListGestureCoordinator(listState)
     Column(Modifier.fillMaxWidth()) {
         EditorSheetTitle(stringResource(R.string.finance_editor_accounts))
-        LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = 480.dp)) {
+        LazyColumn(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 480.dp)
+                    .nestedScroll(gestureCoordinator),
+            state = listState,
+            flingBehavior = gestureCoordinator,
+            overscrollEffect = null,
+        ) {
             itemsIndexed(accounts, key = { _, account -> account.id }) { index, account ->
                 EditorSelectionRow(
                     emoji = account.emoji,

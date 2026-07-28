@@ -174,16 +174,22 @@ private fun ColumnScope.PinContent(
     EditorSheetTitle(
         stringResource(if (isConfigured) R.string.settings_pin_change else R.string.settings_pin_set),
     )
-    Text(
-        text = stringResource(R.string.settings_pin_hint),
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(start = 20.dp, top = 24.dp, end = 20.dp, bottom = 16.dp),
-    )
-    Box(
-        modifier = Modifier.fillMaxWidth().padding(start = 20.dp, top = 14.dp, end = 20.dp, bottom = 14.dp),
-        contentAlignment = Alignment.Center,
+    Column(
+        modifier =
+            Modifier
+                .padding(horizontal = 20.dp, vertical = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        Text(
+            text = stringResource(R.string.settings_pin_hint),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier =
+                Modifier
+                    .align(
+                        Alignment.CenterHorizontally,
+                    ).padding(top = 24.dp),
+        )
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             repeat(4) { index ->
                 Box(
@@ -567,10 +573,10 @@ private fun LanguageOption(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(text = flag, style = MaterialTheme.typography.titleMedium)
-        Text(text = label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+        Text(text = label, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
         if (selected) {
             Icon(
-                painter = painterResource(com.yandex.school.casheye.core.designsystem.R.drawable.ic_editor_check),
+                painter = painterResource(R.drawable.ic_settings_check),
                 contentDescription = null,
                 modifier = Modifier.size(20.dp),
                 tint = MaterialTheme.colorScheme.primary,

@@ -43,6 +43,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.yandex.school.casheye.core.designsystem.component.EmojiCircle
 import com.yandex.school.casheye.core.designsystem.component.ListItem
+import com.yandex.school.casheye.core.designsystem.component.editor.rememberSheetListGestureCoordinator
 import com.yandex.school.casheye.core.model.Category
 import com.yandex.school.casheye.feature.analytics.R
 import com.yandex.school.casheye.feature.analytics.presentation.AnalyticsIntent

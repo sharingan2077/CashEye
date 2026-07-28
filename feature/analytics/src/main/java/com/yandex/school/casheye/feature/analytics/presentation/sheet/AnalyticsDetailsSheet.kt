@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.yandex.school.casheye.core.designsystem.component.editor.rememberSheetListGestureCoordinator
 import com.yandex.school.casheye.feature.analytics.R
 import com.yandex.school.casheye.feature.analytics.presentation.AnalyticsIntent
 import com.yandex.school.casheye.feature.analytics.presentation.AnalyticsType
