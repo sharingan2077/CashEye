@@ -3,6 +3,9 @@
     <string name="settings_wallet">WALLET</string>
     <string name="settings_currency">Currency</string>
     <string name="settings_articles">Articles</string>
+    <string name="settings_articles_search">Find a category</string>
+    <string name="settings_articles_empty">No matching categories</string>
+    <string name="settings_articles_load_error">Could not load categories. Tap to retry.</string>
     <string name="settings_interface">INTERFACE</string>
     <string name="settings_appearance">Appearance</string>
     <string name="settings_language">Language</string>

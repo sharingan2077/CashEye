@@ -3,6 +3,9 @@
     <string name="settings_wallet">PORTEFEUILLE</string>
     <string name="settings_currency">Devise</string>
     <string name="settings_articles">Catégories</string>
+    <string name="settings_articles_search">Rechercher une catégorie</string>
+    <string name="settings_articles_empty">Aucune catégorie correspondante</string>
+    <string name="settings_articles_load_error">Impossible de charger les catégories. Touchez pour réessayer.</string>
     <string name="settings_interface">INTERFACE</string>
     <string name="settings_appearance">Apparence</string>
     <string name="settings_language">Langue</string>

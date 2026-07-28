@@ -3,6 +3,9 @@
     <string name="settings_wallet">КОШЕЛЁК</string>
     <string name="settings_currency">Валюта</string>
     <string name="settings_articles">Статьи</string>
+    <string name="settings_articles_search">Найти категорию</string>
+    <string name="settings_articles_empty">Подходящих категорий нет</string>
+    <string name="settings_articles_load_error">Не удалось загрузить категории. Нажмите, чтобы повторить.</string>
     <string name="settings_interface">ИНТЕРФЕЙС</string>
     <string name="settings_appearance">Тема оформления</string>
     <string name="settings_language">Язык</string>

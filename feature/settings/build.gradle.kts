@@ -25,6 +25,8 @@ kotlin {
 
 dependencies {
     implementation(project(":core:designsystem"))
+    implementation(project(":core:model"))
+    implementation(project(":domain:finance"))
     implementation(project(":domain:settings"))
 
     implementation(platform(libs.androidx.compose.bom))

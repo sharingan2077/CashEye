@@ -3,6 +3,9 @@
     <string name="settings_wallet">GELDBÖRSE</string>
     <string name="settings_currency">Währung</string>
     <string name="settings_articles">Kategorien</string>
+    <string name="settings_articles_search">Kategorie suchen</string>
+    <string name="settings_articles_empty">Keine passenden Kategorien</string>
+    <string name="settings_articles_load_error">Kategorien konnten nicht geladen werden. Zum Wiederholen tippen.</string>
     <string name="settings_interface">OBERFLÄCHE</string>
     <string name="settings_appearance">Erscheinungsbild</string>
     <string name="settings_language">Sprache</string>

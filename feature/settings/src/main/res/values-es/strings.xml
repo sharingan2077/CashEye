@@ -3,6 +3,9 @@
     <string name="settings_wallet">CARTERA</string>
     <string name="settings_currency">Moneda</string>
     <string name="settings_articles">Categorías</string>
+    <string name="settings_articles_search">Buscar una categoría</string>
+    <string name="settings_articles_empty">No hay categorías coincidentes</string>
+    <string name="settings_articles_load_error">No se pudieron cargar las categorías. Toca para reintentar.</string>
     <string name="settings_interface">INTERFAZ</string>
     <string name="settings_appearance">Tema</string>
     <string name="settings_language">Idioma</string>

@@ -12,13 +12,18 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -35,6 +40,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.yandex.school.casheye.core.designsystem.component.editor.CurrencySelectionContent
+import com.yandex.school.casheye.core.designsystem.component.editor.EditorSelectionRow
+import com.yandex.school.casheye.core.designsystem.component.editor.EditorSheetTitle
+import com.yandex.school.casheye.core.model.CurrencyCode
 import com.yandex.school.casheye.feature.settings.R
 import dev.zacsweers.metrox.viewmodel.metroViewModel
 
@@ -90,6 +99,8 @@ private fun SettingsSheet(
         }
         when (state.destination) {
             SettingsDestination.Root -> SettingsRootContent(onIntent)
+            SettingsDestination.Currency -> CurrencyContent(state, onIntent)
+            SettingsDestination.Articles -> ArticlesContent(state, onIntent)
             else -> SettingsPlaceholderContent(destination = state.destination)
         }
     }
@@ -159,6 +170,96 @@ private fun ColumnScope.SettingsRootContent(
     }
     Spacer(Modifier.height(20.dp))
 }
+
+@Composable
+private fun ColumnScope.CurrencyContent(
+    state: SettingsUiState,
+    onIntent: (SettingsIntent) -> Unit,
+) {
+    CurrencySelectionContent(
+        title = stringResource(R.string.settings_currency),
+        selectedCurrency = state.reportingCurrency.isoCode,
+        onSelect = { onIntent(SettingsIntent.SelectReportingCurrency(it.toCurrencyCode())) },
+    )
+}
+
+@Composable
+private fun ColumnScope.ArticlesContent(
+    state: SettingsUiState,
+    onIntent: (SettingsIntent) -> Unit,
+) {
+    EditorSheetTitle(stringResource(R.string.settings_articles))
+    OutlinedTextField(
+        value = state.articlesQuery,
+        onValueChange = { onIntent(SettingsIntent.ArticlesQueryChanged(it)) },
+        placeholder = { Text(stringResource(R.string.settings_articles_search)) },
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
+    )
+    when {
+        state.isArticlesLoading && state.articles.isEmpty() -> {
+            Box(
+                modifier = Modifier.fillMaxWidth().padding(32.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator()
+            }
+        }
+
+        state.articlesError != null && state.articles.isEmpty() -> {
+            Text(
+                text = stringResource(R.string.settings_articles_load_error),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.error,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { onIntent(SettingsIntent.LoadArticles) }
+                        .padding(20.dp),
+            )
+        }
+
+        state.visibleArticles.isEmpty() -> {
+            Text(
+                text = stringResource(R.string.settings_articles_empty),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(20.dp),
+            )
+        }
+
+        else -> {
+            LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = 480.dp)) {
+                itemsIndexed(state.visibleArticles, key = { _, category -> category.id }) { index, category ->
+                    EditorSelectionRow(
+                        emoji = category.emoji,
+                        title = category.name,
+                        subtitle = null,
+                        selected = false,
+                        isLast = index == state.visibleArticles.lastIndex,
+                        onClick = {},
+                    )
+                }
+            }
+            if (state.articlesError != null) {
+                Text(
+                    text = stringResource(R.string.settings_articles_load_error),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .clickable { onIntent(SettingsIntent.LoadArticles) }
+                            .padding(horizontal = 20.dp, vertical = 8.dp),
+                )
+            }
+        }
+    }
+    Spacer(Modifier.height(20.dp))
+}
+
+private fun String.toCurrencyCode() =
+    CurrencyCode.fromIsoCode(this)
 
 @Composable
 private fun SettingsGroup(
