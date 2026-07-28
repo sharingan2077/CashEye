@@ -45,6 +45,16 @@ sealed interface SettingsIntent {
 
     data object LoadArticles : SettingsIntent
 
+    data class SetPin(
+        val value: CharArray,
+    ) : SettingsIntent
+
+    data object DisablePin : SettingsIntent
+
+    data class SetBiometricsEnabled(
+        val enabled: Boolean,
+    ) : SettingsIntent
+
     data object Reset : SettingsIntent
 }
 

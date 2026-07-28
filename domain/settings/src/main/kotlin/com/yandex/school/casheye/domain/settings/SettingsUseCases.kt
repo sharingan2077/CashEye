@@ -26,6 +26,21 @@ class SetPinVerifierUseCase(
     suspend operator fun invoke(verifier: PinVerifier?) = repository.setPinVerifier(verifier)
 }
 
+class SetPinUseCase(
+    private val repository: SettingsRepository,
+) {
+    suspend operator fun invoke(pin: CharArray?) = repository.setPin(pin)
+}
+
+class VerifyPinUseCase(
+    private val repository: SettingsRepository,
+) {
+    suspend operator fun invoke(
+        pin: CharArray,
+        verifier: PinVerifier,
+    ): Boolean = repository.verifyPin(pin, verifier)
+}
+
 class SetBiometricsEnabledUseCase(
     private val repository: SettingsRepository,
 ) {

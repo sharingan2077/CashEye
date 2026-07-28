@@ -20,5 +20,17 @@
     <string name="settings_security">БЕЗОПАСНОСТЬ</string>
     <string name="settings_pin">ПИН-код</string>
     <string name="settings_biometrics">Биометрия</string>
+    <string name="settings_pin_set">Установить ПИН-код</string>
+    <string name="settings_pin_change">Изменить ПИН-код</string>
+    <string name="settings_pin_hint">Введите четыре цифры</string>
+    <string name="settings_pin_disable">Отключить ПИН-код</string>
+    <string name="settings_biometrics_pin_required">Перед включением биометрии установите ПИН-код.</string>
+    <string name="settings_biometrics_unavailable">Настройте биометрию в системных настройках Android, чтобы включить этот параметр.</string>
+    <string name="settings_biometrics_hint">Подтвердите личность с помощью биометрии, чтобы включить этот параметр.</string>
+    <string name="settings_biometrics_enable">Использовать биометрию</string>
+    <string name="app_lock_title">Приложение заблокировано</string>
+    <string name="app_lock_pin_hint">Введите четырёхзначный ПИН-код</string>
+    <string name="app_lock_biometrics_hint">Подтвердите личность с помощью биометрии или используйте ПИН-код.</string>
+    <string name="app_lock_use_pin">Использовать ПИН-код</string>
     <string name="settings_available_in_next_plan">Настройка будет доступна в следующем плане реализации.</string>
 </resources>

@@ -8,8 +8,10 @@ import com.yandex.school.casheye.domain.settings.ObserveSettingsUseCase
 import com.yandex.school.casheye.domain.settings.SetBiometricsEnabledUseCase
 import com.yandex.school.casheye.domain.settings.SetLanguageUseCase
 import com.yandex.school.casheye.domain.settings.SetPinVerifierUseCase
+import com.yandex.school.casheye.domain.settings.SetPinUseCase
 import com.yandex.school.casheye.domain.settings.SetThemeModeUseCase
 import com.yandex.school.casheye.domain.settings.SettingsRepository
+import com.yandex.school.casheye.domain.settings.VerifyPinUseCase
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.Provides
@@ -41,6 +43,12 @@ object SettingsRepositoryBindings {
     @Provides
     fun provideSetPinVerifierUseCase(repository: SettingsRepository): SetPinVerifierUseCase =
         SetPinVerifierUseCase(repository)
+
+    @Provides
+    fun provideSetPinUseCase(repository: SettingsRepository): SetPinUseCase = SetPinUseCase(repository)
+
+    @Provides
+    fun provideVerifyPinUseCase(repository: SettingsRepository): VerifyPinUseCase = VerifyPinUseCase(repository)
 
     @Provides
     fun provideSetBiometricsEnabledUseCase(repository: SettingsRepository): SetBiometricsEnabledUseCase =

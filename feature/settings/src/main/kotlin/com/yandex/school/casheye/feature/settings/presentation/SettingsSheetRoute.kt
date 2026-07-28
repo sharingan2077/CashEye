@@ -19,25 +19,33 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SheetValue
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -53,6 +61,8 @@ import dev.zacsweers.metrox.viewmodel.metroViewModel
 @Composable
 fun SettingsSheetRoute(
     onDismiss: () -> Unit,
+    biometricsAvailable: Boolean,
+    onRequestBiometricEnable: (onResult: (Boolean) -> Unit) -> Unit,
     viewModel: SettingsViewModel = metroViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -67,6 +77,8 @@ fun SettingsSheetRoute(
         onIntent = viewModel::onIntent,
         onDismiss = onDismiss,
         currentDestination = currentDestination,
+        biometricsAvailable = biometricsAvailable,
+        onRequestBiometricEnable = onRequestBiometricEnable,
     )
 }
 
@@ -77,6 +89,8 @@ private fun SettingsSheet(
     onIntent: (SettingsIntent) -> Unit,
     onDismiss: () -> Unit,
     currentDestination: SettingsDestination,
+    biometricsAvailable: Boolean,
+    onRequestBiometricEnable: (onResult: (Boolean) -> Unit) -> Unit,
 ) {
     val sheetState =
         rememberModalBottomSheetState(
@@ -101,14 +115,158 @@ private fun SettingsSheet(
             onIntent(SettingsIntent.BackToRoot)
         }
         when (state.destination) {
-            SettingsDestination.Root -> SettingsRootContent(onIntent)
-            SettingsDestination.Currency -> CurrencyContent(state, onIntent)
-            SettingsDestination.Articles -> ArticlesContent(state, onIntent)
-            SettingsDestination.Appearance -> AppearanceContent(state, onIntent)
-            SettingsDestination.Language -> LanguageContent(state, onIntent)
-            else -> SettingsPlaceholderContent(destination = state.destination)
+            SettingsDestination.Root -> {
+                SettingsRootContent(onIntent)
+            }
+
+            SettingsDestination.Currency -> {
+                CurrencyContent(state, onIntent)
+            }
+
+            SettingsDestination.Articles -> {
+                ArticlesContent(state, onIntent)
+            }
+
+            SettingsDestination.Appearance -> {
+                AppearanceContent(state, onIntent)
+            }
+
+            SettingsDestination.Language -> {
+                LanguageContent(state, onIntent)
+            }
+
+            SettingsDestination.Pin -> {
+                PinContent(state, onIntent)
+            }
+
+            SettingsDestination.Biometrics -> {
+                BiometricsContent(
+                    state = state,
+                    biometricsAvailable = biometricsAvailable,
+                    onIntent = onIntent,
+                    onRequestBiometricEnable = onRequestBiometricEnable,
+                )
+            }
+
+            else -> {
+                SettingsPlaceholderContent(destination = state.destination)
+            }
         }
     }
+}
+
+@Composable
+private fun ColumnScope.PinContent(
+    state: SettingsUiState,
+    onIntent: (SettingsIntent) -> Unit,
+) {
+    val focusRequester = remember { FocusRequester() }
+    var value by remember { mutableStateOf("") }
+    val isConfigured = state.settings.security.pinVerifier != null
+    LaunchedEffect(Unit) { focusRequester.requestFocus() }
+
+    EditorSheetTitle(
+        stringResource(if (isConfigured) R.string.settings_pin_change else R.string.settings_pin_set),
+    )
+    Text(
+        text = stringResource(R.string.settings_pin_hint),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
+    )
+    Box(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            repeat(4) { index ->
+                Box(
+                    modifier =
+                        Modifier
+                            .size(48.dp)
+                            .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(if (index < value.length) "•" else "")
+                }
+            }
+        }
+        androidx.compose.foundation.text.BasicTextField(
+            value = value,
+            onValueChange = { input ->
+                val digits = input.filter(Char::isDigit).take(4)
+                value = digits
+                if (digits.length == 4) {
+                    onIntent(SettingsIntent.SetPin(digits.toCharArray()))
+                    value = ""
+                }
+            },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .alpha(0f)
+                    .focusRequester(focusRequester),
+        )
+    }
+    if (isConfigured) {
+        Text(
+            text = stringResource(R.string.settings_pin_disable),
+            color = MaterialTheme.colorScheme.error,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier =
+                Modifier
+                    .padding(20.dp)
+                    .clickable { onIntent(SettingsIntent.DisablePin) },
+        )
+    }
+    Spacer(Modifier.height(20.dp))
+}
+
+@Composable
+private fun ColumnScope.BiometricsContent(
+    state: SettingsUiState,
+    biometricsAvailable: Boolean,
+    onIntent: (SettingsIntent) -> Unit,
+    onRequestBiometricEnable: (onResult: (Boolean) -> Unit) -> Unit,
+) {
+    val hasPin = state.settings.security.pinVerifier != null
+    val enabled = state.settings.security.biometricsEnabled
+    EditorSheetTitle(stringResource(R.string.settings_biometrics))
+    Text(
+        text =
+            stringResource(
+                when {
+                    !hasPin -> R.string.settings_biometrics_pin_required
+                    !biometricsAvailable -> R.string.settings_biometrics_unavailable
+                    else -> R.string.settings_biometrics_hint
+                },
+            ),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(20.dp),
+    )
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(stringResource(R.string.settings_biometrics_enable), modifier = Modifier.weight(1f))
+        Switch(
+            checked = enabled,
+            enabled = hasPin && biometricsAvailable,
+            onCheckedChange = { checked ->
+                if (checked) {
+                    onRequestBiometricEnable { success ->
+                        if (success) onIntent(SettingsIntent.SetBiometricsEnabled(true))
+                    }
+                } else {
+                    onIntent(SettingsIntent.SetBiometricsEnabled(false))
+                }
+            },
+        )
+    }
+    Spacer(Modifier.height(20.dp))
 }
 
 @Composable
@@ -129,9 +287,7 @@ private fun SettingsSheetHandle() {
 }
 
 @Composable
-private fun ColumnScope.SettingsRootContent(
-    onIntent: (SettingsIntent) -> Unit,
-) {
+private fun ColumnScope.SettingsRootContent(onIntent: (SettingsIntent) -> Unit) {
     Text(
         text = stringResource(R.string.settings_title),
         style = MaterialTheme.typography.headlineMedium,
@@ -415,8 +571,7 @@ private fun LanguageOption(
     if (!isLast) HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp))
 }
 
-private fun String.toCurrencyCode() =
-    CurrencyCode.fromIsoCode(this)
+private fun String.toCurrencyCode() = CurrencyCode.fromIsoCode(this)
 
 @Composable
 private fun SettingsGroup(
@@ -483,9 +638,7 @@ private fun SettingsRow(
 }
 
 @Composable
-private fun ColumnScope.SettingsPlaceholderContent(
-    destination: SettingsDestination,
-) {
+private fun ColumnScope.SettingsPlaceholderContent(destination: SettingsDestination) {
     val title =
         when (destination) {
             SettingsDestination.Currency -> stringResource(R.string.settings_currency)

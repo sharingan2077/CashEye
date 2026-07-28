@@ -26,6 +26,8 @@ import java.time.LocalDate
 @Composable
 fun NavigationRoot(
     networkStatus: StateFlow<Boolean>,
+    biometricsAvailable: Boolean,
+    onRequestBiometricAuthentication: (onResult: (Boolean) -> Unit) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var selectedDateEpochDay by rememberSaveable {
@@ -115,7 +117,11 @@ fun NavigationRoot(
     )
 
     if (showSettings) {
-        SettingsSheetRoute(onDismiss = { showSettings = false })
+        SettingsSheetRoute(
+            onDismiss = { showSettings = false },
+            biometricsAvailable = biometricsAvailable,
+            onRequestBiometricEnable = onRequestBiometricAuthentication,
+        )
     }
 }
 

@@ -15,6 +15,7 @@ import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
 import com.yandex.school.casheye.domain.settings.AppSettings
 import com.yandex.school.casheye.domain.settings.ObserveSettingsUseCase
 import com.yandex.school.casheye.domain.settings.ThemeMode
+import com.yandex.school.casheye.domain.settings.VerifyPinUseCase
 import com.yandex.school.casheye.feature.splash.presentation.SplashScreen
 import dev.zacsweers.metrox.viewmodel.LocalMetroViewModelFactory
 import dev.zacsweers.metrox.viewmodel.MetroViewModelFactory
@@ -25,6 +26,9 @@ internal fun CashEyeApp(
     metroViewModelFactory: MetroViewModelFactory,
     networkStatus: StateFlow<Boolean>,
     observeSettings: ObserveSettingsUseCase,
+    verifyPin: VerifyPinUseCase,
+    biometricsAvailable: Boolean,
+    requestBiometricAuthentication: (onResult: (Boolean) -> Unit) -> Unit,
     onSplashReady: () -> Unit,
 ) {
     val settings by observeSettings().collectAsStateWithLifecycle(initialValue = null as AppSettings?)
@@ -50,7 +54,25 @@ internal fun CashEyeApp(
     ) {
         CashEyeTheme(darkTheme = darkTheme, dynamicColor = false) {
             if (SplashPlaybackState.hasFinished) {
-                NavigationRoot(networkStatus = networkStatus)
+                val currentSettings = settings
+                if (currentSettings != null) {
+                    AppLockGate(
+                        security = currentSettings.security,
+                        biometricsAvailable = biometricsAvailable,
+                        requestBiometricAuthentication = requestBiometricAuthentication,
+                        verifyPin = { pin ->
+                            currentSettings.security.pinVerifier?.let { verifier ->
+                                verifyPin(pin, verifier)
+                            } == true
+                        },
+                    ) {
+                        NavigationRoot(
+                            networkStatus = networkStatus,
+                            biometricsAvailable = biometricsAvailable,
+                            onRequestBiometricAuthentication = requestBiometricAuthentication,
+                        )
+                    }
+                }
             } else {
                 SplashScreen(
                     onReady = onSplashReady,

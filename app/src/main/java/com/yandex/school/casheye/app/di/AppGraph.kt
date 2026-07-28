@@ -13,6 +13,7 @@ import com.yandex.school.casheye.data.finance.sync.FinanceSyncScheduler
 import com.yandex.school.casheye.data.finance.sync.FinanceSyncer
 import com.yandex.school.casheye.data.settings.di.SettingsRepositoryBindings
 import com.yandex.school.casheye.domain.settings.ObserveSettingsUseCase
+import com.yandex.school.casheye.domain.settings.VerifyPinUseCase
 import com.yandex.school.casheye.feature.accounts.di.AccountsViewModelBindings
 import com.yandex.school.casheye.feature.analytics.di.AnalyticsViewModelBindings
 import com.yandex.school.casheye.feature.expenses.di.ExpensesViewModelBindings
@@ -43,6 +44,8 @@ interface AppGraph : ViewModelGraph {
     val networkMonitor: NetworkMonitor
 
     val observeSettings: ObserveSettingsUseCase
+
+    val verifyPin: VerifyPinUseCase
 
     val financeSyncer: FinanceSyncer
 

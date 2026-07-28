@@ -8,6 +8,8 @@ import com.yandex.school.casheye.domain.finance.currency.SetReportingCurrencyUse
 import com.yandex.school.casheye.domain.finance.editor.EditorResult
 import com.yandex.school.casheye.domain.settings.ObserveSettingsUseCase
 import com.yandex.school.casheye.domain.settings.SetLanguageUseCase
+import com.yandex.school.casheye.domain.settings.SetBiometricsEnabledUseCase
+import com.yandex.school.casheye.domain.settings.SetPinUseCase
 import com.yandex.school.casheye.domain.settings.SetThemeModeUseCase
 import dev.zacsweers.metro.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,6 +23,8 @@ class SettingsViewModel(
     private val setReportingCurrency: SetReportingCurrencyUseCase,
     private val setThemeMode: SetThemeModeUseCase,
     private val setLanguage: SetLanguageUseCase,
+    private val setPin: SetPinUseCase,
+    private val setBiometricsEnabled: SetBiometricsEnabledUseCase,
     private val getCategories: GetEditorCategoriesUseCase,
 ) : ViewModel() {
     private val _state = MutableStateFlow(SettingsUiState())
@@ -64,6 +68,24 @@ class SettingsViewModel(
             }
 
             SettingsIntent.LoadArticles -> loadArticles()
+
+            is SettingsIntent.SetPin -> {
+                viewModelScope.launch {
+                    setPin(intent.value)
+                    _state.value = _state.value.copy(destination = SettingsDestination.Root)
+                }
+            }
+
+            SettingsIntent.DisablePin -> {
+                viewModelScope.launch {
+                    setPin(null)
+                    _state.value = _state.value.copy(destination = SettingsDestination.Root)
+                }
+            }
+
+            is SettingsIntent.SetBiometricsEnabled -> {
+                viewModelScope.launch { setBiometricsEnabled(intent.enabled) }
+            }
 
             SettingsIntent.BackToRoot,
             SettingsIntent.Reset,

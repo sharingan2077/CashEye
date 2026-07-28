@@ -20,5 +20,17 @@
     <string name="settings_security">SICHERHEIT</string>
     <string name="settings_pin">PIN-Code</string>
     <string name="settings_biometrics">Biometrie</string>
+    <string name="settings_pin_set">PIN-Code festlegen</string>
+    <string name="settings_pin_change">PIN-Code ändern</string>
+    <string name="settings_pin_hint">Vier Ziffern eingeben</string>
+    <string name="settings_pin_disable">PIN-Code deaktivieren</string>
+    <string name="settings_biometrics_pin_required">Legen Sie vor dem Aktivieren der Biometrie einen PIN-Code fest.</string>
+    <string name="settings_biometrics_unavailable">Richten Sie die Biometrie in den Android-Systemeinstellungen ein, um diese Option zu aktivieren.</string>
+    <string name="settings_biometrics_hint">Bestätigen Sie Ihre Identität biometrisch, um diese Option zu aktivieren.</string>
+    <string name="settings_biometrics_enable">Biometrie verwenden</string>
+    <string name="app_lock_title">App gesperrt</string>
+    <string name="app_lock_pin_hint">Geben Sie Ihren vierstelligen PIN-Code ein</string>
+    <string name="app_lock_biometrics_hint">Bestätigen Sie Ihre Identität biometrisch oder verwenden Sie Ihren PIN-Code.</string>
+    <string name="app_lock_use_pin">PIN-Code verwenden</string>
     <string name="settings_available_in_next_plan">Diese Einstellung wird im nächsten Implementierungsplan verfügbar sein.</string>
 </resources>

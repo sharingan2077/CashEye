@@ -44,5 +44,12 @@ interface SettingsRepository {
 
     suspend fun setPinVerifier(verifier: PinVerifier?)
 
+    suspend fun setPin(pin: CharArray?)
+
+    suspend fun verifyPin(
+        pin: CharArray,
+        verifier: PinVerifier,
+    ): Boolean
+
     suspend fun setBiometricsEnabled(enabled: Boolean)
 }
