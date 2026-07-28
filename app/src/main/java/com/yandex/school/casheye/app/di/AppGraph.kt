@@ -11,10 +11,12 @@ import com.yandex.school.casheye.data.finance.sync.ExchangeRateRefreshScheduler
 import com.yandex.school.casheye.data.finance.sync.ExchangeRateRefresher
 import com.yandex.school.casheye.data.finance.sync.FinanceSyncScheduler
 import com.yandex.school.casheye.data.finance.sync.FinanceSyncer
+import com.yandex.school.casheye.data.settings.di.SettingsRepositoryBindings
 import com.yandex.school.casheye.feature.accounts.di.AccountsViewModelBindings
 import com.yandex.school.casheye.feature.analytics.di.AnalyticsViewModelBindings
 import com.yandex.school.casheye.feature.expenses.di.ExpensesViewModelBindings
 import com.yandex.school.casheye.feature.income.di.IncomeViewModelBindings
+import com.yandex.school.casheye.feature.settings.di.SettingsViewModelBindings
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.DependencyGraph
 import dev.zacsweers.metro.Provides
@@ -27,10 +29,12 @@ import dev.zacsweers.metrox.viewmodel.ViewModelGraph
         FinanceRepositoryBindings::class,
         FinanceSyncBindings::class,
         FinanceUseCaseBindings::class,
+        SettingsRepositoryBindings::class,
         ExpensesViewModelBindings::class,
         IncomeViewModelBindings::class,
         AccountsViewModelBindings::class,
         AnalyticsViewModelBindings::class,
+        SettingsViewModelBindings::class,
         AppViewModelBindings::class,
     ],
 )

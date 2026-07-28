@@ -19,6 +19,7 @@ import com.yandex.school.casheye.app.navigation.chrome.TOP_LEVEL_DESTINATIONS
 import com.yandex.school.casheye.app.navigation.editor.EditorOverlayHost
 import com.yandex.school.casheye.app.navigation.editor.EditorTarget
 import com.yandex.school.casheye.core.designsystem.component.datepicker.PastOrPresentDatePickerDialog
+import com.yandex.school.casheye.feature.settings.presentation.SettingsSheetRoute
 import kotlinx.coroutines.flow.StateFlow
 import java.time.LocalDate
 
@@ -67,6 +68,7 @@ fun NavigationRoot(
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
     val selectedDate = LocalDate.ofEpochDay(selectedDateEpochDay).coerceAtMost(LocalDate.now())
     var editorTarget by remember { mutableStateOf<EditorTarget?>(null) }
+    var showSettings by rememberSaveable { mutableStateOf(false) }
 
     NavigationScaffold(
         modifier = modifier,
@@ -92,6 +94,7 @@ fun NavigationRoot(
                     else -> EditorTarget.Expense(null)
                 }
         },
+        onSettingsClick = { showSettings = true },
     )
 
     if (showDatePicker) {
@@ -110,6 +113,10 @@ fun NavigationRoot(
         selectedDate = selectedDate,
         onDismiss = { editorTarget = null },
     )
+
+    if (showSettings) {
+        SettingsSheetRoute(onDismiss = { showSettings = false })
+    }
 }
 
 internal data class NetworkRecoveryRefresh(

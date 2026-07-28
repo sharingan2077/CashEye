@@ -64,11 +64,13 @@ kotlin {
 dependencies {
     implementation(project(":core:designsystem"))
     implementation(project(":data:finance"))
+    implementation(project(":data:settings"))
     implementation(project(":feature:accounts"))
     implementation(project(":feature:analytics"))
     implementation(project(":feature:expenses"))
     implementation(project(":feature:income"))
     implementation(project(":feature:splash"))
+    implementation(project(":feature:settings"))
 
     implementation(libs.androidx.navigation3.ui)
     implementation(libs.androidx.navigation3.runtime)

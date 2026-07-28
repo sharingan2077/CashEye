@@ -4,6 +4,7 @@
     <string name="nav_accounts">Счета</string>
     <string name="content_description_analytics">Аналитика</string>
     <string name="content_description_filters">Фильтры</string>
+    <string name="content_description_settings">Настройки</string>
     <string name="content_description_back">Назад</string>
     <string name="content_description_add">Добавить</string>
     <string name="analytics_title">Аналитика</string>

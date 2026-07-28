@@ -52,6 +52,7 @@ internal fun NavigationScaffold(
     modifier: Modifier = Modifier,
     onDateClick: () -> Unit = {},
     onAddClick: () -> Unit = {},
+    onSettingsClick: () -> Unit = {},
 ) {
     val currentRoute = navigationState.backStacks[navigationState.topLevelRoute]?.lastOrNull()
     val showMainChrome = currentRoute in TOP_LEVEL_DESTINATIONS
@@ -100,6 +101,7 @@ internal fun NavigationScaffold(
                     NavigationTopBar(
                         date = selectedDate,
                         onDateClick = onDateClick,
+                        onSettingsClick = onSettingsClick,
                         onAnalyticsClick = {
                             navigator.navigate(
                                 Route.Analytics(navigationState.topLevelRoute.toAnalyticsEntryPoint()),

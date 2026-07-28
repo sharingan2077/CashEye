@@ -46,7 +46,7 @@ fun NavigationTopBar(
     modifier: Modifier = Modifier,
     onDateClick: () -> Unit = {},
     onAnalyticsClick: () -> Unit = {},
-    onFilterClick: () -> Unit = {},
+    onSettingsClick: () -> Unit = {},
 ) {
     val locale = LocalConfiguration.current.locales[0] ?: LocalLocale.current.platformLocale
     val dateFormatter = remember(locale) { DateTimeFormatter.ofPattern("d MMMM", locale) }
@@ -65,7 +65,7 @@ fun NavigationTopBar(
         actions = {
             NavigationTopBarActions(
                 onAnalyticsClick = onAnalyticsClick,
-                onFilterClick = onFilterClick,
+                onSettingsClick = onSettingsClick,
             )
         },
         colors =
@@ -127,7 +127,7 @@ private fun NavigationTopBarTitle(
 @Composable
 private fun NavigationTopBarActions(
     onAnalyticsClick: () -> Unit,
-    onFilterClick: () -> Unit,
+    onSettingsClick: () -> Unit,
 ) {
     Row(
         modifier = Modifier.padding(end = 8.dp),
@@ -140,10 +140,10 @@ private fun NavigationTopBarActions(
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        IconButton(onClick = onFilterClick) {
+        IconButton(onClick = onSettingsClick) {
             Icon(
                 painter = painterResource(R.drawable.sliders_horizontal),
-                contentDescription = stringResource(R.string.content_description_filters),
+                contentDescription = stringResource(R.string.content_description_settings),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
@@ -158,7 +158,7 @@ private fun NavigationTopBarPreview() {
             date = LocalDate.of(2026, 6, 12),
             onDateClick = {},
             onAnalyticsClick = {},
-            onFilterClick = {},
+            onSettingsClick = {},
         )
     }
 }
