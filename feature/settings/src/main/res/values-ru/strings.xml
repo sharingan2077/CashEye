@@ -1,0 +1,13 @@
+<resources>
+    <string name="settings_title">Настройки</string>
+    <string name="settings_wallet">КОШЕЛЁК</string>
+    <string name="settings_currency">Валюта</string>
+    <string name="settings_articles">Статьи</string>
+    <string name="settings_interface">ИНТЕРФЕЙС</string>
+    <string name="settings_appearance">Тема оформления</string>
+    <string name="settings_language">Язык</string>
+    <string name="settings_security">БЕЗОПАСНОСТЬ</string>
+    <string name="settings_pin">ПИН-код</string>
+    <string name="settings_biometrics">Биометрия</string>
+    <string name="settings_available_in_next_plan">Настройка будет доступна в следующем плане реализации.</string>
+</resources>

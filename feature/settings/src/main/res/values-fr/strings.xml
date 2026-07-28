@@ -1,0 +1,13 @@
+<resources>
+    <string name="settings_title">Paramètres</string>
+    <string name="settings_wallet">PORTEFEUILLE</string>
+    <string name="settings_currency">Devise</string>
+    <string name="settings_articles">Catégories</string>
+    <string name="settings_interface">INTERFACE</string>
+    <string name="settings_appearance">Apparence</string>
+    <string name="settings_language">Langue</string>
+    <string name="settings_security">SÉCURITÉ</string>
+    <string name="settings_pin">Code PIN</string>
+    <string name="settings_biometrics">Biométrie</string>
+    <string name="settings_available_in_next_plan">Ce réglage sera disponible dans le prochain plan d’implémentation.</string>
+</resources>

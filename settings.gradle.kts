@@ -31,9 +31,12 @@ include(":core:common")
 
 include(":domain:finance")
 include(":data:finance")
+include(":domain:settings")
+include(":data:settings")
 
 include(":feature:expenses")
 include(":feature:income")
 include(":feature:accounts")
 include(":feature:analytics")
 include(":feature:splash")
+include(":feature:settings")

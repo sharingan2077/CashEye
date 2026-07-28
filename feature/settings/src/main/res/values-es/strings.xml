@@ -1,0 +1,13 @@
+<resources>
+    <string name="settings_title">Ajustes</string>
+    <string name="settings_wallet">CARTERA</string>
+    <string name="settings_currency">Moneda</string>
+    <string name="settings_articles">Categorías</string>
+    <string name="settings_interface">INTERFAZ</string>
+    <string name="settings_appearance">Tema</string>
+    <string name="settings_language">Idioma</string>
+    <string name="settings_security">SEGURIDAD</string>
+    <string name="settings_pin">Código PIN</string>
+    <string name="settings_biometrics">Biometría</string>
+    <string name="settings_available_in_next_plan">Este ajuste estará disponible en el siguiente plan de implementación.</string>
+</resources>
