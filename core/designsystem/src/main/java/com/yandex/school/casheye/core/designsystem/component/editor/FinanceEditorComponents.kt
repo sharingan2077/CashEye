@@ -5,7 +5,6 @@ import androidx.annotation.DrawableRes
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -41,7 +40,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.yandex.school.casheye.core.designsystem.R
+import com.yandex.school.casheye.core.designsystem.component.IconCircle
 import com.yandex.school.casheye.core.designsystem.component.ListItem
+import com.yandex.school.casheye.core.designsystem.component.ListItemDefaults
 import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
 import kotlinx.coroutines.android.awaitFrame
 
@@ -55,35 +56,25 @@ fun EditorRow(
     showDivider: Boolean = true,
 ) {
     Column(modifier = modifier) {
-        Row(
+        ListItem(
             modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .then(if (onClick == null) Modifier else Modifier.clickable(onClick = onClick))
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(
-                modifier =
-                    Modifier
-                        .size(40.dp)
-                        .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    painter = painterResource(icon),
+                Modifier.then(if (onClick == null) Modifier else Modifier.clickable(onClick = onClick)),
+            minHeight = ListItemDefaults.MediumMinHeight,
+            leadingContent = {
+                IconCircle(
+                    iconPainter = painterResource(icon),
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(18.dp),
+                    containerSize = 40.dp,
+                    iconSize = 18.dp,
+                    iconTint = MaterialTheme.colorScheme.primary,
                 )
-            }
+            },
+            trailingContent = { ValuePill(value = value) },
+        ) {
             Text(
                 text = label,
                 style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(start = 16.dp),
             )
-            Spacer(modifier = Modifier.weight(1f))
-            ValuePill(value = value, modifier = Modifier.padding(start = 12.dp))
         }
         if (showDivider) HorizontalDivider()
     }
@@ -180,8 +171,8 @@ fun EditorSelectionRow(
 ) {
     Column(modifier = modifier) {
         ListItem(
-            lead = { Text(text = emoji, fontSize = 24.sp) },
-            trail = {
+            leadingContent = { Text(text = emoji, fontSize = 24.sp) },
+            trailingContent = {
                 if (selected) {
                     Icon(
                         painter = painterResource(R.drawable.ic_editor_check_purple),
@@ -191,9 +182,14 @@ fun EditorSelectionRow(
                 }
             },
             modifier = Modifier.clickable(onClick = onClick),
-            height = if (subtitle == null) 56.dp else 72.dp,
-            rowHorizontalPadding = 20.dp,
-            contentHorizontalPadding = 12.dp,
+            minHeight =
+                if (subtitle == null) {
+                    ListItemDefaults.CompactMinHeight
+                } else {
+                    ListItemDefaults.DefaultMinHeight
+                },
+            contentPadding = ListItemDefaults.InsetContentPadding,
+            slotSpacing = ListItemDefaults.DenseSlotSpacing,
         ) {
             Column {
                 Text(

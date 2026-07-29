@@ -43,6 +43,7 @@ import com.yandex.school.casheye.core.designsystem.component.ErrorStateType
 import com.yandex.school.casheye.core.designsystem.component.FilterItem
 import com.yandex.school.casheye.core.designsystem.component.IconCircle
 import com.yandex.school.casheye.core.designsystem.component.ListItem
+import com.yandex.school.casheye.core.designsystem.component.ListItemDefaults
 import com.yandex.school.casheye.core.designsystem.component.PullToRefreshContainer
 import com.yandex.school.casheye.core.format.formatAmount
 import com.yandex.school.casheye.core.model.Category
@@ -381,7 +382,7 @@ internal fun TransactionItem(
 ) {
     ListItem(
         modifier = modifier,
-        lead = { EmojiCircle(emoji = emoji) },
+        leadingContent = { EmojiCircle(emoji = emoji) },
         content = {
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(text = title, style = MaterialTheme.typography.titleMedium)
@@ -394,7 +395,7 @@ internal fun TransactionItem(
                 }
             }
         },
-        trail = {
+        trailingContent = {
             Column(horizontalAlignment = Alignment.End) {
                 Text(text = amount, style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.End)
                 amountSubtitle?.let {
@@ -458,10 +459,10 @@ private fun AnalyticsFilterItem(
 ) {
     ListItem(
         modifier = Modifier.clickable(onClick = onClick),
-        lead = { IconCircle(iconPainter = iconPainter, contentDescription = title) },
+        leadingContent = { IconCircle(iconPainter = iconPainter, contentDescription = title, iconSize = 18.dp) },
         content = { Text(text = title, style = MaterialTheme.typography.titleMedium) },
-        trail = { FilterItem(title = value) },
-        height = 56.dp,
+        trailingContent = { FilterItem(title = value) },
+        minHeight = ListItemDefaults.CompactMinHeight,
     )
 }
 

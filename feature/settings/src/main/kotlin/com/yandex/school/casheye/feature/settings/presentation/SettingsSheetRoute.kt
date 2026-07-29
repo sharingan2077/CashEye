@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -53,6 +54,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yandex.school.casheye.core.designsystem.component.ListItem
+import com.yandex.school.casheye.core.designsystem.component.ListItemDefaults
+import com.yandex.school.casheye.core.designsystem.component.IconCircle
 import com.yandex.school.casheye.core.designsystem.component.editor.CurrencySelectionContent
 import com.yandex.school.casheye.core.designsystem.component.editor.EditorOption
 import com.yandex.school.casheye.core.designsystem.component.editor.EditorOptionSelectionContent
@@ -563,25 +566,29 @@ private fun LanguageOption(
     isLast: Boolean = false,
     onClick: () -> Unit,
 ) {
-    Row(
+    ListItem(
         modifier =
             Modifier
-                .fillMaxWidth()
-                .clickable(role = Role.RadioButton, onClick = onClick)
-                .padding(horizontal = 20.dp, vertical = 16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                .clickable(role = Role.RadioButton, onClick = onClick),
+        minHeight = ListItemDefaults.CompactMinHeight,
+        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
+        slotSpacing = 12.dp,
+        leadingContent = { Text(text = flag, style = MaterialTheme.typography.titleMedium) },
+        trailingContent =
+            if (selected) {
+                {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_settings_check),
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            } else {
+                null
+            },
     ) {
-        Text(text = flag, style = MaterialTheme.typography.titleMedium)
-        Text(text = label, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-        if (selected) {
-            Icon(
-                painter = painterResource(R.drawable.ic_settings_check),
-                contentDescription = null,
-                modifier = Modifier.size(20.dp),
-                tint = MaterialTheme.colorScheme.primary,
-            )
-        }
+        Text(text = label, style = MaterialTheme.typography.titleMedium)
     }
     if (!isLast) HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp))
 }
@@ -612,8 +619,8 @@ private fun SettingsRow(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     ListItem(
-        rowHorizontalPadding = 20.dp,
-        height = 64.dp,
+        contentPadding = ListItemDefaults.InsetContentPadding,
+        minHeight = ListItemDefaults.MediumMinHeight,
         modifier =
             Modifier
                 .clickable(
@@ -621,26 +628,17 @@ private fun SettingsRow(
                     indication = null,
                     role = Role.Button,
                     onClick = onClick,
-                ),
-        lead = {
-            Box(
-                modifier =
-                    Modifier
-                        .size(32.dp)
-                        .border(width = 1.dp, color = MaterialTheme.colorScheme.outline, shape = CircleShape)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.surface),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    painter = painter,
-                    modifier = Modifier.size(20.dp),
-                    tint = MaterialTheme.colorScheme.primary,
-                    contentDescription = null,
-                )
-            }
+        ),
+        leadingContent = {
+            IconCircle(
+                iconPainter = painter,
+                contentDescription = null,
+                iconSize = 20.dp,
+                containerColor = MaterialTheme.colorScheme.surface,
+                iconTint = MaterialTheme.colorScheme.primary,
+            )
         },
-        trail = {
+        trailingContent = {
             Icon(
                 painter = painterResource(R.drawable.ic_chevron_right),
                 contentDescription = null,
