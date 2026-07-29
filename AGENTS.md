@@ -1,11 +1,40 @@
 ## Current Homework
 
-local/HW_3_android_HW_3_Android.md
+local/plan/hw4-settings/README.md
 
 ## Current Project State
 
-HW-3 is implemented in source. Do not plan Room/offline mode from scratch before inspecting the
-current implementation.
+HW-3 and HW-4 are implemented in source. Do not plan Room/offline mode or the Settings flow from
+scratch before inspecting the current implementation.
+
+### Implemented HW-4 scope
+
+- `:domain:settings`, `:data:settings` and `:feature:settings` own the vertical Settings slice;
+  `:app` only composes its sheet, global configuration and Android biometric integration.
+- Settings open from the navigation top bar in one `ModalBottomSheet`. Nested destinations replace
+  its content: Back, scrim dismissal and swipe return to the root list; only the root dismisses
+  the sheet.
+- Reporting-currency selection reuses the existing finance use cases and returns to the root.
+  Settings must not mutate account currencies or replace missing FX data with zero.
+- Articles are a read-only, locally filtered list of finance categories. They use the existing
+  local-first category contract, keep useful cached data after refresh errors, and do not call
+  Retrofit, Room or WorkManager from the UI.
+- Theme (light/dark/system) and language (system, Russian, English, German, French, Spanish) are
+  DataStore-backed. The app applies language with `AppCompatDelegate.setApplicationLocales`; locale
+  changes can recreate the Activity, so nested Settings state must be reset before applying one.
+- PIN and biometric preferences are persisted without plaintext PIN storage: the data layer keeps
+  a salted one-way verifier. PIN setup/change/disable uses four digits through the system numeric
+  IME; disabling PIN also disables biometrics.
+- A configured PIN activates the app lock at startup and when returning from background. Biometrics
+  are available only with a configured PIN and usable enrolled hardware; PIN remains the fallback.
+
+### HW-4 verification boundary
+
+Source and test sources exist, but no Gradle, test, lint, build, or device verification has been
+run under these instructions. Do not claim HW-4 runtime acceptance without manually checking the
+Settings sheet navigation, reporting currency and offline cached articles, all themes/locales and
+their persistence, locale recreation, PIN lifecycle, background lock, and biometric success,
+failure, cancellation and unavailable-hardware paths.
 
 ### Implemented HW-3 scope
 
