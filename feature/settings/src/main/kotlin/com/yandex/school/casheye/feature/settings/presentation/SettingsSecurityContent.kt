@@ -121,7 +121,7 @@ internal fun ColumnScope.PinContent(
                     value = ""
                 }
             },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier =
                 Modifier
                     .fillMaxWidth()

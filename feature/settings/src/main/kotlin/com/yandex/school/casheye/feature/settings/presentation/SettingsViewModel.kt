@@ -60,6 +60,7 @@ class SettingsViewModel(
             }
 
             is SettingsIntent.SelectLanguage -> {
+                _state.value = _state.value.copy(destination = SettingsDestination.Root)
                 viewModelScope.launch { setLanguage(intent.language) }
             }
 
