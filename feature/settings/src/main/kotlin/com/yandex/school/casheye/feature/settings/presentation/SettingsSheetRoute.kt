@@ -204,7 +204,7 @@ private fun ColumnScope.PinContent(
                             Modifier
                                 .size(16.dp)
                                 .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
-                        },
+                        }.testTag("settings_pin_cell_$index"),
                     contentAlignment = Alignment.Center,
                 ) {}
             }
@@ -283,6 +283,7 @@ private fun ColumnScope.BiometricsContent(
                     onIntent(SettingsIntent.SetBiometricsEnabled(false))
                 }
             },
+            modifier = Modifier.testTag("settings_biometrics_toggle"),
         )
     }
     Spacer(Modifier.height(20.dp))

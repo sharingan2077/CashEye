@@ -21,39 +21,44 @@ class SettingsUiTest {
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 
     @Test
-    fun selectingDarkThemeEmitsDarkMode() {
+    fun selectingThemeOptionsUpdatesState() {
         var selectedMode by mutableStateOf(ThemeMode.LIGHT)
         composeRule.setContent {
             CashEyeTheme(darkTheme = false, dynamicColor = false) {
-                ThemeOption(
-                    label = "Dark",
-                    painter = painterResource(R.drawable.ic_settings_moon),
-                    mode = ThemeMode.DARK,
-                    selected = selectedMode == ThemeMode.DARK,
-                    onClick = { selectedMode = ThemeMode.DARK },
-                )
+                ThemeMode.entries.forEach { mode ->
+                    ThemeOption(
+                        label = mode.name,
+                        painter = painterResource(R.drawable.ic_settings_moon),
+                        mode = mode,
+                        selected = selectedMode == mode,
+                        onClick = { selectedMode = mode },
+                    )
+                }
             }
         }
 
-        composeRule.onNodeWithTag("settings_theme_dark").performClick()
+        ThemeMode.entries.forEach { mode ->
+            composeRule.onNodeWithTag("settings_theme_${mode.name.lowercase()}").performClick()
 
-        assertEquals(ThemeMode.DARK, selectedMode)
+            assertEquals(mode, selectedMode)
+        }
     }
 
     @Test
-    fun fourthPinDigitSubmitsOnlyDigits() {
-        var submittedPin = ""
+    fun pinInputFiltersCapsSubmitsAndResets() {
+        val submittedPins = mutableListOf<String>()
         composeRule.setContent {
             CashEyeTheme(darkTheme = false, dynamicColor = false) {
                 AppLockScreen(
                     biometricsEnabled = false,
-                    onPinSubmit = { submittedPin = it.concatToString() },
+                    onPinSubmit = { submittedPins += it.concatToString() },
                 )
             }
         }
 
-        composeRule.onNodeWithTag("app_lock_pin_input").performTextInput("12a34")
+        composeRule.onNodeWithTag("app_lock_pin_input").performTextInput("12a345")
+        composeRule.onNodeWithTag("app_lock_pin_input").performTextInput("5678")
 
-        assertEquals("1234", submittedPin)
+        assertEquals(listOf("1234", "5678"), submittedPins)
     }
 }

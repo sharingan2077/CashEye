@@ -74,7 +74,8 @@ fun AppLockScreen(
                                 modifier =
                                     Modifier
                                         .size(48.dp)
-                                        .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape),
+                                        .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
+                                        .testTag("app_lock_pin_cell_$index"),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Text(if (index < pin.length) "•" else "")
@@ -102,7 +103,10 @@ fun AppLockScreen(
                     )
                 }
             } else {
-                androidx.compose.material3.TextButton(onClick = { showPin = true }) {
+                androidx.compose.material3.TextButton(
+                    onClick = { showPin = true },
+                    modifier = Modifier.testTag("app_lock_pin_fallback"),
+                ) {
                     Text(
                         androidx.compose.ui.res
                             .stringResource(R.string.app_lock_use_pin),
