@@ -1,4 +1,5 @@
 <resources>
+    <string name="app_name" translatable="false">CashEye</string>
     <string name="nav_expenses">Dépenses</string>
     <string name="nav_income">Revenus</string>
     <string name="nav_accounts">Comptes</string>
