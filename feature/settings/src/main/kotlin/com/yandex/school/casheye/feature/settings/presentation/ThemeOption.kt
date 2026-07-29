@@ -69,7 +69,12 @@ internal fun ThemeOption(
         )
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             Icon(painter, null, Modifier.size(16.dp), MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(label, MaterialTheme.typography.labelMedium, MaterialTheme.colorScheme.onSurface, TextAlign.Center)
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
+            )
         }
     }
 }
