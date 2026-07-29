@@ -32,7 +32,7 @@ import com.yandex.school.casheye.feature.settings.R
 @Composable
 fun AppLockScreen(
     biometricsEnabled: Boolean,
-    onPinSubmitted: (CharArray) -> Unit,
+    onPinSubmit: (CharArray) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var showPin by remember { mutableStateOf(!biometricsEnabled) }
@@ -86,7 +86,7 @@ fun AppLockScreen(
                             val digits = input.filter(Char::isDigit).take(4)
                             pin = digits
                             if (digits.length == 4) {
-                                onPinSubmitted(digits.toCharArray())
+                                onPinSubmit(digits.toCharArray())
                                 pin = ""
                             }
                         },

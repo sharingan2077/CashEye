@@ -34,10 +34,12 @@ class AndroidBiometricAuthenticator(
                 override fun onAuthenticationFailed() = Unit
             },
         ).authenticate(
-            BiometricPrompt.PromptInfo.Builder()
+            BiometricPrompt.PromptInfo
+                .Builder()
                 .setTitle("CashEye")
-                .setNegativeButtonText(activity.getString(com.yandex.school.casheye.feature.settings.R.string.app_lock_use_pin))
-                .setAllowedAuthenticators(AUTHENTICATORS)
+                .setNegativeButtonText(
+                    activity.getString(com.yandex.school.casheye.feature.settings.R.string.app_lock_use_pin),
+                ).setAllowedAuthenticators(AUTHENTICATORS)
                 .build(),
         )
     }

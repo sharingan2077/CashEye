@@ -7,8 +7,8 @@ import com.yandex.school.casheye.domain.finance.currency.ObserveReportingCurrenc
 import com.yandex.school.casheye.domain.finance.currency.SetReportingCurrencyUseCase
 import com.yandex.school.casheye.domain.finance.editor.EditorResult
 import com.yandex.school.casheye.domain.settings.ObserveSettingsUseCase
-import com.yandex.school.casheye.domain.settings.SetLanguageUseCase
 import com.yandex.school.casheye.domain.settings.SetBiometricsEnabledUseCase
+import com.yandex.school.casheye.domain.settings.SetLanguageUseCase
 import com.yandex.school.casheye.domain.settings.SetPinUseCase
 import com.yandex.school.casheye.domain.settings.SetThemeModeUseCase
 import dev.zacsweers.metro.Inject
@@ -67,7 +67,9 @@ class SettingsViewModel(
                 _state.value = _state.value.copy(articlesQuery = intent.value)
             }
 
-            SettingsIntent.LoadArticles -> loadArticles()
+            SettingsIntent.LoadArticles -> {
+                loadArticles()
+            }
 
             is SettingsIntent.SetPin -> {
                 viewModelScope.launch {
@@ -89,7 +91,9 @@ class SettingsViewModel(
 
             SettingsIntent.BackToRoot,
             SettingsIntent.Reset,
-            -> _state.value = _state.value.copy(destination = SettingsDestination.Root)
+            -> {
+                _state.value = _state.value.copy(destination = SettingsDestination.Root)
+            }
         }
     }
 

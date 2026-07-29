@@ -7,8 +7,8 @@ import com.yandex.school.casheye.data.settings.repository.PreferencesSettingsRep
 import com.yandex.school.casheye.domain.settings.ObserveSettingsUseCase
 import com.yandex.school.casheye.domain.settings.SetBiometricsEnabledUseCase
 import com.yandex.school.casheye.domain.settings.SetLanguageUseCase
-import com.yandex.school.casheye.domain.settings.SetPinVerifierUseCase
 import com.yandex.school.casheye.domain.settings.SetPinUseCase
+import com.yandex.school.casheye.domain.settings.SetPinVerifierUseCase
 import com.yandex.school.casheye.domain.settings.SetThemeModeUseCase
 import com.yandex.school.casheye.domain.settings.SettingsRepository
 import com.yandex.school.casheye.domain.settings.VerifyPinUseCase
@@ -37,8 +37,7 @@ object SettingsRepositoryBindings {
         SetThemeModeUseCase(repository)
 
     @Provides
-    fun provideSetLanguageUseCase(repository: SettingsRepository): SetLanguageUseCase =
-        SetLanguageUseCase(repository)
+    fun provideSetLanguageUseCase(repository: SettingsRepository): SetLanguageUseCase = SetLanguageUseCase(repository)
 
     @Provides
     fun provideSetPinVerifierUseCase(repository: SettingsRepository): SetPinVerifierUseCase =

@@ -36,12 +36,13 @@ internal fun AppLockGate(
     val lifecycle = ProcessLifecycleOwner.get().lifecycle
 
     DisposableEffect(lifecycle, verifier.hash) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_STOP) {
-                locked = true
-                biometricRequested = false
+        val observer =
+            LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_STOP) {
+                    locked = true
+                    biometricRequested = false
+                }
             }
-        }
         lifecycle.addObserver(observer)
         onDispose { lifecycle.removeObserver(observer) }
     }
@@ -61,7 +62,7 @@ internal fun AppLockGate(
     }
     AppLockScreen(
         biometricsEnabled = security.biometricsEnabled && biometricsAvailable,
-        onPinSubmitted = { pin ->
+        onPinSubmit = { pin ->
             scope.launch {
                 if (verifyPin(pin)) locked = false
             }

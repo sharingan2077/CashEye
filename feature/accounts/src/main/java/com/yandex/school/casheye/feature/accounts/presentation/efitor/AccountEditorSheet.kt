@@ -257,12 +257,11 @@ private fun EmojiOption(
 private fun CurrencyContent(
     selectedCurrency: String,
     onSelect: (String) -> Unit,
-) =
-    CurrencySelectionContent(
-        title = stringResource(R.string.finance_editor_currency),
-        selectedCurrency = selectedCurrency,
-        onSelect = onSelect,
-    )
+) = CurrencySelectionContent(
+    title = stringResource(R.string.finance_editor_currency),
+    selectedCurrency = selectedCurrency,
+    onSelect = onSelect,
+)
 
 private val accountEmojis =
     listOf(

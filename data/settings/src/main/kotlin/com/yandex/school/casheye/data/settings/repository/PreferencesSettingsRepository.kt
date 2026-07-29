@@ -12,15 +12,15 @@ import com.yandex.school.casheye.domain.settings.PinVerifier
 import com.yandex.school.casheye.domain.settings.SecuritySettings
 import com.yandex.school.casheye.domain.settings.SettingsRepository
 import com.yandex.school.casheye.domain.settings.ThemeMode
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.map
 import java.io.IOException
 import java.security.MessageDigest
 import java.security.SecureRandom
 import java.util.Base64
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.map
 
 internal class PreferencesSettingsRepository(
     private val dataStore: DataStore<Preferences>,
@@ -92,12 +92,12 @@ internal class PreferencesSettingsRepository(
 
     override suspend fun setBiometricsEnabled(enabled: Boolean) {
         dataStore.edit { preferences ->
-            preferences[BIOMETRICS_ENABLED_KEY] = enabled && preferences[PIN_SALT_KEY] != null && preferences[PIN_HASH_KEY] != null
+            preferences[BIOMETRICS_ENABLED_KEY] =
+                enabled && preferences[PIN_SALT_KEY] != null && preferences[PIN_HASH_KEY] != null
         }
     }
 
-    private fun String?.toThemeMode(): ThemeMode =
-        ThemeMode.entries.firstOrNull { it.name == this } ?: ThemeMode.SYSTEM
+    private fun String?.toThemeMode(): ThemeMode = ThemeMode.entries.firstOrNull { it.name == this } ?: ThemeMode.SYSTEM
 
     private fun String?.toLanguage(): AppLanguage =
         AppLanguage.entries.firstOrNull { it.name == this } ?: AppLanguage.SYSTEM

@@ -53,9 +53,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.yandex.school.casheye.core.designsystem.component.IconCircle
 import com.yandex.school.casheye.core.designsystem.component.ListItem
 import com.yandex.school.casheye.core.designsystem.component.ListItemDefaults
-import com.yandex.school.casheye.core.designsystem.component.IconCircle
 import com.yandex.school.casheye.core.designsystem.component.editor.CurrencySelectionContent
 import com.yandex.school.casheye.core.designsystem.component.editor.EditorOption
 import com.yandex.school.casheye.core.designsystem.component.editor.EditorOptionSelectionContent
@@ -628,7 +628,7 @@ private fun SettingsRow(
                     indication = null,
                     role = Role.Button,
                     onClick = onClick,
-        ),
+                ),
         leadingContent = {
             IconCircle(
                 iconPainter = painter,
