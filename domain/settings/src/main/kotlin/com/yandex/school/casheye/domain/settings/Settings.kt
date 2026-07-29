@@ -42,8 +42,6 @@ interface SettingsRepository {
 
     suspend fun setLanguage(language: AppLanguage)
 
-    suspend fun setPinVerifier(verifier: PinVerifier?)
-
     suspend fun setPin(pin: CharArray?)
 
     suspend fun verifyPin(

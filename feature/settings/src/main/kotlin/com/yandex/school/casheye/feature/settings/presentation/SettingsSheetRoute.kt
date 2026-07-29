@@ -43,12 +43,11 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -226,7 +225,8 @@ private fun ColumnScope.PinContent(
                     .fillMaxWidth()
                     .height(56.dp)
                     .alpha(0f)
-                    .focusRequester(focusRequester),
+                    .focusRequester(focusRequester)
+                    .testTag("settings_pin_input"),
         )
     }
     if (isConfigured) {
@@ -461,61 +461,6 @@ private fun ColumnScope.AppearanceContent(
         )
     }
     Spacer(Modifier.height(20.dp))
-}
-
-@Composable
-private fun ThemeOption(
-    label: String,
-    painter: Painter,
-    mode: ThemeMode,
-    selected: Boolean,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit,
-) {
-    val borderColor = if (selected) MaterialTheme.colorScheme.primary else Color(0xFFE0E0E0)
-    val optionShape = RoundedCornerShape(16.dp)
-    val previewShape = RoundedCornerShape(8.dp)
-    Column(
-        modifier =
-            modifier
-                .border(2.dp, borderColor, optionShape)
-                .clip(optionShape)
-                .background(MaterialTheme.colorScheme.surface)
-                .clickable(role = Role.RadioButton, onClick = onClick)
-                .padding(12.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .height(60.dp)
-                    .border(1.dp, Color(0xFFE0E0E0), previewShape)
-                    .clip(previewShape)
-                    .background(
-                        when (mode) {
-                            ThemeMode.LIGHT -> Brush.verticalGradient(listOf(Color.White, Color.White))
-                            ThemeMode.DARK -> Brush.verticalGradient(listOf(Color(0xFF1C1B1F), Color(0xFF1C1B1F)))
-                            ThemeMode.SYSTEM -> Brush.verticalGradient(listOf(Color.White, Color.Black))
-                        },
-                    ),
-        )
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            Icon(
-                painter = painter,
-                contentDescription = null,
-                modifier = Modifier.size(16.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center,
-            )
-        }
-    }
 }
 
 @Composable

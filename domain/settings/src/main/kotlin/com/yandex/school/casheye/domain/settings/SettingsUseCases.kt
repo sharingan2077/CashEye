@@ -20,12 +20,6 @@ class SetLanguageUseCase(
     suspend operator fun invoke(language: AppLanguage) = repository.setLanguage(language)
 }
 
-class SetPinVerifierUseCase(
-    private val repository: SettingsRepository,
-) {
-    suspend operator fun invoke(verifier: PinVerifier?) = repository.setPinVerifier(verifier)
-}
-
 class SetPinUseCase(
     private val repository: SettingsRepository,
 ) {
