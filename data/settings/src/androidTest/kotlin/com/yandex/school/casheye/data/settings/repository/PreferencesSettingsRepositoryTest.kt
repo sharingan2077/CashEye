@@ -7,8 +7,8 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.yandex.school.casheye.domain.settings.SecuritySettings
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -33,7 +33,7 @@ class PreferencesSettingsRepositoryTest {
     }
 
     @Test
-    fun `stores verifier, verifies pin, and clears biometric state with pin`() =
+    fun stores_verifier_verifies_pin_and_clears_biometric_state_with_pin() =
         runTest {
             securityStore.setPin("1234".toCharArray())
             val verifier = securityStore.observe().first().pinVerifier
@@ -50,7 +50,7 @@ class PreferencesSettingsRepositoryTest {
         }
 
     @Test
-    fun `first observation removes legacy unencrypted security keys`() =
+    fun first_observation_removes_legacy_unencrypted_security_keys() =
         runTest {
             val dataStore = dataStore(this)
             dataStore.edit { preferences ->

@@ -4,8 +4,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.Lifecycle
@@ -23,10 +26,13 @@ internal fun AppLockGate(
     verifyPin: suspend (CharArray) -> Boolean,
     content: @Composable () -> Unit,
 ) {
+    val currentContent by rememberUpdatedState(content)
+    val movableContent = remember { movableContentOf { currentContent() } }
+    val currentBiometricRequest by rememberUpdatedState(requestBiometricAuthentication)
     val verifier = security.pinVerifier
     val sessionStartedWithoutPin = rememberSaveable { verifier == null }
     if (verifier == null) {
-        content()
+        movableContent()
         return
     }
 
@@ -48,7 +54,7 @@ internal fun AppLockGate(
     }
 
     if (!locked) {
-        content()
+        movableContent()
         return
     }
 
@@ -62,7 +68,7 @@ internal fun AppLockGate(
             )
         ) {
             biometricRequested = true
-            requestBiometricAuthentication { succeeded ->
+            currentBiometricRequest { succeeded ->
                 if (succeeded) locked = false
             }
         }

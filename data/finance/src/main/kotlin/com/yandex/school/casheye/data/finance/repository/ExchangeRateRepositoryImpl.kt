@@ -229,10 +229,6 @@ internal class RoomExchangeRateRepository(
         fetchedAt: Long?,
     ): Boolean = !force && cached.hasAllQuotes() && fetchedAt != null && isFresh(fetchedAt)
 
-    private companion object {
-        val SERVER_ERROR_STATUS_CODES = 500..599
-    }
-
     private fun ExchangeRateEntity.toDomain(): ExchangeRate =
         ExchangeRate(
             baseCurrency = CurrencyCode.fromIsoCode(baseCurrency),
@@ -244,6 +240,7 @@ internal class RoomExchangeRateRepository(
     private companion object {
         val QUOTE_CURRENCIES = CurrencyCode.entries.toSet() - CurrencyCode.EUR
         val LATEST_CACHE_TTL: Duration = Duration.ofHours(24)
+        val SERVER_ERROR_STATUS_CODES = 500..599
         const val HISTORICAL_LOOKBACK_DAYS = 7L
     }
 }

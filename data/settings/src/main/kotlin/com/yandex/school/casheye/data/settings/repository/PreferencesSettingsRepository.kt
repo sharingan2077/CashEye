@@ -48,7 +48,10 @@ internal class PreferencesSettingsRepository(
         securityStore.setPin(pin)
     }
 
-    override suspend fun verifyPin(pin: CharArray, verifier: PinVerifier): Boolean = securityStore.verify(pin, verifier)
+    override suspend fun verifyPin(
+        pin: CharArray,
+        verifier: PinVerifier,
+    ): Boolean = securityStore.verify(pin, verifier)
 
     override suspend fun setBiometricsEnabled(enabled: Boolean) {
         securityStore.setBiometricsEnabled(enabled)

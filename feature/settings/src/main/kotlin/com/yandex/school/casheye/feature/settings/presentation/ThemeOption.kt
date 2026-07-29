@@ -34,8 +34,8 @@ internal fun ThemeOption(
     painter: Painter,
     mode: ThemeMode,
     selected: Boolean,
-    modifier: Modifier = Modifier,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val borderColor = if (selected) MaterialTheme.colorScheme.primary else Color(0xFFE0E0E0)
     val optionShape = RoundedCornerShape(16.dp)

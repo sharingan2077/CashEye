@@ -228,5 +228,3 @@ internal fun EditorTimeContent(
         }
     }
 }
-
-

@@ -203,79 +203,13 @@ internal fun updateAmountField(
     if (previousValue.text == proposedValue.text) {
         return AmountFieldUpdate(normalized, proposedValue)
     }
-
-    val prefixLength = previousValue.text.commonPrefixWith(proposedValue.text).length
-    val suffixLength =
-        previousValue.text
-            .drop(prefixLength)
-            .commonSuffixWith(proposedValue.text.drop(prefixLength))
-            .length
-    val removed = previousValue.text.substring(prefixLength, previousValue.text.length - suffixLength)
-    val inserted = proposedValue.text.substring(prefixLength, proposedValue.text.length - suffixLength)
-    val selectionOffset = canonicalOffset(previousValue.text, prefixLength, locale)
-    val decimalOffset = normalized.indexOf('.')
-
-    val next =
-        when {
-            inserted.any { it == '.' || it == ',' } && decimalOffset == -1 -> {
-                val integerPart = normalized.ifEmpty { "0" }
-                AmountEdit("$integerPart.00", integerPart.length + 1)
-            }
-
-            inserted.any { it == '.' || it == ',' } -> {
-                AmountEdit(normalized, canonicalOffset(previousValue.text, previousValue.selection.start, locale))
-            }
-
-            inserted.length == 1 && inserted[0].isDigit() &&
-                decimalOffset >= 0 && selectionOffset > decimalOffset && selectionOffset < decimalOffset + 3 -> {
-                val replacement = normalized.replaceRange(selectionOffset, selectionOffset + 1, inserted)
-                AmountEdit(replacement, selectionOffset + 1)
-            }
-
-            removed.length == 1 && removed[0].isDigit() &&
-                decimalOffset >= 0 && selectionOffset > decimalOffset && selectionOffset < decimalOffset + 3 -> {
-                val fraction =
-                    normalized.substring(decimalOffset + 1).removeRange(
-                        selectionOffset - decimalOffset - 1,
-                        selectionOffset - decimalOffset,
-                    )
-                AmountEdit(
-                    normalized.substring(0, decimalOffset + 1) + fraction.padEnd(2, '0'),
-                    selectionOffset,
-                )
-            }
-
-            else -> {
-                AmountEdit(
-                    canonicalFromVisual(proposedValue.text, locale),
-                    canonicalOffset(proposedValue.text, proposedValue.selection.start, locale),
-                )
-            }
-        }
-
-    val proposedAmount = normalizeAmount(next.amount)
-    val isWithinLimit = proposedAmount.substringBefore('.').length <= MAX_INTEGER_DIGITS
-    val keepsDecimalAtLimit =
-        !isWithinLimit &&
-            decimalOffset >= 0 &&
-            selectionOffset == decimalOffset &&
-            removed.singleOrNull() == DecimalFormatSymbols.getInstance(locale).decimalSeparator
-    val nextAmount =
-        when {
-            isWithinLimit -> proposedAmount
-            keepsDecimalAtLimit -> "${normalized.substringBefore('.')}.99"
-            else -> normalized
-        }
-    val nextSelection =
-        when {
-            isWithinLimit -> next.selection
-            keepsDecimalAtLimit -> decimalOffset
-            else -> canonicalOffset(previousValue.text, previousValue.selection.start, locale)
-        }
-    val text = formatAmount(nextAmount, locale)
+    val change = AmountFieldChange.from(previousValue, proposedValue, locale)
+    val next = change.toAmountEdit(normalized)
+    val resolved = change.resolveAmountEdit(normalized, next)
+    val text = formatAmount(resolved.amount, locale)
     return AmountFieldUpdate(
-        canonicalAmount = nextAmount,
-        fieldValue = TextFieldValue(text, TextRange(visualOffset(text, nextSelection, locale))),
+        canonicalAmount = resolved.amount,
+        fieldValue = TextFieldValue(text, TextRange(visualOffset(text, resolved.selection, locale))),
     )
 }
 
@@ -284,7 +218,105 @@ private data class AmountEdit(
     val selection: Int,
 )
 
+private data class AmountFieldChange(
+    val previousValue: TextFieldValue,
+    val proposedValue: TextFieldValue,
+    val locale: Locale,
+    val removed: String,
+    val inserted: String,
+    val selectionOffset: Int,
+) {
+    fun toAmountEdit(normalized: String): AmountEdit =
+        separatorEdit(normalized) ?: fractionReplacement(normalized) ?: fractionDeletion(normalized)
+            ?: AmountEdit(
+                canonicalFromVisual(proposedValue.text, locale),
+                canonicalOffset(proposedValue.text, proposedValue.selection.start, locale),
+            )
+
+    fun resolveAmountEdit(
+        normalized: String,
+        edit: AmountEdit,
+    ): AmountEdit {
+        val proposedAmount = normalizeAmount(edit.amount)
+        if (proposedAmount.substringBefore('.').length <= MAX_INTEGER_DIGITS) {
+            return AmountEdit(proposedAmount, edit.selection)
+        }
+        val decimalOffset = normalized.indexOf('.')
+        return if (keepsDecimalAtLimit(decimalOffset)) {
+            AmountEdit("${normalized.substringBefore('.')}.99", decimalOffset)
+        } else {
+            AmountEdit(
+                normalized,
+                canonicalOffset(previousValue.text, previousValue.selection.start, locale),
+            )
+        }
+    }
+
+    private fun separatorEdit(normalized: String): AmountEdit? {
+        if (!inserted.any(Char::isDecimalSeparator)) return null
+        val decimalOffset = normalized.indexOf('.')
+        return if (decimalOffset == -1) {
+            val integerPart = normalized.ifEmpty { "0" }
+            AmountEdit("$integerPart.00", integerPart.length + 1)
+        } else {
+            AmountEdit(normalized, canonicalOffset(previousValue.text, previousValue.selection.start, locale))
+        }
+    }
+
+    private fun fractionReplacement(normalized: String): AmountEdit? {
+        val decimalOffset = normalized.indexOf('.')
+        if (!isFractionCell(decimalOffset) || inserted.length != 1 || !inserted[0].isDigit()) return null
+        return AmountEdit(normalized.replaceRange(selectionOffset, selectionOffset + 1, inserted), selectionOffset + 1)
+    }
+
+    private fun fractionDeletion(normalized: String): AmountEdit? {
+        val decimalOffset = normalized.indexOf('.')
+        if (!isFractionCell(decimalOffset) || removed.length != 1 || !removed[0].isDigit()) return null
+        val fraction =
+            normalized.substring(decimalOffset + 1).removeRange(
+                selectionOffset - decimalOffset - 1,
+                selectionOffset - decimalOffset,
+            )
+        val amount = normalized.substring(0, decimalOffset + 1) + fraction.padEnd(2, '0')
+        return AmountEdit(amount, selectionOffset)
+    }
+
+    private fun isFractionCell(decimalOffset: Int): Boolean =
+        decimalOffset >= 0 &&
+            selectionOffset > decimalOffset &&
+            selectionOffset < decimalOffset + FRACTION_END_EXCLUSIVE_OFFSET
+
+    private fun keepsDecimalAtLimit(decimalOffset: Int): Boolean =
+        decimalOffset >= 0 &&
+            selectionOffset == decimalOffset &&
+            removed.singleOrNull() == DecimalFormatSymbols.getInstance(locale).decimalSeparator
+
+    companion object {
+        fun from(
+            previousValue: TextFieldValue,
+            proposedValue: TextFieldValue,
+            locale: Locale,
+        ): AmountFieldChange {
+            val prefixLength = previousValue.text.commonPrefixWith(proposedValue.text).length
+            val suffixLength =
+                previousValue.text
+                    .drop(prefixLength)
+                    .commonSuffixWith(proposedValue.text.drop(prefixLength))
+                    .length
+            return AmountFieldChange(
+                previousValue = previousValue,
+                proposedValue = proposedValue,
+                locale = locale,
+                removed = previousValue.text.substring(prefixLength, previousValue.text.length - suffixLength),
+                inserted = proposedValue.text.substring(prefixLength, proposedValue.text.length - suffixLength),
+                selectionOffset = canonicalOffset(previousValue.text, prefixLength, locale),
+            )
+        }
+    }
+}
+
 private const val MAX_INTEGER_DIGITS = 9
+private const val FRACTION_END_EXCLUSIVE_OFFSET = 3
 
 private fun amountFieldValue(
     amount: String,
@@ -347,4 +379,3 @@ private fun Char.isEditableAmountCharacter(groupingSeparator: Char): Boolean =
     isDigit() || (this != groupingSeparator && isDecimalSeparator())
 
 private fun Char.isDecimalSeparator(): Boolean = this == '.' || this == ','
-

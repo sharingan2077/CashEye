@@ -108,8 +108,8 @@ class SettingsViewModel(
             val updatedArticles =
                 _state.value.articles
                     .filter { category ->
-                        category.isIncome && incomeCategories == null ||
-                            !category.isIncome && expenseCategories == null
+                        (category.isIncome && incomeCategories == null) ||
+                            (!category.isIncome && expenseCategories == null)
                     }.let { cachedCategories ->
                         cachedCategories + expenseCategories.orEmpty() + incomeCategories.orEmpty()
                     }

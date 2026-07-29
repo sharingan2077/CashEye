@@ -15,7 +15,9 @@ import java.util.Base64
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
 
-internal class EncryptedSecuritySettingsStore(context: Context) {
+internal class EncryptedSecuritySettingsStore(
+    context: Context,
+) {
     private val preferences: SharedPreferences =
         EncryptedSharedPreferences.create(
             context,
@@ -25,32 +27,38 @@ internal class EncryptedSecuritySettingsStore(context: Context) {
             EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
         )
 
-    fun observe(): Flow<SecuritySettings> = callbackFlow {
-        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, _ -> trySend(settings()) }
-        trySend(settings())
-        preferences.registerOnSharedPreferenceChangeListener(listener)
-        awaitClose { preferences.unregisterOnSharedPreferenceChangeListener(listener) }
-    }
+    fun observe(): Flow<SecuritySettings> =
+        callbackFlow {
+            val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, _ -> trySend(settings()) }
+            trySend(settings())
+            preferences.registerOnSharedPreferenceChangeListener(listener)
+            awaitClose { preferences.unregisterOnSharedPreferenceChangeListener(listener) }
+        }
 
     fun setPin(pin: CharArray?) {
         try {
-            preferences.edit().apply {
-                if (pin == null) {
-                    remove(PIN_SALT)
-                    remove(PIN_HASH)
-                    putBoolean(BIOMETRICS, false)
-                } else {
-                    val verifier = createVerifier(pin)
-                    putString(PIN_SALT, verifier.salt)
-                    putString(PIN_HASH, verifier.hash)
-                }
-            }.apply()
+            preferences
+                .edit()
+                .apply {
+                    if (pin == null) {
+                        remove(PIN_SALT)
+                        remove(PIN_HASH)
+                        putBoolean(BIOMETRICS, false)
+                    } else {
+                        val verifier = createVerifier(pin)
+                        putString(PIN_SALT, verifier.salt)
+                        putString(PIN_HASH, verifier.hash)
+                    }
+                }.apply()
         } finally {
             pin?.fill('\u0000')
         }
     }
 
-    fun verify(pin: CharArray, verifier: PinVerifier): Boolean =
+    fun verify(
+        pin: CharArray,
+        verifier: PinVerifier,
+    ): Boolean =
         try {
             MessageDigest.isEqual(
                 Base64.getDecoder().decode(verifier.hash),
@@ -73,6 +81,7 @@ internal class EncryptedSecuritySettingsStore(context: Context) {
         preferences.getString(PIN_SALT, null)?.let { salt ->
             preferences.getString(PIN_HASH, null)?.let { hash -> PinVerifier(salt, hash) }
         }
+
     private fun createVerifier(pin: CharArray): PinVerifier {
         val salt = ByteArray(16).also(random::nextBytes)
         return PinVerifier(
@@ -80,7 +89,11 @@ internal class EncryptedSecuritySettingsStore(context: Context) {
             Base64.getEncoder().encodeToString(derive(pin, salt)),
         )
     }
-    private fun derive(pin: CharArray, salt: ByteArray): ByteArray {
+
+    private fun derive(
+        pin: CharArray,
+        salt: ByteArray,
+    ): ByteArray {
         val spec = PBEKeySpec(pin, salt, 210_000, 256)
         return try {
             SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(spec).encoded
@@ -88,6 +101,7 @@ internal class EncryptedSecuritySettingsStore(context: Context) {
             spec.clearPassword()
         }
     }
+
     private companion object {
         const val PIN_SALT = "pin_salt"
         const val PIN_HASH = "pin_hash"

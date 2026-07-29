@@ -16,8 +16,9 @@ fun CurrencySelectionContent(
     title: String,
     selectedCurrency: String,
     onSelect: (String) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    Column(Modifier.fillMaxWidth()) {
+    Column(modifier.fillMaxWidth()) {
         EditorSheetTitle(title)
         currencyOptions.forEachIndexed { index, currency ->
             EditorSelectionRow(

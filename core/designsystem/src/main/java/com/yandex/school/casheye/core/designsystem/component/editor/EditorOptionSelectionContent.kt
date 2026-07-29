@@ -28,12 +28,13 @@ fun EditorOptionSelectionContent(
     query: String,
     onQueryChange: (String) -> Unit,
     onSelect: (EditorOption) -> Unit,
+    modifier: Modifier = Modifier,
     emptyContent: @Composable () -> Unit = {},
 ) {
     val visibleOptions = remember(options, query) { options.filter { it.label.contains(query, ignoreCase = true) } }
     val listState = rememberLazyListState()
     val gestureCoordinator = rememberSheetListGestureCoordinator(listState)
-    Column(modifier = Modifier.fillMaxWidth()) {
+    Column(modifier = modifier.fillMaxWidth()) {
         EditorSheetTitle(title)
         OutlinedTextField(
             value = query,

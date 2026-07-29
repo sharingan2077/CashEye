@@ -45,9 +45,9 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -151,31 +151,31 @@ private fun LanguageOption(
     isLast: Boolean = false,
     onClick: () -> Unit,
 ) {
-    ListItem(
-        modifier =
-            Modifier
-                .clickable(role = Role.RadioButton, onClick = onClick),
-        minHeight = ListItemDefaults.CompactMinHeight,
-        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
-        slotSpacing = 12.dp,
-        leadingContent = { Text(text = flag, style = MaterialTheme.typography.titleMedium) },
-        trailingContent =
-            if (selected) {
-                {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_settings_check),
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp),
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
-                }
-            } else {
-                null
-            },
-    ) {
-        Text(text = label, style = MaterialTheme.typography.titleMedium)
+    Column {
+        ListItem(
+            modifier =
+                Modifier
+                    .clickable(role = Role.RadioButton, onClick = onClick),
+            minHeight = ListItemDefaults.CompactMinHeight,
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
+            slotSpacing = 12.dp,
+            leadingContent = { Text(text = flag, style = MaterialTheme.typography.titleMedium) },
+            trailingContent =
+                if (selected) {
+                    {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_settings_check),
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp),
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                } else {
+                    null
+                },
+        ) {
+            Text(text = label, style = MaterialTheme.typography.titleMedium)
+        }
+        if (!isLast) HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp))
     }
-    if (!isLast) HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp))
 }
-
-

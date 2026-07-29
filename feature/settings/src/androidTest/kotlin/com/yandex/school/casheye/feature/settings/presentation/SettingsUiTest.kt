@@ -1,18 +1,19 @@
 package com.yandex.school.casheye.feature.settings.presentation
 
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
 import com.yandex.school.casheye.domain.settings.ThemeMode
 import com.yandex.school.casheye.feature.settings.R
-import org.junit.Assert.assertEquals
+import junit.framework.TestCase.assertEquals
 import org.junit.Rule
 import org.junit.Test
 
@@ -25,14 +26,16 @@ class SettingsUiTest {
         var selectedMode by mutableStateOf(ThemeMode.LIGHT)
         composeRule.setContent {
             CashEyeTheme(darkTheme = false, dynamicColor = false) {
-                ThemeMode.entries.forEach { mode ->
-                    ThemeOption(
-                        label = mode.name,
-                        painter = painterResource(R.drawable.ic_settings_moon),
-                        mode = mode,
-                        selected = selectedMode == mode,
-                        onClick = { selectedMode = mode },
-                    )
+                Column {
+                    ThemeMode.entries.forEach { mode ->
+                        ThemeOption(
+                            label = mode.name,
+                            painter = painterResource(R.drawable.ic_settings_moon),
+                            mode = mode,
+                            selected = selectedMode == mode,
+                            onClick = { selectedMode = mode },
+                        )
+                    }
                 }
             }
         }
@@ -40,7 +43,9 @@ class SettingsUiTest {
         ThemeMode.entries.forEach { mode ->
             composeRule.onNodeWithTag("settings_theme_${mode.name.lowercase()}").performClick()
 
-            assertEquals(mode, selectedMode)
+            composeRule.runOnIdle {
+                assertEquals(mode, selectedMode)
+            }
         }
     }
 
