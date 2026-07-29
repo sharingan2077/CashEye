@@ -164,7 +164,7 @@ private fun EmptyIncome(modifier: Modifier = Modifier) {
     ) {
         Image(
             painter = painterResource(R.drawable.image_empty_income),
-            contentDescription = stringResource(R.string.empty_income),
+            contentDescription = null,
             modifier =
                 Modifier
                     .size(200.dp),

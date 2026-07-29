@@ -160,7 +160,7 @@ private fun EmptyExpenses(modifier: Modifier = Modifier) {
     ) {
         Image(
             painter = painterResource(R.drawable.image_empty_expenses),
-            contentDescription = stringResource(R.string.empty_expenses),
+            contentDescription = null,
             modifier =
                 Modifier
                     .size(150.dp),

@@ -43,7 +43,7 @@ fun ErrorState(
     ) {
         Image(
             painter = painterResource(content.imageRes),
-            contentDescription = stringResource(content.titleRes),
+            contentDescription = null,
             modifier = Modifier.size(150.dp),
         )
         Text(

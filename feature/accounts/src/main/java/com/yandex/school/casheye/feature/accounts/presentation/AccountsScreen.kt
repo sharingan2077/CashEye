@@ -184,7 +184,7 @@ private fun EmptyAccounts(modifier: Modifier = Modifier) {
     ) {
         Image(
             painter = painterResource(R.drawable.image_empty_accounts),
-            contentDescription = stringResource(R.string.empty_accounts),
+            contentDescription = null,
             modifier =
                 Modifier
                     .size(200.dp),

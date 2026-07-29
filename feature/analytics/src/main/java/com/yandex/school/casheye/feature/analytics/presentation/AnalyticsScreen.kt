@@ -341,7 +341,7 @@ private fun AnalyticsEmptyState() {
     ) {
         Image(
             painter = painterResource(R.drawable.image_empty_analytics),
-            contentDescription = stringResource(R.string.empty_period),
+            contentDescription = null,
             modifier =
                 Modifier
                     .size(200.dp),
