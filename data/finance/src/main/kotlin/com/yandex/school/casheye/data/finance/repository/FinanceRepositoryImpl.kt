@@ -73,8 +73,8 @@ class FinanceRepositoryImpl(
                     null
                 } catch (error: CancellationException) {
                     throw error
-                } catch (error: Exception) {
-                    error.toFailureReason()
+                } catch (failure: Exception) {
+                    failure.toFailureReason()
                 }
             try {
                 val accounts = localStore.getAccounts()
@@ -217,9 +217,9 @@ class FinanceRepositoryImpl(
             FinanceRefreshResult.Success
         } catch (error: CancellationException) {
             throw error
-        } catch (error: Exception) {
+        } catch (failure: Exception) {
             FinanceRefreshResult.Failure(
-                reason = error.toFailureReason(),
+                reason = failure.toFailureReason(),
                 hasUsableCache = hasUsableCache(),
             )
         }
@@ -250,8 +250,8 @@ class FinanceRepositoryImpl(
                         null
                     } catch (error: CancellationException) {
                         throw error
-                    } catch (error: Exception) {
-                        error.toFailureReason()
+                    } catch (failure: Exception) {
+                        failure.toFailureReason()
                     }
                 val local = read()
                 if (refreshFailure == null || hasCache(local)) {

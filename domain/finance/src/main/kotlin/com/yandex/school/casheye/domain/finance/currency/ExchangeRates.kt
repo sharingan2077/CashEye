@@ -6,7 +6,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import java.math.BigDecimal
 import java.math.MathContext
-import java.math.RoundingMode
 import java.time.LocalDate
 
 data class ExchangeRate(
@@ -103,7 +102,7 @@ sealed interface CurrencyConversionResult {
 }
 
 class CurrencyConverter(
-    private val mathContext: MathContext = MathContext(34, RoundingMode.HALF_EVEN),
+    private val mathContext: MathContext = MathContext.DECIMAL128,
 ) {
     fun convert(
         money: MoneyAmount,

@@ -314,7 +314,7 @@ private fun canonicalFromVisual(
     locale: Locale,
 ): String {
     val groupingSeparator = DecimalFormatSymbols.getInstance(locale).groupingSeparator
-    val cleaned = value.filter { it.isDigit() || (it != groupingSeparator && (it == '.' || it == ',')) }
+    val cleaned = value.filter { it.isEditableAmountCharacter(groupingSeparator) }
     return normalizeAmount(cleaned)
 }
 
@@ -343,4 +343,8 @@ private fun visualOffset(
     return value.length
 }
 
+private fun Char.isEditableAmountCharacter(groupingSeparator: Char): Boolean =
+    isDigit() || (this != groupingSeparator && isDecimalSeparator())
+
+private fun Char.isDecimalSeparator(): Boolean = this == '.' || this == ','
 

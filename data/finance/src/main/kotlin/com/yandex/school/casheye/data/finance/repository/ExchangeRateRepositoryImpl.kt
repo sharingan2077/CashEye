@@ -51,7 +51,7 @@ internal class RoomExchangeRateRepository(
     override suspend fun refreshLatest(force: Boolean): ExchangeRateRefreshResult {
         val cached = cache.getLatest()
         val fetchedAt = cache.latestFetchedAt()
-        if (!force && cached.hasAllQuotes() && fetchedAt != null && isFresh(fetchedAt)) {
+        if (hasFreshCompleteCache(force, cached, fetchedAt)) {
             return ExchangeRateRefreshResult.Fresh
         }
 
@@ -81,8 +81,8 @@ internal class RoomExchangeRateRepository(
             val response =
                 try {
                     api.getRates(from = range.start.toString(), to = range.endInclusive.toString())
-                } catch (error: Throwable) {
-                    return error.toRefreshFailure(cachedRangeIsComplete(requestedStart, endDate))
+                } catch (failure: Throwable) {
+                    return failure.toRefreshFailure(cachedRangeIsComplete(requestedStart, endDate))
                 }
             val missing = missingQuotes(response)
             if (missing.isNotEmpty()) {
@@ -205,7 +205,7 @@ internal class RoomExchangeRateRepository(
                 ExchangeRateRefreshResult.TemporaryFailure(cachedDataAvailable, this)
             }
 
-            is HttpException if code() in 500..599 -> {
+            is HttpException if code() in SERVER_ERROR_STATUS_CODES -> {
                 ExchangeRateRefreshResult.TemporaryFailure(cachedDataAvailable, this)
             }
 
@@ -222,6 +222,16 @@ internal class RoomExchangeRateRepository(
             rateDate = date.toString(),
             fetchedAt = fetchedAt,
         )
+
+    private fun hasFreshCompleteCache(
+        force: Boolean,
+        cached: List<ExchangeRateEntity>,
+        fetchedAt: Long?,
+    ): Boolean = !force && cached.hasAllQuotes() && fetchedAt != null && isFresh(fetchedAt)
+
+    private companion object {
+        val SERVER_ERROR_STATUS_CODES = 500..599
+    }
 
     private fun ExchangeRateEntity.toDomain(): ExchangeRate =
         ExchangeRate(

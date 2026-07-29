@@ -68,8 +68,8 @@ class FinanceSyncer internal constructor(
             } else {
                 FinanceSyncResult.PermanentFailure(error)
             }
-        } catch (error: Exception) {
-            FinanceSyncResult.PermanentFailure(error)
+        } catch (failure: Exception) {
+            FinanceSyncResult.PermanentFailure(failure)
         }
 
     private suspend fun drainOutbox() {

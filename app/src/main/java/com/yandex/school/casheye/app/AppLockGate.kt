@@ -53,7 +53,14 @@ internal fun AppLockGate(
     }
 
     LaunchedEffect(locked, security.biometricsEnabled, biometricsAvailable) {
-        if (locked && security.biometricsEnabled && biometricsAvailable && !biometricRequested) {
+        if (
+            shouldRequestBiometricAuthentication(
+                locked,
+                security.biometricsEnabled,
+                biometricsAvailable,
+                biometricRequested,
+            )
+        ) {
             biometricRequested = true
             requestBiometricAuthentication { succeeded ->
                 if (succeeded) locked = false
@@ -69,3 +76,10 @@ internal fun AppLockGate(
         },
     )
 }
+
+private fun shouldRequestBiometricAuthentication(
+    locked: Boolean,
+    biometricsEnabled: Boolean,
+    biometricsAvailable: Boolean,
+    biometricRequested: Boolean,
+): Boolean = locked && biometricsEnabled && biometricsAvailable && !biometricRequested
