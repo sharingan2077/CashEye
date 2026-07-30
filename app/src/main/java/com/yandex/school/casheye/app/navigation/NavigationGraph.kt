@@ -17,14 +17,14 @@ import com.yandex.school.casheye.feature.analytics.presentation.AnalyticsEntryPo
 import com.yandex.school.casheye.feature.analytics.presentation.AnalyticsRoute
 import com.yandex.school.casheye.feature.expenses.presentation.ExpensesRoute
 import com.yandex.school.casheye.feature.income.presentation.IncomeRoute
-import java.time.LocalDate
+import com.yandex.school.casheye.core.model.DatePeriod
 
 @Composable
 internal fun NavigationContent(
     navigationState: NavigationState,
     snackbarHostState: SnackbarHostState,
     navigator: Navigator,
-    selectedDate: LocalDate,
+    selectedPeriod: DatePeriod,
     networkRecoveryRefresh: NetworkRecoveryRefresh?,
     onNetworkRecoveryRefresh: (Long) -> Unit,
     onEditExpense: (Int) -> Unit,
@@ -48,7 +48,7 @@ internal fun NavigationContent(
                 entryProvider {
                     entry<Route.Expenses> {
                         ExpensesRoute(
-                            selectedDate = selectedDate,
+                            selectedPeriod = selectedPeriod,
                             snackbarHostState = snackbarHostState,
                             onTransactionClick = onEditExpense,
                             networkRecoveryRefreshId =
@@ -58,7 +58,7 @@ internal fun NavigationContent(
                     }
                     entry<Route.Income> {
                         IncomeRoute(
-                            selectedDate = selectedDate,
+                            selectedPeriod = selectedPeriod,
                             snackbarHostState = snackbarHostState,
                             onTransactionClick = onEditIncome,
                             networkRecoveryRefreshId =

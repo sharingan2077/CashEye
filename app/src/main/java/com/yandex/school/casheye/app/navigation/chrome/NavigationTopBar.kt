@@ -36,28 +36,28 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.yandex.school.casheye.R
 import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
+import com.yandex.school.casheye.core.model.DatePeriod
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NavigationTopBar(
-    date: LocalDate,
+    period: DatePeriod,
     modifier: Modifier = Modifier,
     onDateClick: () -> Unit = {},
     onAnalyticsClick: () -> Unit = {},
     onSettingsClick: () -> Unit = {},
 ) {
     val locale = LocalConfiguration.current.locales[0] ?: LocalLocale.current.platformLocale
-    val dateFormatter = remember(locale) { DateTimeFormatter.ofPattern("d MMMM", locale) }
     val dateInteractionSource = remember { MutableInteractionSource() }
 
     TopAppBar(
         modifier = modifier,
         title = {
             NavigationTopBarTitle(
-                date = date,
-                dateFormatter = dateFormatter,
+                period = period,
+                locale = locale,
                 interactionSource = dateInteractionSource,
                 onClick = onDateClick,
             )
@@ -77,8 +77,8 @@ fun NavigationTopBar(
 
 @Composable
 private fun NavigationTopBarTitle(
-    date: LocalDate,
-    dateFormatter: DateTimeFormatter,
+    period: DatePeriod,
+    locale: java.util.Locale,
     interactionSource: MutableInteractionSource,
     onClick: () -> Unit,
 ) {
@@ -115,7 +115,7 @@ private fun NavigationTopBarTitle(
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = date.format(dateFormatter),
+                    text = period.formatted(locale),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -123,6 +123,20 @@ private fun NavigationTopBarTitle(
         }
     }
 }
+
+private fun DatePeriod.formatted(locale: java.util.Locale): String =
+    when {
+        startDate == endDate -> startDate.format(DateTimeFormatter.ofPattern("d MMMM", locale))
+        startDate.year == endDate.year -> {
+            val formatter = DateTimeFormatter.ofPattern("d MMMM", locale)
+            "${startDate.format(formatter)} – ${endDate.format(formatter)}"
+        }
+
+        else -> {
+            val formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy", locale)
+            "${startDate.format(formatter)} – ${endDate.format(formatter)}"
+        }
+    }
 
 @Composable
 private fun NavigationTopBarActions(
@@ -155,7 +169,7 @@ private fun NavigationTopBarActions(
 private fun NavigationTopBarPreview() {
     CashEyeTheme(dynamicColor = false) {
         NavigationTopBar(
-            date = LocalDate.of(2026, 6, 12),
+            period = DatePeriod(LocalDate.of(2026, 6, 12), LocalDate.of(2026, 6, 12)),
             onDateClick = {},
             onAnalyticsClick = {},
             onSettingsClick = {},

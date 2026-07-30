@@ -35,7 +35,7 @@ import com.yandex.school.casheye.app.navigation.NetworkRecoveryRefresh
 import com.yandex.school.casheye.app.navigation.Route
 import com.yandex.school.casheye.app.navigation.toAnalyticsEntryPoint
 import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
-import java.time.LocalDate
+import com.yandex.school.casheye.core.model.DatePeriod
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,7 +43,7 @@ internal fun NavigationScaffold(
     navigationState: NavigationState,
     snackbarHostState: SnackbarHostState,
     navigator: Navigator,
-    selectedDate: LocalDate,
+    selectedPeriod: DatePeriod,
     networkRecoveryRefresh: NetworkRecoveryRefresh?,
     onNetworkRecoveryRefresh: (Long) -> Unit,
     onEditExpense: (Int) -> Unit,
@@ -99,7 +99,7 @@ internal fun NavigationScaffold(
             ) { showMain ->
                 if (showMain) {
                     NavigationTopBar(
-                        date = selectedDate,
+                        period = selectedPeriod,
                         onDateClick = onDateClick,
                         onSettingsClick = onSettingsClick,
                         onAnalyticsClick = {
@@ -141,7 +141,7 @@ internal fun NavigationScaffold(
             navigationState = navigationState,
             snackbarHostState = snackbarHostState,
             navigator = navigator,
-            selectedDate = selectedDate,
+            selectedPeriod = selectedPeriod,
             networkRecoveryRefresh = networkRecoveryRefresh,
             onNetworkRecoveryRefresh = onNetworkRecoveryRefresh,
             onEditExpense = onEditExpense,
