@@ -6,6 +6,7 @@ import android.os.Vibrator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -22,6 +23,13 @@ import kotlin.time.Duration.Companion.minutes
 internal val APP_LOCK_BACKGROUND_GRACE_PERIOD = 5.minutes
 private val APP_LOCK_PIN_ERROR_VIBRATION_DURATION = 50.milliseconds
 
+/**
+ * Keeps authentication state over Activity recreation, but not process death.
+ */
+private object AppLockSessionState {
+    var isLocked: Boolean? = null
+}
+
 @Composable
 internal fun AppLockGate(
     security: SecuritySettings,
@@ -32,29 +40,27 @@ internal fun AppLockGate(
     val context = LocalContext.current
     val vibrator = remember(context) { context.getSystemService(Vibrator::class.java) }
     val verifier = security.pinVerifier
-    val sessionStartedWithoutPin = remember { verifier == null }
-    var locked by remember(verifier?.hash) { mutableStateOf(verifier != null && !sessionStartedWithoutPin) }
-
-    if (verifier == null) {
-        content()
-        return
+    var locked by remember {
+        mutableStateOf(AppLockSessionState.isLocked ?: (verifier != null))
     }
+    SideEffect { AppLockSessionState.isLocked = locked }
 
-    var biometricRequested by remember(verifier.hash) { mutableStateOf(false) }
-    var backgroundedAtElapsedRealtime by remember(verifier.hash) { mutableStateOf<Long?>(null) }
+    var biometricRequested by remember(verifier?.hash) { mutableStateOf(false) }
+    var backgroundedAtElapsedRealtime by remember(verifier?.hash) { mutableStateOf<Long?>(null) }
     val biometricsEnabled = security.biometricsEnabled && biometricsAvailable
     val lifecycle = ProcessLifecycleOwner.get().lifecycle
     var isAppInForeground by remember(lifecycle) {
         mutableStateOf(lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED))
     }
 
-    DisposableEffect(lifecycle, verifier.hash) {
+    DisposableEffect(lifecycle, verifier?.hash) {
         val observer =
             LifecycleEventObserver { _, event ->
                 when (event) {
                     Lifecycle.Event.ON_START -> {
                         isAppInForeground = true
                         if (
+                            verifier != null &&
                             shouldLockAfterBackground(
                                 backgroundedAtElapsedRealtime = backgroundedAtElapsedRealtime,
                                 currentElapsedRealtime = SystemClock.elapsedRealtime(),
@@ -78,13 +84,8 @@ internal fun AppLockGate(
         onDispose { lifecycle.removeObserver(observer) }
     }
 
-    if (!locked) {
-        content()
-        return
-    }
-
     val requestBiometric = {
-        if (locked && biometricsEnabled) {
+        if (verifier != null && locked && biometricsEnabled) {
             biometricRequested = true
             requestBiometricAuthentication { succeeded ->
                 if (succeeded) locked = false
@@ -94,31 +95,35 @@ internal fun AppLockGate(
     LaunchedEffect(locked, biometricsEnabled, biometricRequested, isAppInForeground) {
         if (
             shouldRequestBiometricAuthentication(
-                locked,
-                biometricsEnabled,
-                biometricRequested,
-                isAppInForeground,
+                locked = verifier != null && locked,
+                biometricsEnabled = biometricsEnabled,
+                biometricRequested = biometricRequested,
+                isAppInForeground = isAppInForeground,
             )
         ) {
             requestBiometric()
         }
     }
-    AppLockScreen(
-        verifier = verifier,
-        biometricsEnabled = biometricsEnabled,
-        onRequestBiometricAuthentication = requestBiometric,
-        onPinVerificationError = {
-            if (vibrator?.hasVibrator() == true) {
-                vibrator.vibrate(
-                    VibrationEffect.createOneShot(
-                        APP_LOCK_PIN_ERROR_VIBRATION_DURATION.inWholeMilliseconds,
-                        VibrationEffect.DEFAULT_AMPLITUDE,
-                    ),
-                )
-            }
-        },
-        onPinVerified = { locked = false },
-    )
+    if (verifier != null && locked) {
+        AppLockScreen(
+            verifier = verifier,
+            biometricsEnabled = biometricsEnabled,
+            onRequestBiometricAuthentication = requestBiometric,
+            onPinVerificationError = {
+                if (vibrator?.hasVibrator() == true) {
+                    vibrator.vibrate(
+                        VibrationEffect.createOneShot(
+                            APP_LOCK_PIN_ERROR_VIBRATION_DURATION.inWholeMilliseconds,
+                            VibrationEffect.DEFAULT_AMPLITUDE,
+                        ),
+                    )
+                }
+            },
+            onPinVerified = { locked = false },
+        )
+    } else {
+        content()
+    }
 }
 
 private fun shouldRequestBiometricAuthentication(

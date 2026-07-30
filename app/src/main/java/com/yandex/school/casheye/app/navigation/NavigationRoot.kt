@@ -4,6 +4,7 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -22,6 +23,10 @@ import com.yandex.school.casheye.core.designsystem.component.datepicker.PastOrPr
 import com.yandex.school.casheye.feature.settings.presentation.SettingsSheetRoute
 import kotlinx.coroutines.flow.StateFlow
 import java.time.LocalDate
+
+private object SettingsSheetSessionState {
+    var isVisible: Boolean? = null
+}
 
 @Composable
 fun NavigationRoot(
@@ -70,7 +75,10 @@ fun NavigationRoot(
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
     val selectedDate = LocalDate.ofEpochDay(selectedDateEpochDay).coerceAtMost(LocalDate.now())
     var editorTarget by remember { mutableStateOf<EditorTarget?>(null) }
-    var showSettings by remember { mutableStateOf(false) }
+    var showSettings by rememberSaveable {
+        mutableStateOf(SettingsSheetSessionState.isVisible ?: false)
+    }
+    SideEffect { SettingsSheetSessionState.isVisible = showSettings }
 
     NavigationScaffold(
         modifier = modifier,

@@ -5,9 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.yandex.school.casheye.domain.settings.PinVerifier
 import com.yandex.school.casheye.domain.settings.VerifyPinUseCase
 import dev.zacsweers.metro.Inject
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
@@ -32,10 +30,6 @@ sealed interface AppLockIntent {
     data object ErrorAnimationFinished : AppLockIntent
 }
 
-sealed interface AppLockEffect {
-    data object Unlock : AppLockEffect
-}
-
 @Inject
 class AppLockViewModel(
     private val verifyPin: VerifyPinUseCase,
@@ -43,13 +37,10 @@ class AppLockViewModel(
     private val _state = MutableStateFlow(AppLockUiState())
     val state = _state.asStateFlow()
 
-    private val _effects = MutableSharedFlow<AppLockEffect>()
-    val effects = _effects.asSharedFlow()
-
     fun onIntent(intent: AppLockIntent) {
         when (intent) {
             is AppLockIntent.SubmitPin -> verify(intent.pin, intent.verifier)
-            AppLockIntent.SuccessAnimationFinished -> viewModelScope.launch { _effects.emit(AppLockEffect.Unlock) }
+            AppLockIntent.SuccessAnimationFinished -> _state.value = AppLockUiState()
             AppLockIntent.ErrorAnimationFinished -> _state.value = AppLockUiState()
         }
     }
