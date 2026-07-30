@@ -2,6 +2,7 @@
     <string name="empty_income">За выбранную дату доходов нет</string>
     <string name="empty_income_description">Выберите другую дату в верхней панели, чтобы посмотреть доходы.</string>
     <string name="income_total">доходы, всего</string>
+    <string name="income_not_included">Не включено: %1$s</string>
     <string name="retry">Повторить</string>
     <string name="error_network">Проверьте подключение к интернету</string>
     <string name="error_authorization">Не удалось авторизоваться</string>

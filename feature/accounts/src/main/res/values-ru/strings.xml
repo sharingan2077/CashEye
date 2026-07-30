@@ -7,6 +7,7 @@
     <string name="balance_valuation_partial">Учтено ≈ %1$s</string>
     <string name="balance_valuation_partial_dated">Учтено ≈ %1$s · курс на %2$s</string>
     <string name="balance_not_included">Не включено: %1$s</string>
+    <string name="balance_rate_date">Курс на %1$s</string>
     <string name="retry">Повторить</string>
     <string name="error_network">Проверьте подключение к интернету</string>
     <string name="error_authorization">Не удалось авторизоваться</string>

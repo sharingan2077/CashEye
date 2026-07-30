@@ -106,6 +106,10 @@ private fun IncomeContent(
     ) {
         NativeMoneySummary(
             title = stringResource(R.string.income_total),
+            total =
+                state.currentValuation
+                    ?.includedTotal
+                    ?.let { formatAmount(it.amount, it.currency.isoCode) },
             nativeTotals =
                 state.nativeTotals.map {
                     formatAmount(
@@ -113,6 +117,13 @@ private fun IncomeContent(
                         currencyCode = it.currency.isoCode,
                     )
                 },
+            warning =
+                state.currentValuation
+                    ?.excludedNativeTotals
+                    ?.takeIf { it.isNotEmpty() }
+                    ?.joinToString(separator = " · ") {
+                        formatAmount(it.amount, it.currency.isoCode)
+                    }?.let { stringResource(R.string.income_not_included, it) },
         )
         LazyColumn(
             modifier =

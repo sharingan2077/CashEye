@@ -90,6 +90,7 @@ class ExpensesViewModel(
                             amount = MoneyAmount(removed.amount, removed.currency),
                         ),
                     transactions = remaining,
+                    currentValuation = null,
                     isRefreshing = false,
                 )
             }
@@ -191,6 +192,7 @@ class ExpensesViewModel(
                 ExpensesUiState.Content(
                     nativeTotals = summary.nativeTotals,
                     transactions = summary.transactions,
+                    currentValuation = summary.currentValuation,
                     isRefreshing = isRefreshing,
                 )
             }

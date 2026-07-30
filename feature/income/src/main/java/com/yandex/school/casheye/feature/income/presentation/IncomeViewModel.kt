@@ -92,6 +92,7 @@ class IncomeViewModel(
                             amount = MoneyAmount(removed.amount, removed.currency),
                         ),
                     transactions = remaining,
+                    currentValuation = null,
                     isRefreshing = false,
                 )
             }
@@ -193,6 +194,7 @@ class IncomeViewModel(
                 IncomeUiState.Content(
                     nativeTotals = summary.nativeTotals,
                     transactions = summary.transactions,
+                    currentValuation = summary.currentValuation,
                     isRefreshing = isRefreshing,
                 )
             }

@@ -2,6 +2,7 @@
     <string name="empty_income">No hay ingresos para esta fecha</string>
     <string name="empty_income_description">Elige otra fecha en la barra superior para ver los ingresos.</string>
     <string name="income_total">ingresos, total</string>
+    <string name="income_not_included">No incluido: %1$s</string>
     <string name="retry">Reintentar</string>
     <string name="error_network">Comprueba tu conexión a Internet</string>
     <string name="error_authorization">Error de autorización</string>

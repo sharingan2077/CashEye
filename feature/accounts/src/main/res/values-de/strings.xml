@@ -7,6 +7,7 @@
     <string name="balance_valuation_partial">Berücksichtigt ≈ %1$s</string>
     <string name="balance_valuation_partial_dated">Berücksichtigt ≈ %1$s · Kurse vom %2$s</string>
     <string name="balance_not_included">Nicht berücksichtigt: %1$s</string>
+    <string name="balance_rate_date">Kurse vom %1$s</string>
     <string name="retry">Wiederholen</string>
     <string name="error_network">Internetverbindung prüfen</string>
     <string name="error_authorization">Anmeldung fehlgeschlagen</string>

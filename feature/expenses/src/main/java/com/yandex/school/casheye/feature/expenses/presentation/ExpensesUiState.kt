@@ -3,6 +3,7 @@ package com.yandex.school.casheye.feature.expenses.presentation
 import com.yandex.school.casheye.core.model.MoneyAmount
 import com.yandex.school.casheye.core.model.Transaction
 import com.yandex.school.casheye.core.model.DatePeriod
+import com.yandex.school.casheye.domain.finance.DailyCurrentValuation
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import java.time.LocalDate
 
@@ -19,6 +20,7 @@ sealed interface ExpensesUiState {
     data class Content(
         val nativeTotals: List<MoneyAmount>,
         val transactions: List<Transaction>,
+        val currentValuation: DailyCurrentValuation? = null,
         override val isRefreshing: Boolean = false,
     ) : ExpensesUiState
 

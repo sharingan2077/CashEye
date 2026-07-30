@@ -7,6 +7,7 @@
     <string name="balance_valuation_partial">Inclus ≈ %1$s</string>
     <string name="balance_valuation_partial_dated">Inclus ≈ %1$s · taux au %2$s</string>
     <string name="balance_not_included">Non inclus : %1$s</string>
+    <string name="balance_rate_date">Taux du %1$s</string>
     <string name="retry">Réessayer</string>
     <string name="error_network">Vérifiez votre connexion Internet</string>
     <string name="error_authorization">Échec de l’autorisation</string>

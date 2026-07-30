@@ -216,26 +216,7 @@ private fun AccountsHero(state: AccountsUiState.Content) {
         valuation
             ?.rateDate
             ?.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))
-    val valuationText =
-        included?.let {
-            when {
-                valuation.isComplete && date != null -> {
-                    stringResource(R.string.balance_valuation_dated, it, date)
-                }
-
-                valuation.isComplete -> {
-                    stringResource(R.string.balance_valuation, it)
-                }
-
-                date != null -> {
-                    stringResource(R.string.balance_valuation_partial_dated, it, date)
-                }
-
-                else -> {
-                    stringResource(R.string.balance_valuation_partial, it)
-                }
-            }
-        }
+    val rateDateText = date?.let { stringResource(R.string.balance_rate_date, it) }
     val excluded =
         valuation
             ?.excludedNativeTotals
@@ -246,11 +227,12 @@ private fun AccountsHero(state: AccountsUiState.Content) {
 
     NativeMoneySummary(
         title = stringResource(R.string.balance_total),
+        total = included,
         nativeTotals =
             state.nativeTotals.map {
                 formatAmount(it.amount, it.currency.isoCode)
             },
-        valuation = valuationText,
+        valuation = rateDateText,
         warning = excluded,
     )
 }

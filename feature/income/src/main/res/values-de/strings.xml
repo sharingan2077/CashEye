@@ -2,6 +2,7 @@
     <string name="empty_income">Keine Einnahmen für dieses Datum</string>
     <string name="empty_income_description">Wählen Sie oben ein anderes Datum, um Einnahmen zu sehen.</string>
     <string name="income_total">Einnahmen, gesamt</string>
+    <string name="income_not_included">Nicht enthalten: %1$s</string>
     <string name="retry">Wiederholen</string>
     <string name="error_network">Internetverbindung prüfen</string>
     <string name="error_authorization">Anmeldung fehlgeschlagen</string>

@@ -6,6 +6,7 @@ import com.yandex.school.casheye.core.model.CurrencyCode
 import com.yandex.school.casheye.core.model.MoneyAmount
 import com.yandex.school.casheye.core.model.Transaction
 import com.yandex.school.casheye.domain.finance.DeleteTransactionUseCase
+import com.yandex.school.casheye.domain.finance.DailyCurrentValuation
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import com.yandex.school.casheye.domain.finance.FinanceLoadResult
 import com.yandex.school.casheye.domain.finance.FinanceRefreshResult
@@ -63,6 +64,11 @@ class ExpensesViewModelTest {
                 FinanceSummary(
                     nativeTotals = listOf(MoneyAmount(BigDecimal("25.00"), CurrencyCode.RUB)),
                     transactions = listOf(transaction()),
+                    currentValuation =
+                        DailyCurrentValuation(
+                            includedTotal = MoneyAmount(BigDecimal("25.00"), CurrencyCode.RUB),
+                            excludedNativeTotals = emptyList(),
+                        ),
                 )
             val repository = FakeFinanceRepository(FinanceLoadResult.Success(summary))
             val viewModel = expensesViewModel(repository, clock)
@@ -70,7 +76,7 @@ class ExpensesViewModelTest {
             advanceUntilIdle()
 
             assertEquals(
-                ExpensesUiState.Content(summary.nativeTotals, summary.transactions),
+                ExpensesUiState.Content(summary.nativeTotals, summary.transactions, summary.currentValuation),
                 viewModel.state.value,
             )
         }

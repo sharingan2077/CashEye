@@ -102,6 +102,10 @@ private fun ExpensesContent(
     Column(modifier = modifier.fillMaxSize()) {
         NativeMoneySummary(
             title = stringResource(R.string.expenses_total),
+            total =
+                state.currentValuation
+                    ?.includedTotal
+                    ?.let { formatAmount(it.amount, it.currency.isoCode) },
             nativeTotals =
                 state.nativeTotals.map {
                     formatAmount(
@@ -109,6 +113,13 @@ private fun ExpensesContent(
                         currencyCode = it.currency.isoCode,
                     )
                 },
+            warning =
+                state.currentValuation
+                    ?.excludedNativeTotals
+                    ?.takeIf { it.isNotEmpty() }
+                    ?.joinToString(separator = " · ") {
+                        formatAmount(it.amount, it.currency.isoCode)
+                    }?.let { stringResource(R.string.expenses_not_included, it) },
         )
         LazyColumn(
             modifier =

@@ -113,7 +113,15 @@ object FinanceUseCaseBindings {
     fun provideGetDailySummaryUseCase(
         repository: FinanceQueryRepository,
         reportingCurrencyRepository: ReportingCurrencyRepository,
-    ): GetDailySummaryUseCase = GetDailySummaryUseCase(repository, reportingCurrencyRepository)
+        exchangeRateRepository: ExchangeRateRepository,
+        currencyConverter: CurrencyConverter,
+    ): GetDailySummaryUseCase =
+        GetDailySummaryUseCase(
+            repository = repository,
+            reportingCurrencyRepository = reportingCurrencyRepository,
+            exchangeRateRepository = exchangeRateRepository,
+            currencyConverter = currencyConverter,
+        )
 
     @Provides
     fun provideGetAccountsUseCase(
