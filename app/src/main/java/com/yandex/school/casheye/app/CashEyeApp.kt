@@ -52,14 +52,18 @@ internal fun CashEyeApp(
         }
 
     LaunchedEffect(settings?.themeMode) {
-        settings?.themeMode?.let { savedThemeModeName = it.name }
+        settings?.themeMode?.let { mode ->
+            savedThemeModeName = mode.name
+            AppCompatDelegate.setDefaultNightMode(mode.toNightMode())
+        }
     }
 
     LaunchedEffect(settings?.language) {
         settings?.language?.let { language ->
-            AppCompatDelegate.setApplicationLocales(
-                LocaleListCompat.forLanguageTags(language.languageTag.orEmpty()),
-            )
+            val locales = LocaleListCompat.forLanguageTags(language.languageTag.orEmpty())
+            if (AppCompatDelegate.getApplicationLocales() != locales) {
+                AppCompatDelegate.setApplicationLocales(locales)
+            }
         }
     }
 
@@ -115,6 +119,13 @@ private tailrec fun Context.findActivity(): Activity =
         is Activity -> this
         is ContextWrapper -> baseContext.findActivity()
         else -> error("CashEyeApp must be hosted in an Activity")
+    }
+
+private fun ThemeMode.toNightMode(): Int =
+    when (this) {
+        ThemeMode.SYSTEM -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+        ThemeMode.LIGHT -> AppCompatDelegate.MODE_NIGHT_NO
+        ThemeMode.DARK -> AppCompatDelegate.MODE_NIGHT_YES
     }
 
 /**
