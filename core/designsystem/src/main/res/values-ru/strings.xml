@@ -52,4 +52,5 @@
     <string name="date_period_quarter">За квартал</string>
     <string name="date_period_year">За год</string>
     <string name="date_period_custom">Произвольный период</string>
+    <string name="scroll_to_top">В начало списка</string>
 </resources>
