@@ -25,6 +25,7 @@
     <string name="type_income">Income</string>
     <string name="type_all">All</string>
     <string name="period_custom">Custom</string>
+    <string name="period_today">Today</string>
     <string name="period_week">Last week</string>
     <string name="period_month">Last month</string>
     <string name="period_quarter">Last quarter</string>

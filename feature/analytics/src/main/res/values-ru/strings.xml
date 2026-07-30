@@ -25,6 +25,7 @@
     <string name="type_income">Доходы</string>
     <string name="type_all">Всё</string>
     <string name="period_custom">Произвольный период</string>
+    <string name="period_today">Сегодня</string>
     <string name="period_week">За неделю</string>
     <string name="period_month">За месяц</string>
     <string name="period_quarter">За квартал</string>

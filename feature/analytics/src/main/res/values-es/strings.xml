@@ -25,6 +25,7 @@
     <string name="type_income">Ingresos</string>
     <string name="type_all">Todo</string>
     <string name="period_custom">Personalizado</string>
+    <string name="period_today">Hoy</string>
     <string name="period_week">Última semana</string>
     <string name="period_month">Último mes</string>
     <string name="period_quarter">Último trimestre</string>

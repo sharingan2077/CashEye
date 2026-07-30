@@ -2,6 +2,7 @@ package com.yandex.school.casheye.feature.expenses.presentation
 
 import com.yandex.school.casheye.core.model.MoneyAmount
 import com.yandex.school.casheye.core.model.Transaction
+import com.yandex.school.casheye.core.model.DatePeriod
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import java.time.LocalDate
 
@@ -35,6 +36,10 @@ sealed interface ExpensesIntent {
 
     data class SelectDate(
         val date: LocalDate,
+    ) : ExpensesIntent
+
+    data class SelectPeriod(
+        val period: DatePeriod,
     ) : ExpensesIntent
 
     data class DeleteTransaction(

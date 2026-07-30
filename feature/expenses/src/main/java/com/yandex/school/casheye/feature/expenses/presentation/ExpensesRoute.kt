@@ -11,15 +11,15 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yandex.school.casheye.core.designsystem.component.snackbar.DismissSnackbarOnDispose
 import com.yandex.school.casheye.core.designsystem.component.snackbar.showRetrySnackbar
 import com.yandex.school.casheye.core.designsystem.component.snackbar.showSuccessSnackbar
+import com.yandex.school.casheye.core.model.DatePeriod
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import com.yandex.school.casheye.feature.expenses.R
 import dev.zacsweers.metrox.viewmodel.metroViewModel
 import kotlinx.coroutines.flow.collectLatest
-import java.time.LocalDate
 
 @Composable
 fun ExpensesRoute(
-    selectedDate: LocalDate,
+    selectedPeriod: DatePeriod,
     snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
     onTransactionClick: (Int) -> Unit = {},
@@ -36,8 +36,8 @@ fun ExpensesRoute(
 
     DismissSnackbarOnDispose(snackbarHostState)
 
-    LaunchedEffect(selectedDate, viewModel) {
-        viewModel.onIntent(ExpensesIntent.SelectDate(selectedDate))
+    LaunchedEffect(selectedPeriod, viewModel) {
+        viewModel.onIntent(ExpensesIntent.SelectPeriod(selectedPeriod))
     }
 
     LaunchedEffect(networkRecoveryRefreshId, viewModel) {

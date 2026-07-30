@@ -185,6 +185,7 @@ class AnalyticsViewModel(
         val currentDate = today
         val startDate =
             when (preset) {
+                AnalyticsPeriodPreset.Today -> currentDate
                 AnalyticsPeriodPreset.Week -> {
                     currentDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
                 }

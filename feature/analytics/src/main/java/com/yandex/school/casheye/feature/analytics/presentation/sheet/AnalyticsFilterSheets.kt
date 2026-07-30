@@ -363,6 +363,7 @@ private fun AnalyticsType.title(): String =
 private fun AnalyticsPeriodPreset.title(): String =
     stringResource(
         when (this) {
+            AnalyticsPeriodPreset.Today -> R.string.period_today
             AnalyticsPeriodPreset.Custom -> R.string.period_custom
             AnalyticsPeriodPreset.Week -> R.string.period_week
             AnalyticsPeriodPreset.Month -> R.string.period_month

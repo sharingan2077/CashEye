@@ -80,12 +80,13 @@ class AnalyticsViewModelTest {
     @Test
     fun `calendar presets start on current calendar boundaries`() =
         runTest {
-            val repository = QueueAnalyticsRepository(success(), success(), success(), success(), success())
+            val repository = QueueAnalyticsRepository(success(), success(), success(), success(), success(), success())
             val viewModel = AnalyticsViewModel(GetAnalyticsUseCase(repository), clock)
             viewModel.onIntent(AnalyticsIntent.Initialize(AnalyticsEntryPoint.Expenses))
             advanceUntilIdle()
 
             listOf(
+                AnalyticsPeriodPreset.Today,
                 AnalyticsPeriodPreset.Week,
                 AnalyticsPeriodPreset.Month,
                 AnalyticsPeriodPreset.Quarter,
@@ -97,6 +98,7 @@ class AnalyticsViewModelTest {
 
             assertEquals(
                 listOf(
+                    LocalDate.of(2026, 7, 18),
                     LocalDate.of(2026, 7, 13),
                     LocalDate.of(2026, 7, 1),
                     LocalDate.of(2026, 7, 1),

@@ -21,6 +21,7 @@ enum class AnalyticsType {
 }
 
 enum class AnalyticsPeriodPreset {
+    Today,
     Custom,
     Week,
     Month,

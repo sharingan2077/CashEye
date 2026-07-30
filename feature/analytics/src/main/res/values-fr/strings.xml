@@ -25,6 +25,7 @@
     <string name="type_income">Revenus</string>
     <string name="type_all">Tout</string>
     <string name="period_custom">Personnalisée</string>
+    <string name="period_today">Aujourd’hui</string>
     <string name="period_week">Dernière semaine</string>
     <string name="period_month">Dernier mois</string>
     <string name="period_quarter">Dernier trimestre</string>
