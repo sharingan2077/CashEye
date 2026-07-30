@@ -42,9 +42,11 @@ class AddExpenseViewModelTest {
     private val dispatcher = StandardTestDispatcher()
     private val clock = Clock.fixed(Instant.parse("2026-07-22T10:30:00Z"), ZoneOffset.UTC)
 
-    @Before fun setUp() = Dispatchers.setMain(dispatcher)
+    @Before
+    fun setUp() = Dispatchers.setMain(dispatcher)
 
-    @After fun tearDown() = Dispatchers.resetMain()
+    @After
+    fun tearDown() = Dispatchers.resetMain()
 
     @Test
     fun `expense that would make balance negative is not saved`() =

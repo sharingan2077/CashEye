@@ -108,14 +108,18 @@ Project uses multi-module Clean Architecture with MVVM + MVI-style presentation.
 
 ### Module structure
 
-- `:app` — application entry point, DI composition, root navigation. Must not contain feature UI, domain logic, DTOs, repositories, or shared UI components.
+- `:app` — application entry point, DI composition, root navigation. Must not contain feature UI,
+  domain logic, DTOs, repositories, or shared UI components.
 - `:core:*` — reusable code without feature business logic:
     - `:core:model` — shared domain models used by multiple features;
     - `:core:ui` / `:core:designsystem` — reusable Compose components, theme, formatting;
     - `:core:common` — shared utilities only when genuinely cross-feature.
-- `:feature:<name>` — UI/presentation of one feature: Route, Screen, ViewModel, `UiState`, `Intent`, `Effect`, feature navigation contract.
-- `:domain:<name>` — feature business contracts: use cases, repository interfaces, feature-specific domain models.
-- `:data:<name>` — implementations of `:domain:<name>` contracts, API/DB DTOs, mappers, data sources.
+- `:feature:<name>` — UI/presentation of one feature: Route, Screen, ViewModel, `UiState`, `Intent`,
+  `Effect`, feature navigation contract.
+- `:domain:<name>` — feature business contracts: use cases, repository interfaces, feature-specific
+  domain models.
+- `:data:<name>` — implementations of `:domain:<name>` contracts, API/DB DTOs, mappers, data
+  sources.
 
 ### Dependency rules
 
@@ -127,10 +131,12 @@ Dependencies must point inward:
 `domain:<name> -> core:model` only when model is truly shared.
 
 - A feature must never depend on another feature implementation.
-- Cross-feature interaction uses a small public contract module or a navigation contract, never another feature's internal classes.
+- Cross-feature interaction uses a small public contract module or a navigation contract, never
+  another feature's internal classes.
 - `domain` must not depend on Android, Compose, Retrofit, Room, DTOs, or DI frameworks.
 - `data` must not depend on `feature` or `app`.
-- Feature-specific models must stay in that feature's `domain` module; move a model to `core:model` only after at least two features need it.
+- Feature-specific models must stay in that feature's `domain` module; move a model to `core:model`
+  only after at least two features need it.
 - `app` composes implementations and DI bindings; it does not own feature code.
 
 ### Presentation pattern
@@ -139,11 +145,12 @@ Each screen follows MVVM + MVI-style unidirectional state flow:
 
 - `ViewModel` exposes immutable `StateFlow<...UiState>`.
 - UI sends user actions only through `onIntent(intent)`.
-- One-time events use `SharedFlow<...Effect>`; do not encode navigation, snackbars, or other transient events as persistent state.
-- Composables render state and delegate actions. They must not call repositories or use cases directly.
+- One-time events use `SharedFlow<...Effect>`; do not encode navigation, snackbars, or other
+  transient events as persistent state.
+- Composables render state and delegate actions. They must not call repositories or use cases
+  directly.
 - `ViewModel` depends on domain use cases or repository interfaces, never on data implementations.
 - Keep UI text/resources outside domain and data layers.
-
 
 # Repository Instructions
 
@@ -218,7 +225,8 @@ ast-index watch
 ## Mandatory Read Rules
 
 1. **ALWAYS run `ast-index outline <file>` BEFORE `Read`** for any file longer than 500 lines.
-2. Use the outline to identify the specific symbol or range you need, then `Read` only that slice with `offset` / `limit`.
+2. Use the outline to identify the specific symbol or range you need, then `Read` only that slice
+   with `offset` / `limit`.
 3. This rule is mandatory — do not bulk-read large files without an outline first.
 
 ## Rules For Subagents
@@ -262,7 +270,9 @@ slice via offset/limit. Never bulk-read large files.
 
 ### Compose function parameters
 
-- In every emitting `@Composable`, declare `modifier: Modifier = Modifier` as the first optional parameter, immediately after all required parameters. Do not place required or optional parameters after `modifier`; this is enforced by the Compose ktlint rule.
+- In every emitting `@Composable`, declare `modifier: Modifier = Modifier` as the first optional
+  parameter, immediately after all required parameters. Do not place required or optional parameters
+  after `modifier`; this is enforced by the Compose ktlint rule.
 
 - Prefer type-safe Kotlin duration APIs:
     - `delay(300.milliseconds)`, not `delay(300L)`.

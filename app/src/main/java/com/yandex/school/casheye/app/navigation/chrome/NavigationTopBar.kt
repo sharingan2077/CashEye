@@ -126,7 +126,10 @@ private fun NavigationTopBarTitle(
 
 private fun DatePeriod.formatted(locale: java.util.Locale): String =
     when {
-        startDate == endDate -> startDate.format(DateTimeFormatter.ofPattern("d MMMM", locale))
+        startDate == endDate -> {
+            startDate.format(DateTimeFormatter.ofPattern("d MMMM", locale))
+        }
+
         startDate.year == endDate.year -> {
             val formatter = DateTimeFormatter.ofPattern("d MMMM", locale)
             "${startDate.format(formatter)} – ${endDate.format(formatter)}"

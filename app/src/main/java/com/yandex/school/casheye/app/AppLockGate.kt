@@ -77,7 +77,9 @@ internal fun AppLockGate(
                         biometricRequested = false
                     }
 
-                    else -> Unit
+                    else -> {
+                        Unit
+                    }
                 }
             }
         lifecycle.addObserver(observer)

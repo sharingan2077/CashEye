@@ -24,7 +24,6 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.yandex.school.casheye.core.designsystem.component.editor.rememberSheetListGestureCoordinator
 import com.yandex.school.casheye.feature.analytics.presentation.AnalyticsPeriod
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle

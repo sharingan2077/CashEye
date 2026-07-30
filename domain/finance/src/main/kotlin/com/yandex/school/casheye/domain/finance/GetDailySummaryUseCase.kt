@@ -118,7 +118,9 @@ class GetDailySummaryUseCase(
                     hasIncludedAmount = true
                 }
 
-                is CurrencyConversionResult.Incomplete -> excluded += originalAmount
+                is CurrencyConversionResult.Incomplete -> {
+                    excluded += originalAmount
+                }
             }
         }
 
@@ -133,7 +135,9 @@ class GetDailySummaryUseCase(
             ExchangeRateRefreshResult.Fresh,
             ExchangeRateRefreshResult.Updated,
             is ExchangeRateRefreshResult.Incomplete,
-            -> FinanceRefreshResult.Success
+            -> {
+                FinanceRefreshResult.Success
+            }
 
             is ExchangeRateRefreshResult.TemporaryFailure -> {
                 if (cachedDataAvailable) {

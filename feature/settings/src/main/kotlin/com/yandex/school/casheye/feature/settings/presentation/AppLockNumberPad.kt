@@ -3,7 +3,6 @@ package com.yandex.school.casheye.feature.settings.presentation
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -147,7 +146,7 @@ private fun PinActionKey(
     testTag: String,
     onClick: () -> Unit,
     enabled: Boolean,
-    modifier: Modifier,
+    modifier: Modifier = Modifier,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
 

@@ -45,9 +45,7 @@ internal fun CashEyeApp(
     val darkTheme =
         when (themeMode) {
             ThemeMode.LIGHT -> false
-
             ThemeMode.DARK -> true
-
             ThemeMode.SYSTEM -> isSystemInDarkTheme()
         }
 

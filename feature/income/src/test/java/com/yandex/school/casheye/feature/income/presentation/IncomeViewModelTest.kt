@@ -5,8 +5,8 @@ import com.yandex.school.casheye.core.model.Category
 import com.yandex.school.casheye.core.model.CurrencyCode
 import com.yandex.school.casheye.core.model.MoneyAmount
 import com.yandex.school.casheye.core.model.Transaction
-import com.yandex.school.casheye.domain.finance.DeleteTransactionUseCase
 import com.yandex.school.casheye.domain.finance.DailyCurrentValuation
+import com.yandex.school.casheye.domain.finance.DeleteTransactionUseCase
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import com.yandex.school.casheye.domain.finance.FinanceLoadResult
 import com.yandex.school.casheye.domain.finance.FinanceRefreshResult

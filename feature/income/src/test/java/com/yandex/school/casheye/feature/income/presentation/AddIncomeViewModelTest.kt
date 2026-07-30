@@ -36,9 +36,11 @@ class AddIncomeViewModelTest {
     private val dispatcher = StandardTestDispatcher()
     private val clock = Clock.fixed(Instant.parse("2026-07-22T10:00:00Z"), ZoneOffset.UTC)
 
-    @Before fun setUp() = Dispatchers.setMain(dispatcher)
+    @Before
+    fun setUp() = Dispatchers.setMain(dispatcher)
 
-    @After fun tearDown() = Dispatchers.resetMain()
+    @After
+    fun tearDown() = Dispatchers.resetMain()
 
     @Test
     fun `new income loads income categories and saves transaction`() =

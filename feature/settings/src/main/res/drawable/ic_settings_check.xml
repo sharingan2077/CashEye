@@ -3,10 +3,10 @@
     android:height="20dp"
     android:viewportWidth="20"
     android:viewportHeight="20">
-  <path
-      android:pathData="M16.668,5L7.502,14.166L3.336,10"
-      android:strokeWidth="2"
-      android:fillColor="#00000000"
-      android:strokeColor="#6750A4"
-      android:strokeLineCap="round"/>
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M16.668,5L7.502,14.166L3.336,10"
+        android:strokeWidth="2"
+        android:strokeColor="#6750A4"
+        android:strokeLineCap="round" />
 </vector>

@@ -27,6 +27,7 @@ sealed interface AppLockIntent {
     ) : AppLockIntent
 
     data object SuccessAnimationFinished : AppLockIntent
+
     data object ErrorAnimationFinished : AppLockIntent
 }
 
@@ -45,18 +46,23 @@ class AppLockViewModel(
         }
     }
 
-    private fun verify(pin: CharArray, verifier: PinVerifier) {
+    private fun verify(
+        pin: CharArray,
+        verifier: PinVerifier,
+    ) {
         if (_state.value.verification == AppLockVerificationState.Verifying) return
         viewModelScope.launch {
             _state.value = AppLockUiState(AppLockVerificationState.Verifying)
-            val isCorrect = try {
-                verifyPin(pin, verifier)
-            } finally {
-                pin.fill('\u0000')
-            }
-            _state.value = AppLockUiState(
-                if (isCorrect) AppLockVerificationState.Success else AppLockVerificationState.Error,
-            )
+            val isCorrect =
+                try {
+                    verifyPin(pin, verifier)
+                } finally {
+                    pin.fill('\u0000')
+                }
+            _state.value =
+                AppLockUiState(
+                    if (isCorrect) AppLockVerificationState.Success else AppLockVerificationState.Error,
+                )
         }
     }
 }

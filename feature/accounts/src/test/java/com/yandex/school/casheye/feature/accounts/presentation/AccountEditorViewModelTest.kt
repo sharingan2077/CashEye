@@ -30,9 +30,11 @@ import java.math.BigDecimal
 class AccountEditorViewModelTest {
     private val dispatcher = StandardTestDispatcher()
 
-    @Before fun setUp() = Dispatchers.setMain(dispatcher)
+    @Before
+    fun setUp() = Dispatchers.setMain(dispatcher)
 
-    @After fun tearDown() = Dispatchers.resetMain()
+    @After
+    fun tearDown() = Dispatchers.resetMain()
 
     @Test
     fun `editing loads account and saves full update command`() =
