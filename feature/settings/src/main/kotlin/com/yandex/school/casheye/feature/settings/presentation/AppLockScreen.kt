@@ -2,6 +2,8 @@ package com.yandex.school.casheye.feature.settings.presentation
 
 import android.content.res.Configuration
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationVector1D
+import androidx.compose.animation.core.AnimationVector4D
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -23,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -88,74 +91,33 @@ fun AppLockScreen(
     val cellCenterDistancePx = with(density) { PIN_CELL_CENTER_DISTANCE.toPx() }
     val isPinInputEnabled = pendingPin == null && appLockState.verification != AppLockVerificationState.Verifying
 
-    LaunchedEffect(pin.length) {
-        val enteredIndex = pin.lastIndex
-        if (pin.length > previousPinLength && enteredIndex >= 0) {
-            cellColors[enteredIndex].animateTo(
-                enteredPinIndicatorColor,
-                tween(
-                    durationMillis = PIN_ENTRY_WIDE_DURATION.inWholeMilliseconds.toInt(),
-                    easing = FastOutSlowInEasing,
-                ),
-            )
-        } else if (pin.length < previousPinLength) {
-            coroutineScope {
-                (pin.length until previousPinLength).forEach { index ->
-                    launch {
-                        cellColors[index].animateTo(
-                            defaultPinIndicatorColor,
-                            tween(PIN_ENTRY_COLOR_RESET_DURATION.inWholeMilliseconds.toInt()),
-                        )
-                    }
-                }
-            }
-        }
-        previousPinLength = pin.length
-    }
-
-    LaunchedEffect(pendingPin) {
-        val submittedPin = pendingPin ?: return@LaunchedEffect
-        resultProgress.snapTo(0f)
-        pinAnimationState = PinAnimationState.Verifying
-        delay(PIN_LAST_ENTRY_SETTLE_DURATION)
-        viewModel.onIntent(AppLockIntent.SubmitPin(submittedPin.toCharArray(), verifier))
-    }
-
-    LaunchedEffect(appLockState.verification) {
-        when (appLockState.verification) {
-            AppLockVerificationState.Success -> {
-                pinAnimationState = PinAnimationState.Success
-                delay(PIN_SUCCESS_COLOR_DURATION)
-                resultProgress.animateTo(
-                    1f,
-                    tween(PIN_SUCCESS_COLLAPSE_DURATION.inWholeMilliseconds.toInt()),
-                )
-                viewModel.onIntent(AppLockIntent.SuccessAnimationFinished)
-                onPinVerified()
-            }
-
-            AppLockVerificationState.Error -> {
-                pinAnimationState = PinAnimationState.Error
-                resultProgress.animateTo(
-                    1f,
-                    tween(PIN_ERROR_EXPAND_DURATION.inWholeMilliseconds.toInt()),
-                )
-                resultProgress.animateTo(
-                    0f,
-                    tween(PIN_ERROR_SHRINK_DURATION.inWholeMilliseconds.toInt()),
-                )
-                pinAnimationState = PinAnimationState.Idle
-                delay(PIN_ERROR_COLOR_RESET_DURATION)
-                pin = ""
-                pendingPin = null
-                viewModel.onIntent(AppLockIntent.ErrorAnimationFinished)
-            }
-
-            AppLockVerificationState.Idle, AppLockVerificationState.Verifying -> {
-                return@LaunchedEffect
-            }
-        }
-    }
+    PinEntryColorEffect(
+        pin = pin,
+        previousPinLength = previousPinLength,
+        cellColors = cellColors,
+        enteredColor = enteredPinIndicatorColor,
+        defaultColor = defaultPinIndicatorColor,
+        onPreviousPinLengthChange = { previousPinLength = it },
+    )
+    SubmitPendingPinEffect(
+        pendingPin = pendingPin,
+        resultProgress = resultProgress,
+        onAnimationStateChange = { pinAnimationState = it },
+        onSubmitPin = { submittedPin ->
+            viewModel.onIntent(AppLockIntent.SubmitPin(submittedPin.toCharArray(), verifier))
+        },
+    )
+    HandlePinVerificationResultEffect(
+        verification = appLockState.verification,
+        resultProgress = resultProgress,
+        onAnimationStateChange = { pinAnimationState = it },
+        onResetPin = {
+            pin = ""
+            pendingPin = null
+        },
+        onAnimationFinished = viewModel::onIntent,
+        onPinVerified = onPinVerified,
+    )
 
     Box(
         modifier =
@@ -199,89 +161,16 @@ fun AppLockScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(Modifier.weight(0.18f))
-            PinCodeInput(
-                value = pin,
-                inputTestTag = "app_lock_pin_input",
-                onValueChange = {},
-                onPinComplete = {},
-                cellTestTagPrefix = "app_lock_pin_cell",
+            AppLockPinIndicators(
+                pin = pin,
                 enabled = isPinInputEnabled,
-                indicatorColor =
-                    when (pinAnimationState) {
-                        PinAnimationState.Idle, PinAnimationState.Verifying -> {
-                            defaultPinIndicatorColor
-                        }
-
-                        PinAnimationState.Success -> {
-                            successPinIndicatorColor
-                        }
-
-                        PinAnimationState.Error -> {
-                            errorPinIndicatorColor
-                        }
-                    },
-                indicatorColorForCell = { index ->
-                    when (pinAnimationState) {
-                        PinAnimationState.Success -> {
-                            successPinIndicatorColor
-                        }
-
-                        PinAnimationState.Error -> {
-                            errorPinIndicatorColor
-                        }
-
-                        else -> {
-                            cellColors[index].value
-                        }
-                    }
-                },
-                fillEmptyCells = true,
-                cellScaleX = { _ ->
-                    val resultScale =
-                        when (pinAnimationState) {
-                            PinAnimationState.Success -> {
-                                1f - resultProgress.value
-                            }
-
-                            PinAnimationState.Error -> {
-                                1f + PIN_ERROR_PULSE_SCALE * resultProgress.value
-                            }
-
-                            else -> {
-                                1f
-                            }
-                        }
-
-                    resultScale
-                },
-                cellScaleY = { _ ->
-                    val resultScale =
-                        when (pinAnimationState) {
-                            PinAnimationState.Success -> {
-                                1f - resultProgress.value
-                            }
-
-                            PinAnimationState.Error -> {
-                                1f + PIN_ERROR_PULSE_SCALE * resultProgress.value
-                            }
-
-                            else -> {
-                                1f
-                            }
-                        }
-
-                    resultScale
-                },
-                cellTranslationX = { index ->
-                    if (pinAnimationState == PinAnimationState.Success) {
-                        (PIN_DIGIT_COUNT / 2f - 0.5f - index) *
-                            cellCenterDistancePx * resultProgress.value
-                    } else {
-                        0f
-                    }
-                },
-                animateIndicatorColor = false,
-                useSystemInput = false,
+                animationState = pinAnimationState,
+                cellColors = cellColors,
+                defaultColor = defaultPinIndicatorColor,
+                successColor = successPinIndicatorColor,
+                errorColor = errorPinIndicatorColor,
+                resultProgress = resultProgress,
+                cellCenterDistancePx = cellCenterDistancePx,
             )
             Spacer(Modifier.weight(0.55f))
             AppLockNumberPad(
@@ -299,6 +188,157 @@ fun AppLockScreen(
             )
         }
     }
+}
+
+@Composable
+private fun PinEntryColorEffect(
+    pin: String,
+    previousPinLength: Int,
+    cellColors: List<ColorAnimatable<Color, AnimationVector4D>>,
+    enteredColor: Color,
+    defaultColor: Color,
+    onPreviousPinLengthChange: (Int) -> Unit,
+) {
+    LaunchedEffect(pin.length) {
+        val enteredIndex = pin.lastIndex
+        if (pin.length > previousPinLength && enteredIndex >= 0) {
+            cellColors[enteredIndex].animateTo(
+                enteredColor,
+                tween(
+                    durationMillis = PIN_ENTRY_WIDE_DURATION.inWholeMilliseconds.toInt(),
+                    easing = FastOutSlowInEasing,
+                ),
+            )
+        } else if (pin.length < previousPinLength) {
+            coroutineScope {
+                (pin.length until previousPinLength).forEach { index ->
+                    launch {
+                        cellColors[index].animateTo(
+                            defaultColor,
+                            tween(PIN_ENTRY_COLOR_RESET_DURATION.inWholeMilliseconds.toInt()),
+                        )
+                    }
+                }
+            }
+        }
+        onPreviousPinLengthChange(pin.length)
+    }
+}
+
+@Composable
+private fun SubmitPendingPinEffect(
+    pendingPin: String?,
+    resultProgress: Animatable<Float, AnimationVector1D>,
+    onAnimationStateChange: (PinAnimationState) -> Unit,
+    onSubmitPin: (String) -> Unit,
+) {
+    LaunchedEffect(pendingPin) {
+        val submittedPin = pendingPin ?: return@LaunchedEffect
+        resultProgress.snapTo(0f)
+        onAnimationStateChange(PinAnimationState.Verifying)
+        delay(PIN_LAST_ENTRY_SETTLE_DURATION)
+        onSubmitPin(submittedPin)
+    }
+}
+
+@Composable
+private fun HandlePinVerificationResultEffect(
+    verification: AppLockVerificationState,
+    resultProgress: Animatable<Float, AnimationVector1D>,
+    onAnimationStateChange: (PinAnimationState) -> Unit,
+    onResetPin: () -> Unit,
+    onAnimationFinished: (AppLockIntent) -> Unit,
+    onPinVerified: () -> Unit,
+) {
+    LaunchedEffect(verification) {
+        when (verification) {
+            AppLockVerificationState.Success -> {
+                onAnimationStateChange(PinAnimationState.Success)
+                delay(PIN_SUCCESS_COLOR_DURATION)
+                resultProgress.animateTo(
+                    1f,
+                    tween(PIN_SUCCESS_COLLAPSE_DURATION.inWholeMilliseconds.toInt()),
+                )
+                onAnimationFinished(AppLockIntent.SuccessAnimationFinished)
+                onPinVerified()
+            }
+
+            AppLockVerificationState.Error -> {
+                onAnimationStateChange(PinAnimationState.Error)
+                resultProgress.animateTo(
+                    1f,
+                    tween(PIN_ERROR_EXPAND_DURATION.inWholeMilliseconds.toInt()),
+                )
+                resultProgress.animateTo(
+                    0f,
+                    tween(PIN_ERROR_SHRINK_DURATION.inWholeMilliseconds.toInt()),
+                )
+                onAnimationStateChange(PinAnimationState.Idle)
+                delay(PIN_ERROR_COLOR_RESET_DURATION)
+                onResetPin()
+                onAnimationFinished(AppLockIntent.ErrorAnimationFinished)
+            }
+
+            AppLockVerificationState.Idle, AppLockVerificationState.Verifying -> Unit
+        }
+    }
+}
+
+@Composable
+private fun AppLockPinIndicators(
+    pin: String,
+    enabled: Boolean,
+    animationState: PinAnimationState,
+    cellColors: List<ColorAnimatable<Color, AnimationVector4D>>,
+    defaultColor: Color,
+    successColor: Color,
+    errorColor: Color,
+    resultProgress: Animatable<Float, AnimationVector1D>,
+    cellCenterDistancePx: Float,
+    modifier: Modifier = Modifier,
+) {
+    val indicatorColor =
+        when (animationState) {
+            PinAnimationState.Idle, PinAnimationState.Verifying -> defaultColor
+            PinAnimationState.Success -> successColor
+            PinAnimationState.Error -> errorColor
+        }
+    val resultScale =
+        when (animationState) {
+            PinAnimationState.Success -> 1f - resultProgress.value
+            PinAnimationState.Error -> 1f + PIN_ERROR_PULSE_SCALE * resultProgress.value
+            else -> 1f
+        }
+
+    PinCodeInput(
+        value = pin,
+        inputTestTag = "app_lock_pin_input",
+        cellTestTagPrefix = "app_lock_pin_cell",
+        onValueChange = {},
+        onPinComplete = {},
+        modifier = modifier,
+        enabled = enabled,
+        indicatorColor = indicatorColor,
+        indicatorColorForCell = { index ->
+            when (animationState) {
+                PinAnimationState.Success -> successColor
+                PinAnimationState.Error -> errorColor
+                else -> cellColors[index].value
+            }
+        },
+        fillEmptyCells = true,
+        cellScaleX = { resultScale },
+        cellScaleY = { resultScale },
+        cellTranslationX = { index ->
+            if (animationState == PinAnimationState.Success) {
+                (PIN_DIGIT_COUNT / 2f - 0.5f - index) * cellCenterDistancePx * resultProgress.value
+            } else {
+                0f
+            }
+        },
+        animateIndicatorColor = false,
+        useSystemInput = false,
+    )
 }
 
 @Composable
