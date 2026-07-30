@@ -8,12 +8,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -36,6 +36,7 @@ import com.yandex.school.casheye.core.designsystem.component.DelayedCircularProg
 import com.yandex.school.casheye.core.designsystem.component.ErrorState
 import com.yandex.school.casheye.core.designsystem.component.ErrorStateType
 import com.yandex.school.casheye.core.designsystem.component.PullToRefreshContainer
+import com.yandex.school.casheye.core.designsystem.component.ScrollToTopButton
 import com.yandex.school.casheye.core.designsystem.component.SwipeToRevealDeleteItem
 import com.yandex.school.casheye.core.designsystem.component.money.MoneyListItem
 import com.yandex.school.casheye.core.designsystem.component.money.NativeMoneySummary
@@ -129,18 +130,15 @@ private fun AccountsContent(
     modifier: Modifier = Modifier,
 ) {
     var revealedAccountId by remember { mutableStateOf<Int?>(null) }
+    val listState = rememberLazyListState()
 
-    Column(modifier = modifier.fillMaxSize()) {
-        AccountsHero(
-            state = state,
-        )
+    Box(modifier = modifier.fillMaxSize()) {
         LazyColumn(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-            contentPadding = PaddingValues(bottom = 60.dp),
+            modifier = Modifier.fillMaxSize(),
+            state = listState,
+            contentPadding = PaddingValues(bottom = 72.dp),
         ) {
+            item { AccountsHero(state = state) }
             items(
                 items = state.accounts,
                 key = Account::id,
@@ -172,6 +170,13 @@ private fun AccountsContent(
                 }
             }
         }
+        ScrollToTopButton(
+            listState = listState,
+            modifier =
+                Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(start = 16.dp, bottom = 16.dp),
+        )
     }
 }
 

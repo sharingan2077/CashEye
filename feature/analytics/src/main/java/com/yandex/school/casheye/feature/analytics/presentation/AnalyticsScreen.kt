@@ -8,6 +8,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -45,6 +47,7 @@ import com.yandex.school.casheye.core.designsystem.component.IconCircle
 import com.yandex.school.casheye.core.designsystem.component.ListItem
 import com.yandex.school.casheye.core.designsystem.component.ListItemDefaults
 import com.yandex.school.casheye.core.designsystem.component.PullToRefreshContainer
+import com.yandex.school.casheye.core.designsystem.component.ScrollToTopButton
 import com.yandex.school.casheye.core.format.formatAmount
 import com.yandex.school.casheye.core.model.Category
 import com.yandex.school.casheye.domain.finance.AnalyticsTransaction
@@ -110,6 +113,7 @@ private fun AnalyticsContent(
     state: AnalyticsUiState.Content,
     onIntent: (AnalyticsIntent) -> Unit,
 ) {
+    val listState = rememberLazyListState()
     val chartModelProducer = remember { PieChartModelProducer() }
     var animateChartIn by remember { mutableStateOf(true) }
     val chartPalette = analyticsChartPalette()
@@ -138,91 +142,104 @@ private fun AnalyticsContent(
         }
     }
 
-    LazyColumn(modifier = Modifier.fillMaxSize()) {
-        if (state.transactions.isNotEmpty()) {
-            item {
-                AnalyticsPieChart(
-                    total =
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            state = listState,
+            contentPadding = PaddingValues(bottom = 72.dp),
+        ) {
+            if (state.transactions.isNotEmpty()) {
+                item {
+                    AnalyticsPieChart(
+                        total =
+                            formatAnalyticsDisplayAmount(
+                                amount = state.total,
+                                amountType = AnalyticsType.All,
+                                selectedType = state.data.filters.type,
+                                currencyCode = state.currencyCode,
+                            ),
+                        items = chartItems,
+                        modelProducer = chartModelProducer,
+                        animateIn = animateChartIn,
+                        onChartDispose = { animateChartIn = false },
+                        modifier =
+                            Modifier.clickable(
+                                role = Role.Button,
+                                onClick = { onIntent(AnalyticsIntent.OpenDetails) },
+                            ),
+                    )
+                }
+            }
+            item { FilterView(data = state.data, onIntent = onIntent) }
+            if (state.unconvertedTransactions.isNotEmpty()) {
+                item {
+                    MissingRatesNotice(
+                        transactions = state.unconvertedTransactions,
+                        onRetry = { onIntent(AnalyticsIntent.Retry) },
+                    )
+                }
+            }
+            item { TransactionsHeading() }
+            itemsIndexed(
+                items = state.transactions,
+                key = { _, transaction -> transaction.id },
+            ) { index: Int, transaction: AnalyticsTransaction ->
+                TransactionItem(
+                    emoji = transaction.category.emoji,
+                    title = transaction.category.name,
+                    comment = transaction.transaction.comment,
+                    amount =
                         formatAnalyticsDisplayAmount(
-                            amount = state.total,
-                            amountType = AnalyticsType.All,
+                            amount = transaction.reportingAmount.amount,
+                            amountType =
+                                if (transaction.category.isIncome) {
+                                    AnalyticsType.Income
+                                } else {
+                                    AnalyticsType.Expenses
+                                },
                             selectedType = state.data.filters.type,
                             currencyCode = state.currencyCode,
                         ),
-                    items = chartItems,
-                    modelProducer = chartModelProducer,
-                    animateIn = animateChartIn,
-                    onChartDispose = { animateChartIn = false },
-                    modifier =
-                        Modifier.clickable(
-                            role = Role.Button,
-                            onClick = { onIntent(AnalyticsIntent.OpenDetails) },
+                    amountSubtitle = transaction.originalAmountSubtitle(state.data.filters.type),
+                )
+                if (index != state.transactions.lastIndex || state.unconvertedTransactions.isNotEmpty()) {
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                }
+            }
+            itemsIndexed(
+                items = state.unconvertedTransactions,
+                key = { _, transaction -> "missing-${transaction.id}" },
+            ) { index, transaction ->
+                TransactionItem(
+                    emoji = transaction.transaction.category.emoji,
+                    title = transaction.transaction.category.name,
+                    comment = transaction.transaction.comment,
+                    amount =
+                        formatAnalyticsDisplayAmount(
+                            amount = transaction.originalAmount.amount,
+                            amountType =
+                                if (transaction.transaction.category.isIncome) {
+                                    AnalyticsType.Income
+                                } else {
+                                    AnalyticsType.Expenses
+                                },
+                            selectedType = state.data.filters.type,
+                            currencyCode = transaction.originalAmount.currency.isoCode,
                         ),
+                    amountSubtitle = stringResource(R.string.not_included_missing_rate),
                 )
+                if (index != state.unconvertedTransactions.lastIndex) {
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                }
             }
         }
-        item { FilterView(data = state.data, onIntent = onIntent) }
-        if (state.unconvertedTransactions.isNotEmpty()) {
-            item {
-                MissingRatesNotice(
-                    transactions = state.unconvertedTransactions,
-                    onRetry = { onIntent(AnalyticsIntent.Retry) },
-                )
-            }
-        }
-        item { TransactionsHeading() }
-        itemsIndexed(
-            items = state.transactions,
-            key = { _, transaction -> transaction.id },
-        ) { index: Int, transaction: AnalyticsTransaction ->
-            TransactionItem(
-                emoji = transaction.category.emoji,
-                title = transaction.category.name,
-                comment = transaction.transaction.comment,
-                amount =
-                    formatAnalyticsDisplayAmount(
-                        amount = transaction.reportingAmount.amount,
-                        amountType =
-                            if (transaction.category.isIncome) {
-                                AnalyticsType.Income
-                            } else {
-                                AnalyticsType.Expenses
-                            },
-                        selectedType = state.data.filters.type,
-                        currencyCode = state.currencyCode,
-                    ),
-                amountSubtitle = transaction.originalAmountSubtitle(state.data.filters.type),
-            )
-            if (index != state.transactions.lastIndex || state.unconvertedTransactions.isNotEmpty()) {
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-            }
-        }
-        itemsIndexed(
-            items = state.unconvertedTransactions,
-            key = { _, transaction -> "missing-${transaction.id}" },
-        ) { index, transaction ->
-            TransactionItem(
-                emoji = transaction.transaction.category.emoji,
-                title = transaction.transaction.category.name,
-                comment = transaction.transaction.comment,
-                amount =
-                    formatAnalyticsDisplayAmount(
-                        amount = transaction.originalAmount.amount,
-                        amountType =
-                            if (transaction.transaction.category.isIncome) {
-                                AnalyticsType.Income
-                            } else {
-                                AnalyticsType.Expenses
-                            },
-                        selectedType = state.data.filters.type,
-                        currencyCode = transaction.originalAmount.currency.isoCode,
-                    ),
-                amountSubtitle = stringResource(R.string.not_included_missing_rate),
-            )
-            if (index != state.unconvertedTransactions.lastIndex) {
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-            }
-        }
+        ScrollToTopButton(
+            listState = listState,
+            modifier =
+                Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(start = 16.dp, bottom = 16.dp),
+        )
     }
 }
 

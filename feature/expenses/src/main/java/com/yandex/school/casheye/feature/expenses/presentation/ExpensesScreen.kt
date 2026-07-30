@@ -8,12 +8,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -33,6 +33,7 @@ import com.yandex.school.casheye.core.designsystem.component.DelayedCircularProg
 import com.yandex.school.casheye.core.designsystem.component.ErrorState
 import com.yandex.school.casheye.core.designsystem.component.ErrorStateType
 import com.yandex.school.casheye.core.designsystem.component.PullToRefreshContainer
+import com.yandex.school.casheye.core.designsystem.component.ScrollToTopButton
 import com.yandex.school.casheye.core.designsystem.component.SwipeToRevealDeleteItem
 import com.yandex.school.casheye.core.designsystem.component.money.MoneyListItem
 import com.yandex.school.casheye.core.designsystem.component.money.NativeMoneySummary
@@ -98,36 +99,37 @@ private fun ExpensesContent(
     modifier: Modifier = Modifier,
 ) {
     var revealedTransactionId by remember { mutableStateOf<Int?>(null) }
+    val listState = rememberLazyListState()
 
-    Column(modifier = modifier.fillMaxSize()) {
-        NativeMoneySummary(
-            title = stringResource(R.string.expenses_total),
-            total =
-                state.currentValuation
-                    ?.includedTotal
-                    ?.let { formatAmount(it.amount, it.currency.isoCode) },
-            nativeTotals =
-                state.nativeTotals.map {
-                    formatAmount(
-                        amount = it.amount,
-                        currencyCode = it.currency.isoCode,
-                    )
-                },
-            warning =
-                state.currentValuation
-                    ?.excludedNativeTotals
-                    ?.takeIf { it.isNotEmpty() }
-                    ?.joinToString(separator = " · ") {
-                        formatAmount(it.amount, it.currency.isoCode)
-                    }?.let { stringResource(R.string.expenses_not_included, it) },
-        )
+    Box(modifier = modifier.fillMaxSize()) {
         LazyColumn(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-            contentPadding = PaddingValues(bottom = 60.dp),
+            modifier = Modifier.fillMaxSize(),
+            state = listState,
+            contentPadding = PaddingValues(bottom = 72.dp),
         ) {
+            item {
+                NativeMoneySummary(
+                    title = stringResource(R.string.expenses_total),
+                    total =
+                        state.currentValuation
+                            ?.includedTotal
+                            ?.let { formatAmount(it.amount, it.currency.isoCode) },
+                    nativeTotals =
+                        state.nativeTotals.map {
+                            formatAmount(
+                                amount = it.amount,
+                                currencyCode = it.currency.isoCode,
+                            )
+                        },
+                    warning =
+                        state.currentValuation
+                            ?.excludedNativeTotals
+                            ?.takeIf { it.isNotEmpty() }
+                            ?.joinToString(separator = " · ") {
+                                formatAmount(it.amount, it.currency.isoCode)
+                            }?.let { stringResource(R.string.expenses_not_included, it) },
+                )
+            }
             items(
                 items = state.transactions,
                 key = Transaction::id,
@@ -159,6 +161,13 @@ private fun ExpensesContent(
                 }
             }
         }
+        ScrollToTopButton(
+            listState = listState,
+            modifier =
+                Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(start = 16.dp, bottom = 16.dp),
+        )
     }
 }
 
