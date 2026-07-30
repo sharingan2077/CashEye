@@ -1,20 +1,21 @@
 package com.yandex.school.casheye.app
 
+import android.os.SystemClock
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ProcessLifecycleOwner
 import com.yandex.school.casheye.domain.settings.SecuritySettings
 import com.yandex.school.casheye.feature.settings.presentation.AppLockScreen
+import kotlin.time.Duration.Companion.minutes
+
+internal val APP_LOCK_BACKGROUND_GRACE_PERIOD = 5.minutes
 
 @Composable
 internal fun AppLockGate(
@@ -23,27 +24,47 @@ internal fun AppLockGate(
     requestBiometricAuthentication: (onResult: (Boolean) -> Unit) -> Unit,
     content: @Composable () -> Unit,
 ) {
-    val currentContent by rememberUpdatedState(content)
-    val movableContent = remember { movableContentOf { currentContent() } }
-    val currentBiometricRequest by rememberUpdatedState(requestBiometricAuthentication)
     val verifier = security.pinVerifier
-    val sessionStartedWithoutPin = rememberSaveable { verifier == null }
+    val sessionStartedWithoutPin = remember { verifier == null }
+    var locked by remember(verifier?.hash) { mutableStateOf(verifier != null && !sessionStartedWithoutPin) }
+
     if (verifier == null) {
-        movableContent()
+        content()
         return
     }
 
-    var locked by rememberSaveable(verifier.hash) { mutableStateOf(!sessionStartedWithoutPin) }
-    var biometricRequested by rememberSaveable(verifier.hash) { mutableStateOf(false) }
+    var biometricRequested by remember(verifier.hash) { mutableStateOf(false) }
+    var backgroundedAtElapsedRealtime by remember(verifier.hash) { mutableStateOf<Long?>(null) }
     val biometricsEnabled = security.biometricsEnabled && biometricsAvailable
     val lifecycle = ProcessLifecycleOwner.get().lifecycle
+    var isAppInForeground by remember(lifecycle) {
+        mutableStateOf(lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED))
+    }
 
     DisposableEffect(lifecycle, verifier.hash) {
         val observer =
             LifecycleEventObserver { _, event ->
-                if (event == Lifecycle.Event.ON_STOP) {
-                    locked = true
-                    biometricRequested = false
+                when (event) {
+                    Lifecycle.Event.ON_START -> {
+                        isAppInForeground = true
+                        if (
+                            shouldLockAfterBackground(
+                                backgroundedAtElapsedRealtime = backgroundedAtElapsedRealtime,
+                                currentElapsedRealtime = SystemClock.elapsedRealtime(),
+                            )
+                        ) {
+                            locked = true
+                        }
+                        backgroundedAtElapsedRealtime = null
+                    }
+
+                    Lifecycle.Event.ON_STOP -> {
+                        isAppInForeground = false
+                        backgroundedAtElapsedRealtime = SystemClock.elapsedRealtime()
+                        biometricRequested = false
+                    }
+
+                    else -> Unit
                 }
             }
         lifecycle.addObserver(observer)
@@ -51,33 +72,34 @@ internal fun AppLockGate(
     }
 
     if (!locked) {
-        movableContent()
+        content()
         return
     }
 
-    val requestBiometricAuthentication = {
+    val requestBiometric = {
         if (locked && biometricsEnabled) {
             biometricRequested = true
-            currentBiometricRequest { succeeded ->
+            requestBiometricAuthentication { succeeded ->
                 if (succeeded) locked = false
             }
         }
     }
-    LaunchedEffect(locked, biometricsEnabled) {
+    LaunchedEffect(locked, biometricsEnabled, biometricRequested, isAppInForeground) {
         if (
             shouldRequestBiometricAuthentication(
                 locked,
                 biometricsEnabled,
                 biometricRequested,
+                isAppInForeground,
             )
         ) {
-            requestBiometricAuthentication()
+            requestBiometric()
         }
     }
     AppLockScreen(
         verifier = verifier,
         biometricsEnabled = biometricsEnabled,
-        onRequestBiometricAuthentication = requestBiometricAuthentication,
+        onRequestBiometricAuthentication = requestBiometric,
         onPinVerified = { locked = false },
     )
 }
@@ -86,4 +108,12 @@ private fun shouldRequestBiometricAuthentication(
     locked: Boolean,
     biometricsEnabled: Boolean,
     biometricRequested: Boolean,
-): Boolean = locked && biometricsEnabled && !biometricRequested
+    isAppInForeground: Boolean,
+): Boolean = locked && biometricsEnabled && !biometricRequested && isAppInForeground
+
+internal fun shouldLockAfterBackground(
+    backgroundedAtElapsedRealtime: Long?,
+    currentElapsedRealtime: Long,
+): Boolean =
+    backgroundedAtElapsedRealtime != null &&
+        currentElapsedRealtime - backgroundedAtElapsedRealtime >= APP_LOCK_BACKGROUND_GRACE_PERIOD.inWholeMilliseconds

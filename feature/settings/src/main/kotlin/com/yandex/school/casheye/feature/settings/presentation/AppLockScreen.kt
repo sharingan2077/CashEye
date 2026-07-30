@@ -2,6 +2,7 @@ package com.yandex.school.casheye.feature.settings.presentation
 
 import android.content.res.Configuration
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -32,14 +33,17 @@ import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
 import com.yandex.school.casheye.domain.settings.PinVerifier
 import com.yandex.school.casheye.feature.settings.R
 import dev.zacsweers.metrox.viewmodel.metroViewModel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.util.Calendar
 import kotlin.time.Duration.Companion.milliseconds
+import androidx.compose.animation.Animatable as ColorAnimatable
 
 private const val PIN_DIGIT_COUNT = 4
-private const val PIN_WIDE_SCALE = 2.75f
 private const val PIN_ERROR_PULSE_SCALE = 0.45f
-private val PIN_ENTRY_NARROW_DURATION = 260.milliseconds
+private val PIN_ENTRY_WIDE_DURATION = 140.milliseconds
+private val PIN_ENTRY_COLOR_RESET_DURATION = 100.milliseconds
 private val PIN_LAST_ENTRY_SETTLE_DURATION = 260.milliseconds
 private val PIN_SUCCESS_COLOR_DURATION = 140.milliseconds
 private val PIN_SUCCESS_COLLAPSE_DURATION = 350.milliseconds
@@ -61,15 +65,24 @@ fun AppLockScreen(
     biometricsEnabled: Boolean,
     onRequestBiometricAuthentication: () -> Unit,
     onPinVerified: () -> Unit,
-    viewModel: AppLockViewModel = metroViewModel(),
     modifier: Modifier = Modifier,
+    viewModel: AppLockViewModel = metroViewModel(),
 ) {
     val appLockState by viewModel.state.collectAsStateWithLifecycle()
     var pin by remember { mutableStateOf("") }
     var pendingPin by remember { mutableStateOf<String?>(null) }
     var pinAnimationState by remember { mutableStateOf(PinAnimationState.Idle) }
     var previousPinLength by remember { mutableIntStateOf(0) }
-    val cellScales = remember { List(PIN_DIGIT_COUNT) { Animatable(1f) } }
+    val defaultPinIndicatorColor = MaterialTheme.colorScheme.outlineVariant
+    val enteredPinIndicatorColor = MaterialTheme.colorScheme.primary
+    val errorPinIndicatorColor = MaterialTheme.colorScheme.error
+    val successPinIndicatorColor = CashEyeExtendedTheme.colors.chartIncome
+    val cellColors =
+        remember {
+            List(PIN_DIGIT_COUNT) {
+                ColorAnimatable(defaultPinIndicatorColor)
+            }
+        }
     val resultProgress = remember { Animatable(0f) }
     val density = LocalDensity.current
     val cellCenterDistancePx = with(density) { PIN_CELL_CENTER_DISTANCE.toPx() }
@@ -78,16 +91,24 @@ fun AppLockScreen(
     LaunchedEffect(pin.length) {
         val enteredIndex = pin.lastIndex
         if (pin.length > previousPinLength && enteredIndex >= 0) {
-            cellScales.forEachIndexed { index, scale ->
-                if (index != enteredIndex) scale.snapTo(1f)
-            }
-            cellScales[enteredIndex].snapTo(PIN_WIDE_SCALE)
-            cellScales[enteredIndex].animateTo(
-                1f,
-                tween(PIN_ENTRY_NARROW_DURATION.inWholeMilliseconds.toInt()),
+            cellColors[enteredIndex].animateTo(
+                enteredPinIndicatorColor,
+                tween(
+                    durationMillis = PIN_ENTRY_WIDE_DURATION.inWholeMilliseconds.toInt(),
+                    easing = FastOutSlowInEasing,
+                ),
             )
         } else if (pin.length < previousPinLength) {
-            cellScales[pin.length].snapTo(1f)
+            coroutineScope {
+                (pin.length until previousPinLength).forEach { index ->
+                    launch {
+                        cellColors[index].animateTo(
+                            defaultPinIndicatorColor,
+                            tween(PIN_ENTRY_COLOR_RESET_DURATION.inWholeMilliseconds.toInt()),
+                        )
+                    }
+                }
+            }
         }
         previousPinLength = pin.length
     }
@@ -103,32 +124,36 @@ fun AppLockScreen(
     LaunchedEffect(appLockState.verification) {
         when (appLockState.verification) {
             AppLockVerificationState.Success -> {
-            pinAnimationState = PinAnimationState.Success
-            delay(PIN_SUCCESS_COLOR_DURATION)
-            resultProgress.animateTo(
-                1f,
-                tween(PIN_SUCCESS_COLLAPSE_DURATION.inWholeMilliseconds.toInt()),
-            )
-            viewModel.onIntent(AppLockIntent.SuccessAnimationFinished)
-            onPinVerified()
+                pinAnimationState = PinAnimationState.Success
+                delay(PIN_SUCCESS_COLOR_DURATION)
+                resultProgress.animateTo(
+                    1f,
+                    tween(PIN_SUCCESS_COLLAPSE_DURATION.inWholeMilliseconds.toInt()),
+                )
+                viewModel.onIntent(AppLockIntent.SuccessAnimationFinished)
+                onPinVerified()
             }
+
             AppLockVerificationState.Error -> {
-            pinAnimationState = PinAnimationState.Error
-            resultProgress.animateTo(
-                1f,
-                tween(PIN_ERROR_EXPAND_DURATION.inWholeMilliseconds.toInt()),
-            )
-            resultProgress.animateTo(
-                0f,
-                tween(PIN_ERROR_SHRINK_DURATION.inWholeMilliseconds.toInt()),
-            )
-            pinAnimationState = PinAnimationState.Idle
-            delay(PIN_ERROR_COLOR_RESET_DURATION)
-            pin = ""
-            pendingPin = null
-            viewModel.onIntent(AppLockIntent.ErrorAnimationFinished)
+                pinAnimationState = PinAnimationState.Error
+                resultProgress.animateTo(
+                    1f,
+                    tween(PIN_ERROR_EXPAND_DURATION.inWholeMilliseconds.toInt()),
+                )
+                resultProgress.animateTo(
+                    0f,
+                    tween(PIN_ERROR_SHRINK_DURATION.inWholeMilliseconds.toInt()),
+                )
+                pinAnimationState = PinAnimationState.Idle
+                delay(PIN_ERROR_COLOR_RESET_DURATION)
+                pin = ""
+                pendingPin = null
+                viewModel.onIntent(AppLockIntent.ErrorAnimationFinished)
             }
-            else -> Unit
+
+            AppLockVerificationState.Idle, AppLockVerificationState.Verifying -> {
+                return@LaunchedEffect
+            }
         }
     }
 
@@ -174,10 +199,6 @@ fun AppLockScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(Modifier.weight(0.18f))
-            val defaultPinIndicatorColor = MaterialTheme.colorScheme.outlineVariant
-            val enteredPinIndicatorColor = MaterialTheme.colorScheme.primary
-            val errorPinIndicatorColor = MaterialTheme.colorScheme.error
-            val successPinIndicatorColor = CashEyeExtendedTheme.colors.chartIncome
             PinCodeInput(
                 value = pin,
                 inputTestTag = "app_lock_pin_input",
@@ -187,41 +208,69 @@ fun AppLockScreen(
                 enabled = isPinInputEnabled,
                 indicatorColor =
                     when (pinAnimationState) {
-                        PinAnimationState.Idle, PinAnimationState.Verifying ->
+                        PinAnimationState.Idle, PinAnimationState.Verifying -> {
                             defaultPinIndicatorColor
-                        PinAnimationState.Success -> successPinIndicatorColor
-                        PinAnimationState.Error -> errorPinIndicatorColor
+                        }
+
+                        PinAnimationState.Success -> {
+                            successPinIndicatorColor
+                        }
+
+                        PinAnimationState.Error -> {
+                            errorPinIndicatorColor
+                        }
                     },
                 indicatorColorForCell = { index ->
                     when (pinAnimationState) {
-                        PinAnimationState.Success -> successPinIndicatorColor
-                        PinAnimationState.Error -> errorPinIndicatorColor
-                        else ->
-                            if (index < pin.length) {
-                                enteredPinIndicatorColor
-                            } else {
-                                defaultPinIndicatorColor
-                            }
+                        PinAnimationState.Success -> {
+                            successPinIndicatorColor
+                        }
+
+                        PinAnimationState.Error -> {
+                            errorPinIndicatorColor
+                        }
+
+                        else -> {
+                            cellColors[index].value
+                        }
                     }
                 },
                 fillEmptyCells = true,
-                cellScaleX = { index ->
+                cellScaleX = { _ ->
                     val resultScale =
                         when (pinAnimationState) {
-                            PinAnimationState.Success -> 1f - resultProgress.value
-                            PinAnimationState.Error -> 1f + PIN_ERROR_PULSE_SCALE * resultProgress.value
-                            else -> 1f
+                            PinAnimationState.Success -> {
+                                1f - resultProgress.value
+                            }
+
+                            PinAnimationState.Error -> {
+                                1f + PIN_ERROR_PULSE_SCALE * resultProgress.value
+                            }
+
+                            else -> {
+                                1f
+                            }
                         }
-                    cellScales[index].value * resultScale
+
+                    resultScale
                 },
-                cellScaleY = { index ->
+                cellScaleY = { _ ->
                     val resultScale =
                         when (pinAnimationState) {
-                        PinAnimationState.Success -> 1f - resultProgress.value
-                        PinAnimationState.Error -> 1f + PIN_ERROR_PULSE_SCALE * resultProgress.value
-                        else -> 1f
+                            PinAnimationState.Success -> {
+                                1f - resultProgress.value
+                            }
+
+                            PinAnimationState.Error -> {
+                                1f + PIN_ERROR_PULSE_SCALE * resultProgress.value
+                            }
+
+                            else -> {
+                                1f
+                            }
                         }
-                    cellScales[index].value * resultScale
+
+                    resultScale
                 },
                 cellTranslationX = { index ->
                     if (pinAnimationState == PinAnimationState.Success) {
@@ -231,6 +280,7 @@ fun AppLockScreen(
                         0f
                     }
                 },
+                animateIndicatorColor = false,
                 useSystemInput = false,
             )
             Spacer(Modifier.weight(0.55f))
