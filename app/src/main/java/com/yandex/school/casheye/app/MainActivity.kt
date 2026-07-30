@@ -27,7 +27,6 @@ class MainActivity : AppCompatActivity() {
                 metroViewModelFactory = appGraph.metroViewModelFactory,
                 networkStatus = appGraph.networkMonitor.isOnline,
                 observeSettings = appGraph.observeSettings,
-                verifyPin = appGraph.verifyPin,
                 biometricsAvailable = biometricsAvailable,
                 requestBiometricAuthentication = biometricAuthenticator::authenticate,
                 onSplashReady = { isLottieReady = true },

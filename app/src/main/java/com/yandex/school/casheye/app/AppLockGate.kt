@@ -21,7 +21,6 @@ internal fun AppLockGate(
     security: SecuritySettings,
     biometricsAvailable: Boolean,
     requestBiometricAuthentication: (onResult: (Boolean) -> Unit) -> Unit,
-    verifyPin: suspend (CharArray) -> Boolean,
     content: @Composable () -> Unit,
 ) {
     val currentContent by rememberUpdatedState(content)
@@ -76,9 +75,9 @@ internal fun AppLockGate(
         }
     }
     AppLockScreen(
+        verifier = verifier,
         biometricsEnabled = biometricsEnabled,
         onRequestBiometricAuthentication = requestBiometricAuthentication,
-        onVerifyPin = verifyPin,
         onPinVerified = { locked = false },
     )
 }

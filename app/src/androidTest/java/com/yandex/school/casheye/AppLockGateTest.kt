@@ -18,7 +18,7 @@ class AppLockGateTest {
 
     @Test
     fun incorrectPinKeepsContentLocked() {
-        setLockGate { false }
+        setLockGate()
 
         repeat(4) { composeRule.onNodeWithTag("app_lock_key_9").performClick() }
 
@@ -27,7 +27,7 @@ class AppLockGateTest {
 
     @Test
     fun correctPinUnlocksContent() {
-        setLockGate { pin -> pin.concatToString() == "1234" }
+        setLockGate()
 
         listOf(1, 2, 3, 4).forEach { digit ->
             composeRule.onNodeWithTag("app_lock_key_$digit").performClick()
@@ -37,13 +37,12 @@ class AppLockGateTest {
         composeRule.onNodeWithTag("locked_content").assertExists()
     }
 
-    private fun setLockGate(verifyPin: suspend (CharArray) -> Boolean) {
+    private fun setLockGate() {
         composeRule.setContent {
             AppLockGate(
                 security = SecuritySettings(pinVerifier = PinVerifier("salt", "hash")),
                 biometricsAvailable = false,
                 requestBiometricAuthentication = {},
-                verifyPin = verifyPin,
             ) {
                 Box(Modifier.testTag("locked_content"))
             }

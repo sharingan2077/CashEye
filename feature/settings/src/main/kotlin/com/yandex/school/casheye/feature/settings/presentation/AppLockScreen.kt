@@ -26,9 +26,12 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yandex.school.casheye.core.designsystem.theme.CashEyeExtendedTheme
 import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
+import com.yandex.school.casheye.domain.settings.PinVerifier
 import com.yandex.school.casheye.feature.settings.R
+import dev.zacsweers.metrox.viewmodel.metroViewModel
 import kotlinx.coroutines.delay
 import java.util.Calendar
 import kotlin.time.Duration.Companion.milliseconds
@@ -54,22 +57,23 @@ private enum class PinAnimationState {
 
 @Composable
 fun AppLockScreen(
+    verifier: PinVerifier,
     biometricsEnabled: Boolean,
     onRequestBiometricAuthentication: () -> Unit,
-    onVerifyPin: suspend (CharArray) -> Boolean,
     onPinVerified: () -> Unit,
+    viewModel: AppLockViewModel = metroViewModel(),
     modifier: Modifier = Modifier,
 ) {
+    val appLockState by viewModel.state.collectAsStateWithLifecycle()
     var pin by remember { mutableStateOf("") }
     var pendingPin by remember { mutableStateOf<String?>(null) }
-    var isVerifying by remember { mutableStateOf(false) }
     var pinAnimationState by remember { mutableStateOf(PinAnimationState.Idle) }
     var previousPinLength by remember { mutableIntStateOf(0) }
     val cellScales = remember { List(PIN_DIGIT_COUNT) { Animatable(1f) } }
     val resultProgress = remember { Animatable(0f) }
     val density = LocalDensity.current
     val cellCenterDistancePx = with(density) { PIN_CELL_CENTER_DISTANCE.toPx() }
-    val isPinInputEnabled = pendingPin == null && !isVerifying
+    val isPinInputEnabled = pendingPin == null && appLockState.verification != AppLockVerificationState.Verifying
 
     LaunchedEffect(pin.length) {
         val enteredIndex = pin.lastIndex
@@ -90,20 +94,25 @@ fun AppLockScreen(
 
     LaunchedEffect(pendingPin) {
         val submittedPin = pendingPin ?: return@LaunchedEffect
-        isVerifying = true
         resultProgress.snapTo(0f)
         pinAnimationState = PinAnimationState.Verifying
         delay(PIN_LAST_ENTRY_SETTLE_DURATION)
-        val isPinCorrect = onVerifyPin(submittedPin.toCharArray())
-        if (isPinCorrect) {
+        viewModel.onIntent(AppLockIntent.SubmitPin(submittedPin.toCharArray(), verifier))
+    }
+
+    LaunchedEffect(appLockState.verification) {
+        when (appLockState.verification) {
+            AppLockVerificationState.Success -> {
             pinAnimationState = PinAnimationState.Success
             delay(PIN_SUCCESS_COLOR_DURATION)
             resultProgress.animateTo(
                 1f,
                 tween(PIN_SUCCESS_COLLAPSE_DURATION.inWholeMilliseconds.toInt()),
             )
+            viewModel.onIntent(AppLockIntent.SuccessAnimationFinished)
             onPinVerified()
-        } else {
+            }
+            AppLockVerificationState.Error -> {
             pinAnimationState = PinAnimationState.Error
             resultProgress.animateTo(
                 1f,
@@ -116,8 +125,10 @@ fun AppLockScreen(
             pinAnimationState = PinAnimationState.Idle
             delay(PIN_ERROR_COLOR_RESET_DURATION)
             pin = ""
-            isVerifying = false
             pendingPin = null
+            viewModel.onIntent(AppLockIntent.ErrorAnimationFinished)
+            }
+            else -> Unit
         }
     }
 
@@ -152,7 +163,7 @@ fun AppLockScreen(
             Text(
                 text =
                     androidx.compose.ui.res.stringResource(
-                        if (pendingPin != null || isVerifying) {
+                        if (pendingPin != null || appLockState.verification == AppLockVerificationState.Verifying) {
                             R.string.app_lock_checking_hint
                         } else {
                             R.string.app_lock_pin_hint
@@ -269,9 +280,9 @@ private fun appLockGreeting(): String =
 private fun AppLockScreenPreview() {
     CashEyeTheme(dynamicColor = false) {
         AppLockScreen(
+            verifier = PinVerifier("preview", "preview"),
             biometricsEnabled = true,
             onRequestBiometricAuthentication = {},
-            onVerifyPin = { false },
             onPinVerified = {},
         )
     }

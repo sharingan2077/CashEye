@@ -15,7 +15,6 @@ import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
 import com.yandex.school.casheye.domain.settings.AppSettings
 import com.yandex.school.casheye.domain.settings.ObserveSettingsUseCase
 import com.yandex.school.casheye.domain.settings.ThemeMode
-import com.yandex.school.casheye.domain.settings.VerifyPinUseCase
 import com.yandex.school.casheye.feature.splash.presentation.SplashScreen
 import dev.zacsweers.metrox.viewmodel.LocalMetroViewModelFactory
 import dev.zacsweers.metrox.viewmodel.MetroViewModelFactory
@@ -26,7 +25,6 @@ internal fun CashEyeApp(
     metroViewModelFactory: MetroViewModelFactory,
     networkStatus: StateFlow<Boolean>,
     observeSettings: ObserveSettingsUseCase,
-    verifyPin: VerifyPinUseCase,
     biometricsAvailable: Boolean,
     requestBiometricAuthentication: (onResult: (Boolean) -> Unit) -> Unit,
     onSplashReady: () -> Unit,
@@ -62,11 +60,6 @@ internal fun CashEyeApp(
                         security = currentSettings.security,
                         biometricsAvailable = biometricsAvailable,
                         requestBiometricAuthentication = requestBiometricAuthentication,
-                        verifyPin = { pin ->
-                            currentSettings.security.pinVerifier?.let { verifier ->
-                                verifyPin(pin, verifier)
-                            } == true
-                        },
                     ) {
                         NavigationRoot(
                             networkStatus = networkStatus,
