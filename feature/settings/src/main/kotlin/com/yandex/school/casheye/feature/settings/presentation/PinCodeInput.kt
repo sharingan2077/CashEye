@@ -37,8 +37,10 @@ import androidx.compose.ui.unit.dp
 import kotlin.time.Duration.Companion.milliseconds
 
 private const val PIN_LENGTH = 4
-private const val PIN_WIDE_SCALE = 2f
+private const val PIN_WIDE_SCALE = 1.5f
 private const val PIN_NARROW_SCALE = 0.85f
+private val PIN_INDICATOR_SIZE = 16.dp
+private val PIN_INDICATOR_SLOT_SIZE = 32.dp
 private val PIN_ENTRY_WIDE_DURATION = 140.milliseconds
 private val PIN_ENTRY_NARROW_DURATION = 110.milliseconds
 private val PIN_ENTRY_SETTLE_DURATION = 90.milliseconds
@@ -111,9 +113,10 @@ internal fun PinCodeInput(
         modifier = modifier,
         contentAlignment = Alignment.Center,
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(0.dp)) {
             repeat(PIN_LENGTH) { index ->
                 val isFilled = index < value.length || fillEmptyCells
+                val entryIndicatorSize = PIN_INDICATOR_SIZE * entryScaleXs[index].value
                 val targetIndicatorColor =
                     if (isError) MaterialTheme.colorScheme.error else indicatorColorForCell(index)
                 val indicatorColor =
@@ -132,21 +135,29 @@ internal fun PinCodeInput(
                     }
                 Box(
                     modifier =
-                        if (isFilled) {
-                            Modifier
-                                .size(16.dp)
-                                .background(indicatorColor, CircleShape)
-                        } else {
-                            Modifier
-                                .size(16.dp)
-                                .border(2.dp, indicatorColor, CircleShape)
-                        }.graphicsLayer {
-                            scaleX = cellScaleX(index) * entryScaleXs[index].value
-                            scaleY = cellScaleY(index)
-                            translationX = cellTranslationX(index)
-                            translationY = cellTranslationY(index)
-                        }.testTag("${cellTestTagPrefix}_$index"),
-                )
+                        Modifier
+                            .size(PIN_INDICATOR_SLOT_SIZE)
+                            .graphicsLayer {
+                                scaleX = cellScaleX(index)
+                                scaleY = cellScaleY(index)
+                                translationX = cellTranslationX(index)
+                                translationY = cellTranslationY(index)
+                            },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Box(
+                        modifier =
+                            if (isFilled) {
+                                Modifier
+                                    .size(entryIndicatorSize)
+                                    .background(indicatorColor, CircleShape)
+                            } else {
+                                Modifier
+                                    .size(entryIndicatorSize)
+                                    .border(2.dp, indicatorColor, CircleShape)
+                            }.testTag("${cellTestTagPrefix}_$index"),
+                    )
+                }
             }
         }
         if (useSystemInput) {

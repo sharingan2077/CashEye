@@ -1,6 +1,7 @@
 package com.yandex.school.casheye.feature.settings.presentation
 
 import android.content.res.Configuration
+import androidx.compose.animation.Animatable
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.animation.core.AnimationVector4D
@@ -41,13 +42,13 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import kotlin.time.Duration.Companion.milliseconds
-import androidx.compose.animation.Animatable as ColorAnimatable
 
 private const val PIN_DIGIT_COUNT = 4
 private const val PIN_ERROR_PULSE_SCALE = 0.45f
 private val PIN_ENTRY_WIDE_DURATION = 140.milliseconds
 private val PIN_ENTRY_COLOR_RESET_DURATION = 100.milliseconds
 private val PIN_LAST_ENTRY_SETTLE_DURATION = 260.milliseconds
+
 private val PIN_SUCCESS_COLOR_DURATION = 140.milliseconds
 private val PIN_SUCCESS_COLLAPSE_DURATION = 350.milliseconds
 private val PIN_ERROR_EXPAND_DURATION = 100.milliseconds
@@ -83,7 +84,7 @@ fun AppLockScreen(
     val cellColors =
         remember {
             List(PIN_DIGIT_COUNT) {
-                ColorAnimatable(defaultPinIndicatorColor)
+                Animatable(defaultPinIndicatorColor)
             }
         }
     val resultProgress = remember { Animatable(0f) }
@@ -194,7 +195,7 @@ fun AppLockScreen(
 private fun PinEntryColorEffect(
     pin: String,
     previousPinLength: Int,
-    cellColors: List<ColorAnimatable<Color, AnimationVector4D>>,
+    cellColors: List<Animatable<Color, AnimationVector4D>>,
     enteredColor: Color,
     defaultColor: Color,
     onPreviousPinLengthChange: (Int) -> Unit,
@@ -279,7 +280,9 @@ private fun HandlePinVerificationResultEffect(
                 onAnimationFinished(AppLockIntent.ErrorAnimationFinished)
             }
 
-            AppLockVerificationState.Idle, AppLockVerificationState.Verifying -> Unit
+            AppLockVerificationState.Idle, AppLockVerificationState.Verifying -> {
+                Unit
+            }
         }
     }
 }
@@ -289,7 +292,7 @@ private fun AppLockPinIndicators(
     pin: String,
     enabled: Boolean,
     animationState: PinAnimationState,
-    cellColors: List<ColorAnimatable<Color, AnimationVector4D>>,
+    cellColors: List<Animatable<Color, AnimationVector4D>>,
     defaultColor: Color,
     successColor: Color,
     errorColor: Color,

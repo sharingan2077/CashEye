@@ -1,5 +1,5 @@
 interface:
-  display_name: "Explain CashEye files"
+  display_name: "casheye-explain-files"
   short_description: "Explain selected CashEye code line by line"
   default_prompt: "Use $casheye-explain-files to explain the files I selected with @ line by line."
 
