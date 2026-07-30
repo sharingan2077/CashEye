@@ -134,6 +134,7 @@ private fun PinKey(
                 text = label,
                 style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Normal),
                 textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurface,
             )
         }
     }

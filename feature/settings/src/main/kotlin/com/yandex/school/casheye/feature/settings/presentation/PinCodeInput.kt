@@ -170,7 +170,7 @@ internal fun PinCodeInput(
                         onPinComplete(digits)
                     }
                 },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier =
                     Modifier
                         .fillMaxWidth()

@@ -146,6 +146,7 @@ fun AppLockScreen(
             Spacer(Modifier.weight(1f))
             Text(
                 text = appLockGreeting(),
+                color = MaterialTheme.colorScheme.onBackground,
                 style = MaterialTheme.typography.headlineSmall,
                 textAlign = TextAlign.Center,
             )
