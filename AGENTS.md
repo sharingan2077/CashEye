@@ -260,6 +260,10 @@ slice via offset/limit. Never bulk-read large files.
 
 ## Kotlin and coroutines conventions
 
+### Compose function parameters
+
+- In every emitting `@Composable`, declare `modifier: Modifier = Modifier` as the first optional parameter, immediately after all required parameters. Do not place required or optional parameters after `modifier`; this is enforced by the Compose ktlint rule.
+
 - Prefer type-safe Kotlin duration APIs:
     - `delay(300.milliseconds)`, not `delay(300L)`.
     - `withTimeout(5.seconds)`, not `withTimeout(5_000L)`.
