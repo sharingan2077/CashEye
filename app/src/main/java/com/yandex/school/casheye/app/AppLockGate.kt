@@ -7,7 +7,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -16,7 +15,6 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ProcessLifecycleOwner
 import com.yandex.school.casheye.domain.settings.SecuritySettings
 import com.yandex.school.casheye.feature.settings.presentation.AppLockScreen
-import kotlinx.coroutines.launch
 
 @Composable
 internal fun AppLockGate(
@@ -38,7 +36,7 @@ internal fun AppLockGate(
 
     var locked by rememberSaveable(verifier.hash) { mutableStateOf(!sessionStartedWithoutPin) }
     var biometricRequested by rememberSaveable(verifier.hash) { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
+    val biometricsEnabled = security.biometricsEnabled && biometricsAvailable
     val lifecycle = ProcessLifecycleOwner.get().lifecycle
 
     DisposableEffect(lifecycle, verifier.hash) {
@@ -58,34 +56,35 @@ internal fun AppLockGate(
         return
     }
 
-    LaunchedEffect(locked, security.biometricsEnabled, biometricsAvailable) {
-        if (
-            shouldRequestBiometricAuthentication(
-                locked,
-                security.biometricsEnabled,
-                biometricsAvailable,
-                biometricRequested,
-            )
-        ) {
+    val requestBiometricAuthentication = {
+        if (locked && biometricsEnabled) {
             biometricRequested = true
             currentBiometricRequest { succeeded ->
                 if (succeeded) locked = false
             }
         }
     }
+    LaunchedEffect(locked, biometricsEnabled) {
+        if (
+            shouldRequestBiometricAuthentication(
+                locked,
+                biometricsEnabled,
+                biometricRequested,
+            )
+        ) {
+            requestBiometricAuthentication()
+        }
+    }
     AppLockScreen(
-        biometricsEnabled = security.biometricsEnabled && biometricsAvailable,
-        onPinSubmit = { pin ->
-            scope.launch {
-                if (verifyPin(pin)) locked = false
-            }
-        },
+        biometricsEnabled = biometricsEnabled,
+        onRequestBiometricAuthentication = requestBiometricAuthentication,
+        onVerifyPin = verifyPin,
+        onPinVerified = { locked = false },
     )
 }
 
 private fun shouldRequestBiometricAuthentication(
     locked: Boolean,
     biometricsEnabled: Boolean,
-    biometricsAvailable: Boolean,
     biometricRequested: Boolean,
-): Boolean = locked && biometricsEnabled && biometricsAvailable && !biometricRequested
+): Boolean = locked && biometricsEnabled && !biometricRequested

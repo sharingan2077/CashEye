@@ -28,9 +28,17 @@
     <string name="settings_biometrics_unavailable">Richten Sie die Biometrie in den Android-Systemeinstellungen ein, um diese Option zu aktivieren.</string>
     <string name="settings_biometrics_hint">Bestätigen Sie Ihre Identität biometrisch, um diese Option zu aktivieren.</string>
     <string name="settings_biometrics_enable">Biometrie verwenden</string>
-    <string name="app_lock_title">App gesperrt</string>
-    <string name="app_lock_pin_hint">Geben Sie Ihren vierstelligen PIN-Code ein</string>
+    <string name="app_lock_title">Willkommen!</string>
+    <string name="app_lock_pin_hint">Code eingeben</string>
+    <string name="app_lock_checking_hint">Wird überprüft…</string>
     <string name="app_lock_biometrics_hint">Bestätigen Sie Ihre Identität biometrisch oder verwenden Sie Ihren PIN-Code.</string>
     <string name="app_lock_use_pin">PIN-Code verwenden</string>
+    <string name="app_lock_pin_error">Falscher PIN-Code. Versuchen Sie es erneut.</string>
+    <string name="app_lock_greeting_morning">Guten Morgen!</string>
+    <string name="app_lock_greeting_afternoon">Guten Tag!</string>
+    <string name="app_lock_greeting_evening">Guten Abend!</string>
+    <string name="app_lock_greeting_night">Gute Nacht!</string>
+    <string name="app_lock_retry_biometrics">Biometrie erneut versuchen</string>
+    <string name="app_lock_backspace">Letzte Ziffer löschen</string>
     <string name="settings_available_in_next_plan">Diese Einstellung wird im nächsten Implementierungsplan verfügbar sein.</string>
 </resources>

@@ -6,7 +6,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.performTextInput
 import com.yandex.school.casheye.app.AppLockGate
 import com.yandex.school.casheye.domain.settings.PinVerifier
 import com.yandex.school.casheye.domain.settings.SecuritySettings
@@ -21,7 +20,7 @@ class AppLockGateTest {
     fun incorrectPinKeepsContentLocked() {
         setLockGate { false }
 
-        composeRule.onNodeWithTag("app_lock_pin_input").performTextInput("9999")
+        repeat(4) { composeRule.onNodeWithTag("app_lock_key_9").performClick() }
 
         composeRule.onNodeWithTag("locked_content").assertDoesNotExist()
     }
@@ -30,7 +29,10 @@ class AppLockGateTest {
     fun correctPinUnlocksContent() {
         setLockGate { pin -> pin.concatToString() == "1234" }
 
-        composeRule.onNodeWithTag("app_lock_pin_input").performTextInput("1234")
+        listOf(1, 2, 3, 4).forEach { digit ->
+            composeRule.onNodeWithTag("app_lock_key_$digit").performClick()
+        }
+        composeRule.mainClock.advanceTimeBy(500)
 
         composeRule.onNodeWithTag("locked_content").assertExists()
     }

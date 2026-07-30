@@ -9,7 +9,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performTextInput
 import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
 import com.yandex.school.casheye.domain.settings.ThemeMode
 import com.yandex.school.casheye.feature.settings.R
@@ -50,20 +49,27 @@ class SettingsUiTest {
     }
 
     @Test
-    fun pinInputFiltersCapsSubmitsAndResets() {
+    fun pinKeypadSubmitsFourDigits() {
         val submittedPins = mutableListOf<String>()
         composeRule.setContent {
             CashEyeTheme(darkTheme = false, dynamicColor = false) {
                 AppLockScreen(
                     biometricsEnabled = false,
-                    onPinSubmit = { submittedPins += it.concatToString() },
+                    onRequestBiometricAuthentication = {},
+                    onVerifyPin = {
+                        submittedPins += it.concatToString()
+                        true
+                    },
+                    onPinVerified = {},
                 )
             }
         }
 
-        composeRule.onNodeWithTag("app_lock_pin_input").performTextInput("12a345")
-        composeRule.onNodeWithTag("app_lock_pin_input").performTextInput("5678")
+        listOf(1, 2, 3, 4).forEach { digit ->
+            composeRule.onNodeWithTag("app_lock_key_$digit").performClick()
+        }
+        composeRule.mainClock.advanceTimeBy(500)
 
-        assertEquals(listOf("1234", "5678"), submittedPins)
+        assertEquals(listOf("1234"), submittedPins)
     }
 }
