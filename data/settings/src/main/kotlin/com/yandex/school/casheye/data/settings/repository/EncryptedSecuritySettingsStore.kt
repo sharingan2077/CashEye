@@ -9,6 +9,7 @@ import com.yandex.school.casheye.domain.settings.SecuritySettings
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import java.security.GeneralSecurityException
 import java.security.MessageDigest
 import java.security.SecureRandom
 import java.util.Base64
@@ -18,14 +19,7 @@ import javax.crypto.spec.PBEKeySpec
 internal class EncryptedSecuritySettingsStore(
     context: Context,
 ) {
-    private val preferences: SharedPreferences =
-        EncryptedSharedPreferences.create(
-            context,
-            "encrypted_security_settings",
-            MasterKey.Builder(context).setKeyScheme(MasterKey.KeyScheme.AES256_GCM).build(),
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
-        )
+    private val preferences: SharedPreferences = createPreferences(context)
 
     fun observe(): Flow<SecuritySettings> =
         callbackFlow {
@@ -102,7 +96,25 @@ internal class EncryptedSecuritySettingsStore(
         }
     }
 
+    private fun createPreferences(context: Context): SharedPreferences =
+        try {
+            createEncryptedPreferences(context)
+        } catch (_: GeneralSecurityException) {
+            context.deleteSharedPreferences(SECURITY_PREFERENCES)
+            createEncryptedPreferences(context)
+        }
+
+    private fun createEncryptedPreferences(context: Context): SharedPreferences =
+        EncryptedSharedPreferences.create(
+            context,
+            SECURITY_PREFERENCES,
+            MasterKey.Builder(context).setKeyScheme(MasterKey.KeyScheme.AES256_GCM).build(),
+            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
+        )
+
     private companion object {
+        const val SECURITY_PREFERENCES = "encrypted_security_settings"
         const val PIN_SALT = "pin_salt"
         const val PIN_HASH = "pin_hash"
         const val BIOMETRICS = "biometrics_enabled"
