@@ -45,4 +45,11 @@
     <string name="finance_editor_enter_time">Introduce la hora</string>
     <string name="finance_editor_switch_to_time_picker">Cambiar al selector de hora con reloj</string>
     <string name="finance_editor_switch_to_time_input">Cambiar a la entrada de hora por texto</string>
+    <string name="date_period_title">Período</string>
+    <string name="date_period_today">Hoy</string>
+    <string name="date_period_week">Última semana</string>
+    <string name="date_period_month">Último mes</string>
+    <string name="date_period_quarter">Último trimestre</string>
+    <string name="date_period_year">Último año</string>
+    <string name="date_period_custom">Personalizado</string>
 </resources>

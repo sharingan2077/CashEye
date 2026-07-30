@@ -45,4 +45,11 @@
     <string name="finance_editor_enter_time">Uhrzeit eingeben</string>
     <string name="finance_editor_switch_to_time_picker">Zur Zeitauswahl mit Uhr wechseln</string>
     <string name="finance_editor_switch_to_time_input">Zur Texteingabe der Uhrzeit wechseln</string>
+    <string name="date_period_title">Zeitraum</string>
+    <string name="date_period_today">Heute</string>
+    <string name="date_period_week">Letzte Woche</string>
+    <string name="date_period_month">Letzter Monat</string>
+    <string name="date_period_quarter">Letztes Quartal</string>
+    <string name="date_period_year">Letztes Jahr</string>
+    <string name="date_period_custom">Benutzerdefiniert</string>
 </resources>

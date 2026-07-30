@@ -45,4 +45,11 @@
     <string name="finance_editor_enter_time">Enter time</string>
     <string name="finance_editor_switch_to_time_picker">Switch to clock time picker</string>
     <string name="finance_editor_switch_to_time_input">Switch to text time input</string>
+    <string name="date_period_title">Period</string>
+    <string name="date_period_today">Today</string>
+    <string name="date_period_week">Last week</string>
+    <string name="date_period_month">Last month</string>
+    <string name="date_period_quarter">Last quarter</string>
+    <string name="date_period_year">Last year</string>
+    <string name="date_period_custom">Custom</string>
 </resources>

@@ -45,4 +45,11 @@
     <string name="finance_editor_enter_time">Введите время</string>
     <string name="finance_editor_switch_to_time_picker">Перейти к выбору времени на циферблате</string>
     <string name="finance_editor_switch_to_time_input">Перейти к текстовому вводу времени</string>
+    <string name="date_period_title">Период</string>
+    <string name="date_period_today">Сегодня</string>
+    <string name="date_period_week">За неделю</string>
+    <string name="date_period_month">За месяц</string>
+    <string name="date_period_quarter">За квартал</string>
+    <string name="date_period_year">За год</string>
+    <string name="date_period_custom">Произвольный период</string>
 </resources>

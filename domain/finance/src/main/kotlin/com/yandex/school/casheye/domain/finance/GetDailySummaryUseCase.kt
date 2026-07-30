@@ -16,14 +16,20 @@ class GetDailySummaryUseCase(
     operator fun invoke(
         date: LocalDate,
         transactionKind: TransactionKind,
+    ): Flow<FinanceLoadResult> = invoke(date, date, transactionKind)
+
+    operator fun invoke(
+        startDate: LocalDate,
+        endDate: LocalDate,
+        transactionKind: TransactionKind,
     ): Flow<FinanceLoadResult> =
         combine(
             repository.observeAccounts(),
             repository.observeTransactions(
                 TransactionsQuery(
                     accountIds = emptySet(),
-                    startDate = date,
-                    endDate = date,
+                    startDate = startDate,
+                    endDate = endDate,
                 ),
             ),
             reportingCurrencyRepository.observe(),
@@ -53,5 +59,10 @@ class GetDailySummaryUseCase(
             result
         }.catch { emit(FinanceLoadResult.Failure(FinanceFailureReason.Unknown)) }
 
-    suspend fun refresh(date: LocalDate): FinanceRefreshResult = repository.refreshPeriod(date, date)
+    suspend fun refresh(date: LocalDate): FinanceRefreshResult = refresh(date, date)
+
+    suspend fun refresh(
+        startDate: LocalDate,
+        endDate: LocalDate,
+    ): FinanceRefreshResult = repository.refreshPeriod(startDate, endDate)
 }
