@@ -1,6 +1,8 @@
 package com.yandex.school.casheye.app
 
 import android.os.SystemClock
+import android.os.VibrationEffect
+import android.os.Vibrator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -8,14 +10,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ProcessLifecycleOwner
 import com.yandex.school.casheye.domain.settings.SecuritySettings
 import com.yandex.school.casheye.feature.settings.presentation.AppLockScreen
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 
 internal val APP_LOCK_BACKGROUND_GRACE_PERIOD = 5.minutes
+private val APP_LOCK_PIN_ERROR_VIBRATION_DURATION = 50.milliseconds
 
 @Composable
 internal fun AppLockGate(
@@ -24,6 +29,8 @@ internal fun AppLockGate(
     requestBiometricAuthentication: (onResult: (Boolean) -> Unit) -> Unit,
     content: @Composable () -> Unit,
 ) {
+    val context = LocalContext.current
+    val vibrator = remember(context) { context.getSystemService(Vibrator::class.java) }
     val verifier = security.pinVerifier
     val sessionStartedWithoutPin = remember { verifier == null }
     var locked by remember(verifier?.hash) { mutableStateOf(verifier != null && !sessionStartedWithoutPin) }
@@ -100,6 +107,16 @@ internal fun AppLockGate(
         verifier = verifier,
         biometricsEnabled = biometricsEnabled,
         onRequestBiometricAuthentication = requestBiometric,
+        onPinVerificationError = {
+            if (vibrator?.hasVibrator() == true) {
+                vibrator.vibrate(
+                    VibrationEffect.createOneShot(
+                        APP_LOCK_PIN_ERROR_VIBRATION_DURATION.inWholeMilliseconds,
+                        VibrationEffect.DEFAULT_AMPLITUDE,
+                    ),
+                )
+            }
+        },
         onPinVerified = { locked = false },
     )
 }

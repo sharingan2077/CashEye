@@ -68,6 +68,7 @@ fun AppLockScreen(
     verifier: PinVerifier,
     biometricsEnabled: Boolean,
     onRequestBiometricAuthentication: () -> Unit,
+    onPinVerificationError: () -> Unit,
     onPinVerified: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: AppLockViewModel = metroViewModel(),
@@ -112,6 +113,7 @@ fun AppLockScreen(
         verification = appLockState.verification,
         resultProgress = resultProgress,
         onAnimationStateChange = { pinAnimationState = it },
+        onErrorHapticFeedback = onPinVerificationError,
         onResetPin = {
             pin = ""
             pendingPin = null
@@ -247,6 +249,7 @@ private fun HandlePinVerificationResultEffect(
     verification: AppLockVerificationState,
     resultProgress: Animatable<Float, AnimationVector1D>,
     onAnimationStateChange: (PinAnimationState) -> Unit,
+    onErrorHapticFeedback: () -> Unit,
     onResetPin: () -> Unit,
     onAnimationFinished: (AppLockIntent) -> Unit,
     onPinVerified: () -> Unit,
@@ -266,6 +269,7 @@ private fun HandlePinVerificationResultEffect(
 
             AppLockVerificationState.Error -> {
                 onAnimationStateChange(PinAnimationState.Error)
+                onErrorHapticFeedback()
                 resultProgress.animateTo(
                     1f,
                     tween(PIN_ERROR_EXPAND_DURATION.inWholeMilliseconds.toInt()),
@@ -376,6 +380,7 @@ private fun AppLockScreenPreview() {
             verifier = PinVerifier("preview", "preview"),
             biometricsEnabled = true,
             onRequestBiometricAuthentication = {},
+            onPinVerificationError = {},
             onPinVerified = {},
         )
     }
