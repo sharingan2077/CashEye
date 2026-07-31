@@ -117,7 +117,7 @@ fun NavigationRoot(
         DatePeriodPickerSheet(
             period = selectedPeriod,
             today = LocalDate.now(),
-            onPeriodSelected = { period ->
+            onPeriodSelect = { period ->
                 selectedStartDateEpochDay = period.startDate.toEpochDay()
                 selectedEndDateEpochDay = period.endDate.toEpochDay()
                 showPeriodPicker = false

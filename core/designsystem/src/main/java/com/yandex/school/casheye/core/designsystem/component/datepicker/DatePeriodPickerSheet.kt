@@ -39,7 +39,7 @@ fun DatePeriodPickerSheet(
     period: DatePeriod,
     today: LocalDate,
     onDismiss: () -> Unit,
-    onPeriodSelected: (DatePeriod) -> Unit,
+    onPeriodSelect: (DatePeriod) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var selectingCustom by remember { mutableStateOf(false) }
@@ -64,7 +64,7 @@ fun DatePeriodPickerSheet(
                 onClick = {
                     val start = pickerState.selectedStartDateMillis!!.toLocalDate()
                     val end = pickerState.selectedEndDateMillis!!.toLocalDate()
-                    if (start <= end && end <= today) onPeriodSelected(DatePeriod(start, end))
+                    if (start <= end && end <= today) onPeriodSelect(DatePeriod(start, end))
                 },
                 modifier = Modifier.fillMaxWidth().padding(20.dp),
             ) { Text(stringResource(R.string.finance_editor_apply)) }
@@ -81,7 +81,7 @@ fun DatePeriodPickerSheet(
                             if (preset == DatePeriodPreset.Custom) {
                                 selectingCustom = true
                             } else {
-                                onPeriodSelected(preset.resolve(today))
+                                onPeriodSelect(preset.resolve(today))
                             }
                         },
                     minHeight = ListItemDefaults.CompactMinHeight,
