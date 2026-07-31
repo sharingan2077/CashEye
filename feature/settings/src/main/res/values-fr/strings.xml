@@ -3,7 +3,6 @@
     <string name="settings_wallet">PORTEFEUILLE</string>
     <string name="settings_currency">Devise</string>
     <string name="settings_articles">Catégories</string>
-    <string name="settings_articles_search">Rechercher une catégorie</string>
     <string name="settings_articles_empty">Aucune catégorie correspondante</string>
     <string name="settings_articles_load_error">Impossible de charger les catégories. Touchez pour réessayer.</string>
     <string name="settings_interface">INTERFACE</string>
@@ -28,12 +27,9 @@
     <string name="settings_biometrics_unavailable">Configurez la biométrie dans les réglages système Android pour activer cette option.</string>
     <string name="settings_biometrics_hint">Confirmez votre identité avec la biométrie pour activer cette option.</string>
     <string name="settings_biometrics_enable">Utiliser la biométrie</string>
-    <string name="app_lock_title">Bienvenue !</string>
     <string name="app_lock_pin_hint">Saisissez le code</string>
     <string name="app_lock_checking_hint">Vérification…</string>
-    <string name="app_lock_biometrics_hint">Confirmez votre identité avec la biométrie ou utilisez votre code PIN.</string>
     <string name="app_lock_use_pin">Utiliser le code PIN</string>
-    <string name="app_lock_pin_error">Code PIN incorrect. Réessayez.</string>
     <string name="app_lock_greeting_morning">Bonjour !</string>
     <string name="app_lock_greeting_afternoon">Bon après-midi !</string>
     <string name="app_lock_greeting_evening">Bonsoir !</string>

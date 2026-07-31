@@ -3,7 +3,6 @@
     <string name="settings_wallet">CARTERA</string>
     <string name="settings_currency">Moneda</string>
     <string name="settings_articles">Categorías</string>
-    <string name="settings_articles_search">Buscar una categoría</string>
     <string name="settings_articles_empty">No hay categorías coincidentes</string>
     <string name="settings_articles_load_error">No se pudieron cargar las categorías. Toca para reintentar.</string>
     <string name="settings_interface">INTERFAZ</string>
@@ -28,12 +27,9 @@
     <string name="settings_biometrics_unavailable">Configura la biometría en los ajustes del sistema Android para activar esta opción.</string>
     <string name="settings_biometrics_hint">Confirma tu identidad con biometría para activar esta opción.</string>
     <string name="settings_biometrics_enable">Usar biometría</string>
-    <string name="app_lock_title">¡Bienvenido!</string>
     <string name="app_lock_pin_hint">Introduce el código</string>
     <string name="app_lock_checking_hint">Comprobando…</string>
-    <string name="app_lock_biometrics_hint">Confirma tu identidad con biometría o usa tu código PIN.</string>
     <string name="app_lock_use_pin">Usar código PIN</string>
-    <string name="app_lock_pin_error">El código PIN no es correcto. Inténtalo de nuevo.</string>
     <string name="app_lock_greeting_morning">¡Buenos días!</string>
     <string name="app_lock_greeting_afternoon">¡Buenas tardes!</string>
     <string name="app_lock_greeting_evening">¡Buenas noches!</string>

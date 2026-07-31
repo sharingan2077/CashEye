@@ -3,7 +3,6 @@
     <string name="settings_wallet">КОШЕЛЁК</string>
     <string name="settings_currency">Валюта</string>
     <string name="settings_articles">Статьи</string>
-    <string name="settings_articles_search">Найти категорию</string>
     <string name="settings_articles_empty">Подходящих категорий нет</string>
     <string name="settings_articles_load_error">Не удалось загрузить категории. Нажмите, чтобы повторить.</string>
     <string name="settings_interface">ИНТЕРФЕЙС</string>
@@ -28,12 +27,9 @@
     <string name="settings_biometrics_unavailable">Настройте биометрию в системных настройках Android, чтобы включить этот параметр.</string>
     <string name="settings_biometrics_hint">Подтвердите личность с помощью биометрии, чтобы включить этот параметр.</string>
     <string name="settings_biometrics_enable">Использовать биометрию</string>
-    <string name="app_lock_title">Добро пожаловать!</string>
     <string name="app_lock_pin_hint">Введите код</string>
     <string name="app_lock_checking_hint">Проверяем…</string>
-    <string name="app_lock_biometrics_hint">Подтвердите личность с помощью биометрии или используйте ПИН-код.</string>
     <string name="app_lock_use_pin">Использовать ПИН-код</string>
-    <string name="app_lock_pin_error">ПИН-код не подходит. Попробуйте снова.</string>
     <string name="app_lock_greeting_morning">Доброе утро!</string>
     <string name="app_lock_greeting_afternoon">Добрый день!</string>
     <string name="app_lock_greeting_evening">Добрый вечер!</string>

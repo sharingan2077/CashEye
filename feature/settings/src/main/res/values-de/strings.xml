@@ -3,7 +3,6 @@
     <string name="settings_wallet">GELDBÖRSE</string>
     <string name="settings_currency">Währung</string>
     <string name="settings_articles">Kategorien</string>
-    <string name="settings_articles_search">Kategorie suchen</string>
     <string name="settings_articles_empty">Keine passenden Kategorien</string>
     <string name="settings_articles_load_error">Kategorien konnten nicht geladen werden. Zum Wiederholen tippen.</string>
     <string name="settings_interface">OBERFLÄCHE</string>
@@ -28,12 +27,9 @@
     <string name="settings_biometrics_unavailable">Richten Sie die Biometrie in den Android-Systemeinstellungen ein, um diese Option zu aktivieren.</string>
     <string name="settings_biometrics_hint">Bestätigen Sie Ihre Identität biometrisch, um diese Option zu aktivieren.</string>
     <string name="settings_biometrics_enable">Biometrie verwenden</string>
-    <string name="app_lock_title">Willkommen!</string>
     <string name="app_lock_pin_hint">Code eingeben</string>
     <string name="app_lock_checking_hint">Wird überprüft…</string>
-    <string name="app_lock_biometrics_hint">Bestätigen Sie Ihre Identität biometrisch oder verwenden Sie Ihren PIN-Code.</string>
     <string name="app_lock_use_pin">PIN-Code verwenden</string>
-    <string name="app_lock_pin_error">Falscher PIN-Code. Versuchen Sie es erneut.</string>
     <string name="app_lock_greeting_morning">Guten Morgen!</string>
     <string name="app_lock_greeting_afternoon">Guten Tag!</string>
     <string name="app_lock_greeting_evening">Guten Abend!</string>
