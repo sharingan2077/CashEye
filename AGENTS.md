@@ -273,6 +273,8 @@ slice via offset/limit. Never bulk-read large files.
 - In every emitting `@Composable`, declare `modifier: Modifier = Modifier` as the first optional
   parameter, immediately after all required parameters. Do not place required or optional parameters
   after `modifier`; this is enforced by the Compose ktlint rule.
+- Name composable callback parameters in the present tense: use `onClick`, `onPeriodChange`, or
+  `onTextChange`, not past-tense names such as `onClicked`, `onPeriodSelected`, or `onTextChanged`.
 
 - Prefer type-safe Kotlin duration APIs:
     - `delay(300.milliseconds)`, not `delay(300L)`.
@@ -282,3 +284,4 @@ slice via offset/limit. Never bulk-read large files.
     - `kotlin.time.Duration.Companion.seconds`
 - Avoid unexplained raw numeric time values.
 - Extract repeated delays and timeouts into named `Duration` constants.
+- For a no-op `when` branch, use `else -> Unit`; do not write a redundant `else -> { Unit }` block.
