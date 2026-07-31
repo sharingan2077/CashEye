@@ -4,6 +4,8 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.temporal.TemporalAdjusters
 
+private const val MONTHS_PER_QUARTER = 3
+
 data class DatePeriod(
     val startDate: LocalDate,
     val endDate: LocalDate,
@@ -34,7 +36,10 @@ fun DatePeriodPreset.resolve(today: LocalDate): DatePeriod =
 
         DatePeriodPreset.Quarter -> {
             DatePeriod(
-                today.withMonth(((today.monthValue - 1) / 3) * 3 + 1).withDayOfMonth(1),
+                today
+                    .withMonth(
+                        ((today.monthValue - 1) / MONTHS_PER_QUARTER) * MONTHS_PER_QUARTER + 1,
+                    ).withDayOfMonth(1),
                 today,
             )
         }
