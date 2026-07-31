@@ -22,6 +22,7 @@ import kotlinx.serialization.PolymorphicSerializer
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 
+/** Holds the selected top-level route and a separate saved back stack for every top-level route. */
 class NavigationState(
     val startRoute: NavKey,
     topLevelRoute: MutableState<NavKey>,
@@ -38,6 +39,7 @@ class NavigationState(
             }
 }
 
+/** Restores all top-level stacks with the NavKey serializers required by Navigation 3. */
 @Composable
 fun rememberNavigationState(
     startRoute: NavKey,
@@ -70,6 +72,7 @@ fun rememberNavigationState(
     }
 }
 
+/** Decorates only the stacks needed to display the start route and current top-level route. */
 @Composable
 fun NavigationState.toEntries(entryProvider: (NavKey) -> NavEntry<NavKey>): SnapshotStateList<NavEntry<NavKey>> {
     val decoratedEntries =

@@ -5,6 +5,7 @@ import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 
+/** Android adapter that exposes strong-biometric availability and one prompt result to app composition. */
 class AndroidBiometricAuthenticator(
     private val activity: FragmentActivity,
 ) {

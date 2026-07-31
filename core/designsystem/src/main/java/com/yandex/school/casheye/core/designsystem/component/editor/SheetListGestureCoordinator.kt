@@ -11,6 +11,10 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.unit.Velocity
 
+/**
+ * Lets a list consume its own gestures while allowing a downward drag at its top to dismiss the
+ * parent sheet.
+ */
 class SheetListGestureCoordinator(
     private val listState: LazyListState,
     private val listFlingBehavior: FlingBehavior,
@@ -70,6 +74,7 @@ class SheetListGestureCoordinator(
     }
 }
 
+/** Remembers one coordinator and the matching default fling behavior for a sheet list. */
 @Composable
 fun rememberSheetListGestureCoordinator(listState: LazyListState): SheetListGestureCoordinator {
     val listFlingBehavior = ScrollableDefaults.flingBehavior()

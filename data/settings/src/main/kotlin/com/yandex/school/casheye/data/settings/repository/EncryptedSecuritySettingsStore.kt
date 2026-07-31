@@ -16,6 +16,10 @@ import java.util.Base64
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
 
+/**
+ * Stores the PIN verifier and biometric preference in encrypted preferences, never the PIN.
+ * Submitted character arrays are cleared after deriving or checking a verifier.
+ */
 internal class EncryptedSecuritySettingsStore(
     context: Context,
 ) {
@@ -29,6 +33,7 @@ internal class EncryptedSecuritySettingsStore(
             awaitClose { preferences.unregisterOnSharedPreferenceChangeListener(listener) }
         }
 
+    /** Replaces or clears the verifier; clearing it also disables biometrics. */
     fun setPin(pin: CharArray?) {
         try {
             preferences

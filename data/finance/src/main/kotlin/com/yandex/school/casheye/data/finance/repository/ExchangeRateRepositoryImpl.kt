@@ -21,6 +21,11 @@ import java.time.Clock
 import java.time.Duration
 import java.time.LocalDate
 
+/**
+ * Caches EUR exchange quotes and records complete historical coverage.
+ * Refreshes keep valid cached rates on failure and distinguish incomplete API responses from
+ * transport failures.
+ */
 internal class RoomExchangeRateRepository(
     private val api: ExchangeRateApi,
     private val cache: ExchangeRateCache,
@@ -136,6 +141,7 @@ internal class RoomExchangeRateRepository(
         if (entities.isNotEmpty()) cache.upsertRates(entities)
     }
 
+    /** Returns uncovered date intervals so historical refreshes request only the missing data. */
     private suspend fun missingRanges(
         startDate: LocalDate,
         endDate: LocalDate,

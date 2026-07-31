@@ -18,12 +18,14 @@ import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
 import java.util.concurrent.TimeUnit
 
+/** Schedules durable-outbox synchronization without exposing WorkManager to feature layers. */
 interface FinanceSyncScheduler {
     fun registerPeriodicSync()
 
     fun enqueueImmediateSync()
 }
 
+/** Registers unique network-constrained periodic and immediate finance synchronization work. */
 @Inject
 @SingleIn(AppScope::class)
 class WorkManagerFinanceSyncScheduler(
@@ -73,6 +75,7 @@ class WorkManagerFinanceSyncScheduler(
     }
 }
 
+/** Maps the domain sync result to WorkManager retry semantics. */
 class FinanceSyncWorker(
     appContext: Context,
     workerParameters: WorkerParameters,
@@ -81,6 +84,7 @@ class FinanceSyncWorker(
     override suspend fun doWork(): Result = financeSyncer.sync().toWorkerResult()
 }
 
+/** Retries only failures that may succeed later; permanent HTTP failures complete as failures. */
 internal fun FinanceSyncResult.toWorkerResult(): ListenableWorker.Result =
     when (this) {
         FinanceSyncResult.Success -> ListenableWorker.Result.success()
@@ -88,6 +92,7 @@ internal fun FinanceSyncResult.toWorkerResult(): ListenableWorker.Result =
         is FinanceSyncResult.PermanentFailure -> ListenableWorker.Result.failure()
     }
 
+/** Creates workers whose dependencies cannot be supplied by WorkManager's default factory. */
 class FinanceSyncWorkerFactory(
     private val financeSyncerProvider: () -> FinanceSyncer,
     private val exchangeRateRefresherProvider: () -> ExchangeRateRefresher,

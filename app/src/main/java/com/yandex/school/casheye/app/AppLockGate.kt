@@ -32,6 +32,10 @@ private object AppLockSessionState {
     var isLocked: Boolean? = null
 }
 
+/**
+ * Owns process-lifecycle locking and biometric prompt coordination around the app content.
+ * PIN verification state and UI remain in the Settings feature.
+ */
 @Composable
 internal fun AppLockGate(
     security: SecuritySettings,
@@ -177,6 +181,7 @@ private fun shouldRequestBiometricAuthentication(
     isAppInForeground: Boolean,
 ): Boolean = locked && biometricsEnabled && !biometricRequested && isAppInForeground
 
+/** Applies the grace period in elapsed-realtime units so wall-clock changes cannot affect locking. */
 internal fun shouldLockAfterBackground(
     backgroundedAtElapsedRealtime: Long?,
     currentElapsedRealtime: Long,

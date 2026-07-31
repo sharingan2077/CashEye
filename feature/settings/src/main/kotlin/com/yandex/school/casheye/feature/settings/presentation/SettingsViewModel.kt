@@ -16,6 +16,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
+/**
+ * Reduces Settings intents into persistent preference updates and sheet state.
+ * Article loading keeps the last successful categories when a later refresh fails.
+ */
 @Inject
 class SettingsViewModel(
     observeSettings: ObserveSettingsUseCase,
@@ -98,6 +102,7 @@ class SettingsViewModel(
         }
     }
 
+    /** Merges each successful category type with the previous cache to keep partial offline content useful. */
     private fun loadArticles() {
         if (_state.value.isArticlesLoading) return
         viewModelScope.launch {

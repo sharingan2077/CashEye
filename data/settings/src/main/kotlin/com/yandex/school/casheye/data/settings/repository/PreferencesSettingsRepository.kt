@@ -18,6 +18,10 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import java.io.IOException
 
+/**
+ * Combines non-secret appearance preferences with encrypted security settings behind one domain
+ * repository, removing legacy plaintext verifier entries on first observation.
+ */
 internal class PreferencesSettingsRepository(
     private val dataStore: DataStore<Preferences>,
     private val securityStore: EncryptedSecuritySettingsStore,
