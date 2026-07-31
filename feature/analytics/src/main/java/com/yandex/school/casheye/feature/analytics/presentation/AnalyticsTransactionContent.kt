@@ -28,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
@@ -229,7 +230,12 @@ internal fun MissingRatesNotice(
             style = MaterialTheme.typography.titleMedium,
         )
         Text(
-            stringResource(R.string.missing_rates_description, transactions.size, currencies),
+            pluralStringResource(
+                R.plurals.missing_rates_description,
+                transactions.size,
+                transactions.size,
+                currencies,
+            ),
             color = MaterialTheme.colorScheme.onErrorContainer,
             style = MaterialTheme.typography.bodyMedium,
         )

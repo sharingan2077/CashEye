@@ -14,7 +14,10 @@
     <string name="selected_count">Seleccionado: %1$d</string>
     <string name="transactions">Transacciones</string>
     <string name="missing_rates_title">Algunas transacciones no se incluyeron</string>
-    <string name="missing_rates_description">%1$d transacciones: faltan tipos históricos para %2$s.</string>
+    <plurals name="missing_rates_description">
+        <item quantity="one">%1$d transacción: falta el tipo histórico para %2$s.</item>
+        <item quantity="other">%1$d transacciones: faltan los tipos históricos para %2$s.</item>
+    </plurals>
     <string name="not_included_missing_rate">No incluida: tipo de cambio no disponible</string>
     <string name="original_amount_rate">%1$s · tipo %2$s</string>
     <string name="empty_period">No hay operaciones para el período seleccionado</string>
