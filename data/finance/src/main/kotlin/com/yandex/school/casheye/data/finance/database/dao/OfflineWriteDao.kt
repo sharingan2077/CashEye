@@ -367,7 +367,7 @@ internal abstract class OfflineWriteDao {
             return
         }
 
-        operationsForEntity(PendingEntityType.TRANSACTION, temporaryId).forEach { operation ->
+        operationsForTransaction(temporaryId).forEach { operation ->
             val snapshot = json.decodeFromString<TransactionCommandSnapshot>(operation.payload)
             updateOperation(
                 operation.copy(
@@ -382,7 +382,7 @@ internal abstract class OfflineWriteDao {
             "Temporary transaction $temporaryId was not found"
         }
         unchangedOperationIds.forEach { deleteOperation(it) }
-        if (countOperations(PendingEntityType.TRANSACTION, serverId) == 0) {
+        if (countTransactionOperations(serverId) == 0) {
             upsertTransaction(serverTransaction.copy(currency = localCurrency ?: serverTransaction.currency))
         }
     }
@@ -405,7 +405,7 @@ internal abstract class OfflineWriteDao {
     ) {
         val localCurrency = transactionById(serverTransaction.id)?.currency
         unchangedOperationIds(sentOperations).forEach { deleteOperation(it) }
-        if (countOperations(PendingEntityType.TRANSACTION, serverTransaction.id) == 0) {
+        if (countTransactionOperations(serverTransaction.id) == 0) {
             upsertTransaction(serverTransaction.copy(currency = localCurrency ?: serverTransaction.currency))
         }
     }
@@ -514,12 +514,9 @@ internal abstract class OfflineWriteDao {
     protected abstract suspend fun operationById(operationId: Long): PendingOperationEntity?
 
     @Query(
-        "SELECT COUNT(*) FROM pending_operations WHERE entity_type = :entityType AND local_entity_id = :localId",
+        "SELECT COUNT(*) FROM pending_operations WHERE entity_type = 'TRANSACTION' AND local_entity_id = :localId",
     )
-    protected abstract suspend fun countOperations(
-        entityType: PendingEntityType,
-        localId: Int,
-    ): Int
+    protected abstract suspend fun countTransactionOperations(localId: Int): Int
 
     @Query(
         """
@@ -558,13 +555,10 @@ internal abstract class OfflineWriteDao {
     @Query(
         """
         SELECT * FROM pending_operations
-        WHERE entity_type = :entityType AND local_entity_id = :localId
+        WHERE entity_type = 'TRANSACTION' AND local_entity_id = :localId
         """,
     )
-    protected abstract suspend fun operationsForEntity(
-        entityType: PendingEntityType,
-        localId: Int,
-    ): List<PendingOperationEntity>
+    protected abstract suspend fun operationsForTransaction(localId: Int): List<PendingOperationEntity>
 
     @Query(
         "DELETE FROM pending_operations WHERE entity_type = :entityType AND local_entity_id = :localId",

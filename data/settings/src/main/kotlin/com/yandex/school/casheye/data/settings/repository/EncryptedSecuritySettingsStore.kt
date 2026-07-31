@@ -1,7 +1,11 @@
+@file:Suppress("DEPRECATION")
+// Используется Deprecated EncryptedSharedPreferences, так как это указано в требованиях к HW_4
+
 package com.yandex.school.casheye.data.settings.repository
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.core.content.edit
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.yandex.school.casheye.domain.settings.PinVerifier
@@ -37,8 +41,7 @@ internal class EncryptedSecuritySettingsStore(
     fun setPin(pin: CharArray?) {
         try {
             preferences
-                .edit()
-                .apply {
+                .edit {
                     if (pin == null) {
                         remove(PIN_SALT)
                         remove(PIN_HASH)
@@ -48,7 +51,7 @@ internal class EncryptedSecuritySettingsStore(
                         putString(PIN_SALT, verifier.salt)
                         putString(PIN_HASH, verifier.hash)
                     }
-                }.apply()
+                }
         } finally {
             pin?.fill('\u0000')
         }
@@ -68,7 +71,7 @@ internal class EncryptedSecuritySettingsStore(
         }
 
     fun setBiometricsEnabled(enabled: Boolean) {
-        preferences.edit().putBoolean(BIOMETRICS, enabled && verifier() != null).apply()
+        preferences.edit { putBoolean(BIOMETRICS, enabled && verifier() != null) }
     }
 
     private fun settings(): SecuritySettings {
