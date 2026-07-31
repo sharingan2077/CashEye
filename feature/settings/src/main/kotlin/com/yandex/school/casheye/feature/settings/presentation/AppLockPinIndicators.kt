@@ -22,6 +22,7 @@ internal fun AppLockPinIndicators(
     successColor: Color,
     errorColor: Color,
     resultProgress: Animatable<Float, AnimationVector1D>,
+    entryScaleXs: List<Animatable<Float, AnimationVector1D>>,
     cellCenterDistancePx: Float,
     modifier: Modifier = Modifier,
 ) {
@@ -46,7 +47,7 @@ internal fun AppLockPinIndicators(
                 1f
             }
         }
-    ; PinCodeInput(
+    PinCodeInput(
         value = pin,
         inputTestTag = "app_lock_pin_input",
         cellTestTagPrefix = "app_lock_pin_cell",
@@ -65,8 +66,8 @@ internal fun AppLockPinIndicators(
             }
         },
         fillEmptyCells = true,
-        cellScaleX = { resultScale },
-        cellScaleY = { resultScale },
+        cellScaleX = { index -> entryScaleXs[index].value * resultScale },
+        cellScaleY = { index -> entryScaleXs[index].value * resultScale },
         cellTranslationX = { index ->
             if (animationState ==
                 PinAnimationState.Success
@@ -76,6 +77,7 @@ internal fun AppLockPinIndicators(
                 0f
             }
         },
+        animateEntry = false,
         animateIndicatorColor = false,
         useSystemInput = false,
     )

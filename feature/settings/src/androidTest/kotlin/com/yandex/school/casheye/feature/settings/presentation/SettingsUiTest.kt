@@ -6,9 +6,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.unit.dp
 import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
 import com.yandex.school.casheye.domain.settings.AppLanguage
 import com.yandex.school.casheye.domain.settings.AppSettings
@@ -56,7 +58,8 @@ class SettingsUiTest {
     }
 
     @Test
-    fun pinKeypadSubmitsFourDigits() {
+    fun rapidPinKeypadInputAnimatesEveryCellAndSubmitsFourDigits() {
+        composeRule.mainClock.autoAdvance = false
         val submittedPins = mutableListOf<String>()
         val viewModel =
             AppLockViewModel(
@@ -97,6 +100,11 @@ class SettingsUiTest {
 
         listOf(1, 2, 3, 4).forEach { digit ->
             composeRule.onNodeWithTag("app_lock_key_$digit").performClick()
+        }
+        composeRule.mainClock.advanceTimeBy(80)
+
+        repeat(4) { index ->
+            composeRule.onNodeWithTag("app_lock_pin_cell_$index").assertHeightIsAtLeast(17.dp)
         }
         composeRule.mainClock.advanceTimeBy(500)
 

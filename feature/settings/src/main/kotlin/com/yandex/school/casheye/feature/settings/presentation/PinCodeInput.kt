@@ -62,6 +62,7 @@ internal fun PinCodeInput(
     cellScaleY: (Int) -> Float = { 1f },
     cellTranslationX: (Int) -> Float = { 0f },
     cellTranslationY: (Int) -> Float = { 0f },
+    animateEntry: Boolean = true,
     animateIndicatorColor: Boolean = true,
     useSystemInput: Boolean = true,
 ) {
@@ -73,7 +74,8 @@ internal fun PinCodeInput(
         if (enabled && useSystemInput) focusRequester.requestFocus()
     }
 
-    LaunchedEffect(value.length) {
+    LaunchedEffect(value.length, animateEntry) {
+        if (!animateEntry) return@LaunchedEffect
         val enteredIndex = value.lastIndex
         if (value.length > previousValueLength && enteredIndex >= 0) {
             entryScaleXs.forEachIndexed { index, scale ->

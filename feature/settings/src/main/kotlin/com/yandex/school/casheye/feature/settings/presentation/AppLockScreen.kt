@@ -14,9 +14,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,6 +32,7 @@ import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
 import com.yandex.school.casheye.domain.settings.PinVerifier
 import com.yandex.school.casheye.feature.settings.R
 import dev.zacsweers.metrox.viewmodel.metroViewModel
+import kotlinx.coroutines.Job
 import java.util.Calendar
 
 @Composable
@@ -48,16 +49,17 @@ fun AppLockScreen(
     var pin by remember { mutableStateOf("") }
     var pendingPin by remember { mutableStateOf<String?>(null) }
     var animationState by remember { mutableStateOf(PinAnimationState.Idle) }
-    var previousPinLength by remember { mutableIntStateOf(0) }
+    val animationScope = rememberCoroutineScope()
     val defaultColor = MaterialTheme.colorScheme.outlineVariant
     val enteredColor = MaterialTheme.colorScheme.primary
     val errorColor = MaterialTheme.colorScheme.error
     val successColor = CashEyeExtendedTheme.colors.chartIncome
     val cellColors = remember { List(PIN_DIGIT_COUNT) { Animatable(defaultColor) } }
+    val entryScaleXs = remember { List(PIN_DIGIT_COUNT) { Animatable(1f) } }
+    val pinEntryAnimationJobs = remember { arrayOfNulls<Job>(PIN_DIGIT_COUNT) }
     val resultProgress = remember { Animatable(0f) }
     val cellCenterDistancePx = with(LocalDensity.current) { PIN_CELL_CENTER_DISTANCE.toPx() }
     val inputEnabled = pendingPin == null && state.verification != AppLockVerificationState.Verifying
-    PinEntryColorEffect(pin, previousPinLength, cellColors, enteredColor, defaultColor) { previousPinLength = it }
     SubmitPendingPinEffect(
         pendingPin,
         resultProgress,
@@ -71,6 +73,16 @@ fun AppLockScreen(
         {
             pin = ""
             pendingPin = null
+            for (index in 0 until PIN_DIGIT_COUNT) {
+                pinEntryAnimationJobs[index]?.cancel()
+                pinEntryAnimationJobs[index] =
+                    animationScope.launchPinCellResetAnimation(
+                        index,
+                        entryScaleXs,
+                        cellColors,
+                        defaultColor,
+                    )
+            }
         },
         viewModel::onIntent,
         onPinVerify,
@@ -122,6 +134,7 @@ fun AppLockScreen(
                 successColor,
                 errorColor,
                 resultProgress,
+                entryScaleXs,
                 cellCenterDistancePx,
             )
             Spacer(Modifier.weight(.55f))
@@ -131,11 +144,34 @@ fun AppLockScreen(
                 enabled = inputEnabled,
                 onDigit = { digit ->
                     val updated = (pin + digit).take(PIN_DIGIT_COUNT)
-                    pin =
-                        updated
+                    if (updated.length > pin.length) {
+                        val enteredIndex = pin.length
+                        pinEntryAnimationJobs[enteredIndex]?.cancel()
+                        pinEntryAnimationJobs[enteredIndex] =
+                            animationScope.launchPinEntryAnimation(
+                                enteredIndex,
+                                entryScaleXs,
+                                cellColors,
+                                enteredColor,
+                            )
+                    }
+                    pin = updated
                     if (updated.length == PIN_DIGIT_COUNT) pendingPin = updated
                 },
-                onBackspace = { pin = pin.dropLast(1) },
+                onBackspace = {
+                    if (pin.isNotEmpty()) {
+                        val removedIndex = pin.lastIndex
+                        pin = pin.dropLast(1)
+                        pinEntryAnimationJobs[removedIndex]?.cancel()
+                        pinEntryAnimationJobs[removedIndex] =
+                            animationScope.launchPinCellResetAnimation(
+                                removedIndex,
+                                entryScaleXs,
+                                cellColors,
+                                defaultColor,
+                            )
+                    }
+                },
                 onFingerprint = onRequestBiometricAuthentication,
                 modifier = Modifier.fillMaxWidth(),
             )
