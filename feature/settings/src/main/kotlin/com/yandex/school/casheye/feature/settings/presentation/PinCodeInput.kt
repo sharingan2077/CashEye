@@ -102,7 +102,7 @@ internal fun PinCodeInput(
                 ),
             )
         } else if (value.length < previousValueLength) {
-            (value.length until previousValueLength).forEach { index ->
+            for (index in value.length until previousValueLength) {
                 entryScaleXs[index].snapTo(1f)
             }
         }
@@ -170,7 +170,7 @@ internal fun PinCodeInput(
                         onPinComplete(digits)
                     }
                 },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                 modifier =
                     Modifier
                         .fillMaxWidth()

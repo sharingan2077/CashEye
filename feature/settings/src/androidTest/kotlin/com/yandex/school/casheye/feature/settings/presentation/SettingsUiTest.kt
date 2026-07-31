@@ -10,9 +10,16 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
+import com.yandex.school.casheye.domain.settings.AppLanguage
+import com.yandex.school.casheye.domain.settings.AppSettings
+import com.yandex.school.casheye.domain.settings.PinVerifier
+import com.yandex.school.casheye.domain.settings.SettingsRepository
 import com.yandex.school.casheye.domain.settings.ThemeMode
+import com.yandex.school.casheye.domain.settings.VerifyPinUseCase
 import com.yandex.school.casheye.feature.settings.R
 import junit.framework.TestCase.assertEquals
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 import org.junit.Rule
 import org.junit.Test
 
@@ -51,16 +58,39 @@ class SettingsUiTest {
     @Test
     fun pinKeypadSubmitsFourDigits() {
         val submittedPins = mutableListOf<String>()
+        val viewModel =
+            AppLockViewModel(
+                VerifyPinUseCase(
+                    object : SettingsRepository {
+                        override fun observe(): Flow<AppSettings> = emptyFlow()
+
+                        override suspend fun setThemeMode(mode: ThemeMode) = Unit
+
+                        override suspend fun setLanguage(language: AppLanguage) = Unit
+
+                        override suspend fun setPin(pin: CharArray?) = Unit
+
+                        override suspend fun verifyPin(
+                            pin: CharArray,
+                            verifier: PinVerifier,
+                        ): Boolean {
+                            submittedPins += pin.concatToString()
+                            return true
+                        }
+
+                        override suspend fun setBiometricsEnabled(enabled: Boolean) = Unit
+                    },
+                ),
+            )
         composeRule.setContent {
             CashEyeTheme(darkTheme = false, dynamicColor = false) {
                 AppLockScreen(
+                    verifier = PinVerifier("salt", "hash"),
                     biometricsEnabled = false,
                     onRequestBiometricAuthentication = {},
-                    onVerifyPin = {
-                        submittedPins += it.concatToString()
-                        true
-                    },
-                    onPinVerified = {},
+                    onPinVerificationError = {},
+                    onPinVerify = {},
+                    viewModel = viewModel,
                 )
             }
         }

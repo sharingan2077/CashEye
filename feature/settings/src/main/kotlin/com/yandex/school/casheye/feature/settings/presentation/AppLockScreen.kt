@@ -22,6 +22,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -69,7 +70,7 @@ fun AppLockScreen(
     biometricsEnabled: Boolean,
     onRequestBiometricAuthentication: () -> Unit,
     onPinVerificationError: () -> Unit,
-    onPinVerified: () -> Unit,
+    onPinVerify: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: AppLockViewModel = metroViewModel(),
 ) {
@@ -118,8 +119,8 @@ fun AppLockScreen(
             pin = ""
             pendingPin = null
         },
-        onAnimationFinished = viewModel::onIntent,
-        onPinVerified = onPinVerified,
+        onAnimationFinish = viewModel::onIntent,
+        onPinVerify = onPinVerify,
     )
 
     Box(
@@ -203,6 +204,8 @@ private fun PinEntryColorEffect(
     defaultColor: Color,
     onPreviousPinLengthChange: (Int) -> Unit,
 ) {
+    val currentOnPreviousPinLengthChange by rememberUpdatedState(onPreviousPinLengthChange)
+
     LaunchedEffect(pin.length) {
         val enteredIndex = pin.lastIndex
         if (pin.length > previousPinLength && enteredIndex >= 0) {
@@ -215,7 +218,7 @@ private fun PinEntryColorEffect(
             )
         } else if (pin.length < previousPinLength) {
             coroutineScope {
-                (pin.length until previousPinLength).forEach { index ->
+                for (index in pin.length until previousPinLength) {
                     launch {
                         cellColors[index].animateTo(
                             defaultColor,
@@ -225,7 +228,7 @@ private fun PinEntryColorEffect(
                 }
             }
         }
-        onPreviousPinLengthChange(pin.length)
+        currentOnPreviousPinLengthChange(pin.length)
     }
 }
 
@@ -236,12 +239,15 @@ private fun SubmitPendingPinEffect(
     onAnimationStateChange: (PinAnimationState) -> Unit,
     onSubmitPin: (String) -> Unit,
 ) {
+    val currentOnAnimationStateChange by rememberUpdatedState(onAnimationStateChange)
+    val currentOnSubmitPin by rememberUpdatedState(onSubmitPin)
+
     LaunchedEffect(pendingPin) {
         val submittedPin = pendingPin ?: return@LaunchedEffect
         resultProgress.snapTo(0f)
-        onAnimationStateChange(PinAnimationState.Verifying)
+        currentOnAnimationStateChange(PinAnimationState.Verifying)
         delay(PIN_LAST_ENTRY_SETTLE_DURATION)
-        onSubmitPin(submittedPin)
+        currentOnSubmitPin(submittedPin)
     }
 }
 
@@ -252,25 +258,31 @@ private fun HandlePinVerificationResultEffect(
     onAnimationStateChange: (PinAnimationState) -> Unit,
     onErrorHapticFeedback: () -> Unit,
     onResetPin: () -> Unit,
-    onAnimationFinished: (AppLockIntent) -> Unit,
-    onPinVerified: () -> Unit,
+    onAnimationFinish: (AppLockIntent) -> Unit,
+    onPinVerify: () -> Unit,
 ) {
+    val currentOnAnimationStateChange by rememberUpdatedState(onAnimationStateChange)
+    val currentOnErrorHapticFeedback by rememberUpdatedState(onErrorHapticFeedback)
+    val currentOnResetPin by rememberUpdatedState(onResetPin)
+    val currentOnAnimationFinished by rememberUpdatedState(onAnimationFinish)
+    val currentOnPinVerified by rememberUpdatedState(onPinVerify)
+
     LaunchedEffect(verification) {
         when (verification) {
             AppLockVerificationState.Success -> {
-                onAnimationStateChange(PinAnimationState.Success)
+                currentOnAnimationStateChange(PinAnimationState.Success)
                 delay(PIN_SUCCESS_COLOR_DURATION)
                 resultProgress.animateTo(
                     1f,
                     tween(PIN_SUCCESS_COLLAPSE_DURATION.inWholeMilliseconds.toInt()),
                 )
-                onAnimationFinished(AppLockIntent.SuccessAnimationFinished)
-                onPinVerified()
+                currentOnAnimationFinished(AppLockIntent.SuccessAnimationFinished)
+                currentOnPinVerified()
             }
 
             AppLockVerificationState.Error -> {
-                onAnimationStateChange(PinAnimationState.Error)
-                onErrorHapticFeedback()
+                currentOnAnimationStateChange(PinAnimationState.Error)
+                currentOnErrorHapticFeedback()
                 resultProgress.animateTo(
                     1f,
                     tween(PIN_ERROR_EXPAND_DURATION.inWholeMilliseconds.toInt()),
@@ -279,14 +291,13 @@ private fun HandlePinVerificationResultEffect(
                     0f,
                     tween(PIN_ERROR_SHRINK_DURATION.inWholeMilliseconds.toInt()),
                 )
-                onAnimationStateChange(PinAnimationState.Idle)
+                currentOnAnimationStateChange(PinAnimationState.Idle)
                 delay(PIN_ERROR_COLOR_RESET_DURATION)
-                onResetPin()
-                onAnimationFinished(AppLockIntent.ErrorAnimationFinished)
+                currentOnResetPin()
+                currentOnAnimationFinished(AppLockIntent.ErrorAnimationFinished)
             }
 
             AppLockVerificationState.Idle, AppLockVerificationState.Verifying -> {
-                Unit
             }
         }
     }
@@ -382,7 +393,7 @@ private fun AppLockScreenPreview() {
             biometricsEnabled = true,
             onRequestBiometricAuthentication = {},
             onPinVerificationError = {},
-            onPinVerified = {},
+            onPinVerify = {},
         )
     }
 }

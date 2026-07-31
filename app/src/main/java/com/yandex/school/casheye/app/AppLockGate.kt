@@ -10,11 +10,13 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ProcessLifecycleOwner
+import com.yandex.school.casheye.domain.settings.PinVerifier
 import com.yandex.school.casheye.domain.settings.SecuritySettings
 import com.yandex.school.casheye.feature.settings.presentation.AppLockScreen
 import kotlin.time.Duration.Companion.milliseconds
@@ -53,38 +55,21 @@ internal fun AppLockGate(
         mutableStateOf(lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED))
     }
 
-    DisposableEffect(lifecycle, verifier?.hash) {
-        val observer =
-            LifecycleEventObserver { _, event ->
-                when (event) {
-                    Lifecycle.Event.ON_START -> {
-                        isAppInForeground = true
-                        if (
-                            verifier != null &&
-                            shouldLockAfterBackground(
-                                backgroundedAtElapsedRealtime = backgroundedAtElapsedRealtime,
-                                currentElapsedRealtime = SystemClock.elapsedRealtime(),
-                            )
-                        ) {
-                            locked = true
-                        }
-                        backgroundedAtElapsedRealtime = null
-                    }
-
-                    Lifecycle.Event.ON_STOP -> {
-                        isAppInForeground = false
-                        backgroundedAtElapsedRealtime = SystemClock.elapsedRealtime()
-                        biometricRequested = false
-                    }
-
-                    else -> {
-                        Unit
-                    }
-                }
-            }
-        lifecycle.addObserver(observer)
-        onDispose { lifecycle.removeObserver(observer) }
-    }
+    AppLockLifecycleEffect(
+        lifecycle = lifecycle,
+        verifier = verifier,
+        backgroundedAtElapsedRealtime = backgroundedAtElapsedRealtime,
+        onAppStart = { shouldLock ->
+            isAppInForeground = true
+            if (shouldLock) locked = true
+            backgroundedAtElapsedRealtime = null
+        },
+        onAppStop = { stoppedAtElapsedRealtime ->
+            isAppInForeground = false
+            backgroundedAtElapsedRealtime = stoppedAtElapsedRealtime
+            biometricRequested = false
+        },
+    )
 
     val requestBiometric = {
         if (verifier != null && locked && biometricsEnabled) {
@@ -94,18 +79,13 @@ internal fun AppLockGate(
             }
         }
     }
-    LaunchedEffect(locked, biometricsEnabled, biometricRequested, isAppInForeground) {
-        if (
-            shouldRequestBiometricAuthentication(
-                locked = verifier != null && locked,
-                biometricsEnabled = biometricsEnabled,
-                biometricRequested = biometricRequested,
-                isAppInForeground = isAppInForeground,
-            )
-        ) {
-            requestBiometric()
-        }
-    }
+    AppLockBiometricRequestEffect(
+        locked = verifier != null && locked,
+        biometricsEnabled = biometricsEnabled,
+        biometricRequested = biometricRequested,
+        isAppInForeground = isAppInForeground,
+        onRequest = requestBiometric,
+    )
     if (verifier != null && locked) {
         AppLockScreen(
             verifier = verifier,
@@ -121,10 +101,72 @@ internal fun AppLockGate(
                     )
                 }
             },
-            onPinVerified = { locked = false },
+            onPinVerify = { locked = false },
         )
     } else {
         content()
+    }
+}
+
+@Composable
+private fun AppLockLifecycleEffect(
+    lifecycle: Lifecycle,
+    verifier: PinVerifier?,
+    backgroundedAtElapsedRealtime: Long?,
+    onAppStart: (shouldLock: Boolean) -> Unit,
+    onAppStop: (stoppedAtElapsedRealtime: Long) -> Unit,
+) {
+    val currentBackgroundedAtElapsedRealtime by rememberUpdatedState(backgroundedAtElapsedRealtime)
+    val currentOnAppStart by rememberUpdatedState(onAppStart)
+    val currentOnAppStop by rememberUpdatedState(onAppStop)
+
+    DisposableEffect(lifecycle, verifier?.hash) {
+        val observer =
+            LifecycleEventObserver { _, event ->
+                when (event) {
+                    Lifecycle.Event.ON_START -> {
+                        currentOnAppStart(
+                            verifier != null &&
+                                shouldLockAfterBackground(
+                                    backgroundedAtElapsedRealtime = currentBackgroundedAtElapsedRealtime,
+                                    currentElapsedRealtime = SystemClock.elapsedRealtime(),
+                                ),
+                        )
+                    }
+
+                    Lifecycle.Event.ON_STOP -> {
+                        currentOnAppStop(SystemClock.elapsedRealtime())
+                    }
+
+                    else -> {}
+                }
+            }
+        lifecycle.addObserver(observer)
+        onDispose { lifecycle.removeObserver(observer) }
+    }
+}
+
+@Composable
+private fun AppLockBiometricRequestEffect(
+    locked: Boolean,
+    biometricsEnabled: Boolean,
+    biometricRequested: Boolean,
+    isAppInForeground: Boolean,
+    onRequest: () -> Unit,
+) {
+    val currentOnRequest by rememberUpdatedState(onRequest)
+
+    LaunchedEffect(locked, biometricsEnabled, biometricRequested, isAppInForeground) {
+        if (
+            shouldRequestBiometricAuthentication(
+                locked = locked,
+                biometricsEnabled = biometricsEnabled,
+                biometricRequested = biometricRequested,
+                isAppInForeground = isAppInForeground,
+            )
+        ) {
+            currentOnRequest()
+        }
     }
 }
 
