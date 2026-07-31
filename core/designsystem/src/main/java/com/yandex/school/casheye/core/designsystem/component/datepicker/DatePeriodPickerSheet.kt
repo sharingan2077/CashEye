@@ -6,14 +6,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -29,9 +26,7 @@ import com.yandex.school.casheye.core.designsystem.component.ListItemDefaults
 import com.yandex.school.casheye.core.model.DatePeriod
 import com.yandex.school.casheye.core.model.DatePeriodPreset
 import com.yandex.school.casheye.core.model.resolve
-import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneOffset
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,30 +39,18 @@ fun DatePeriodPickerSheet(
 ) {
     var selectingCustom by remember { mutableStateOf(false) }
     val state = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val selectableDates = rememberPastOrPresentSelectableDates(today)
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = state, modifier = modifier) {
         if (selectingCustom) {
-            val pickerState =
-                rememberDateRangePickerState(
-                    initialSelectedStartDateMillis = period.startDate.toEpochDay() * MILLIS_PER_DAY,
-                    initialSelectedEndDateMillis = period.endDate.toEpochDay() * MILLIS_PER_DAY,
-                    selectableDates = selectableDates,
-                )
-            Text(
-                text = stringResource(R.string.date_period_custom),
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
+            CustomDateRangePickerContent(
+                initialStartDate = period.startDate,
+                initialEndDate = period.endDate,
+                currentDate = today,
+                title = stringResource(R.string.date_period_custom),
+                cancelLabel = stringResource(R.string.finance_editor_cancel),
+                applyLabel = stringResource(R.string.finance_editor_apply),
+                onCancel = { selectingCustom = false },
+                onApply = { startDate, endDate -> onPeriodSelect(DatePeriod(startDate, endDate)) },
             )
-            DateRangePicker(state = pickerState, modifier = Modifier.weight(1f, fill = false))
-            Button(
-                enabled = pickerState.selectedStartDateMillis != null && pickerState.selectedEndDateMillis != null,
-                onClick = {
-                    val start = pickerState.selectedStartDateMillis!!.toLocalDate()
-                    val end = pickerState.selectedEndDateMillis!!.toLocalDate()
-                    if (start <= end && end <= today) onPeriodSelect(DatePeriod(start, end))
-                },
-                modifier = Modifier.fillMaxWidth().padding(20.dp),
-            ) { Text(stringResource(R.string.finance_editor_apply)) }
         } else {
             Text(
                 text = stringResource(R.string.date_period_title),
@@ -103,7 +86,3 @@ private fun DatePeriodPreset.titleRes(): Int =
         DatePeriodPreset.Year -> R.string.date_period_year
         DatePeriodPreset.Custom -> R.string.date_period_custom
     }
-
-private fun Long.toLocalDate(): LocalDate = Instant.ofEpochMilli(this).atZone(ZoneOffset.UTC).toLocalDate()
-
-private const val MILLIS_PER_DAY = 86_400_000L

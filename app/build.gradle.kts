@@ -17,6 +17,15 @@ android {
         version = release(37)
     }
 
+    installation {
+        val installUser =
+            providers.gradleProperty("androidInstallUser").orNull
+
+        if (installUser != null) {
+            installOptions += listOf("--user", installUser)
+        }
+    }
+
     defaultConfig {
         applicationId = "com.yandex.school.casheye"
         minSdk = 26
