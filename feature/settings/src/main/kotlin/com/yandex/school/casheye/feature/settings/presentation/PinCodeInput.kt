@@ -32,6 +32,9 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.SemanticsPropertyKey
+import androidx.compose.ui.semantics.SemanticsPropertyReceiver
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import kotlin.time.Duration.Companion.milliseconds
@@ -44,6 +47,9 @@ private val PIN_INDICATOR_SLOT_SIZE = 32.dp
 private val PIN_ENTRY_WIDE_DURATION = 140.milliseconds
 private val PIN_ENTRY_NARROW_DURATION = 110.milliseconds
 private val PIN_ENTRY_SETTLE_DURATION = 90.milliseconds
+
+internal val PinCellScaleKey = SemanticsPropertyKey<Float>("PinCellScale")
+internal var SemanticsPropertyReceiver.pinCellScale by PinCellScaleKey
 
 @Composable
 internal fun PinCodeInput(
@@ -119,6 +125,8 @@ internal fun PinCodeInput(
             repeat(PIN_LENGTH) { index ->
                 val isFilled = index < value.length || fillEmptyCells
                 val entryIndicatorSize = PIN_INDICATOR_SIZE * entryScaleXs[index].value
+                val cellScaleXValue = cellScaleX(index)
+                val cellScaleYValue = cellScaleY(index)
                 val targetIndicatorColor =
                     if (isError) MaterialTheme.colorScheme.error else indicatorColorForCell(index)
                 val indicatorColor =
@@ -139,12 +147,13 @@ internal fun PinCodeInput(
                     modifier =
                         Modifier
                             .size(PIN_INDICATOR_SLOT_SIZE)
+                            .testTag("${cellTestTagPrefix}_$index")
                             .graphicsLayer {
-                                scaleX = cellScaleX(index)
-                                scaleY = cellScaleY(index)
+                                scaleX = cellScaleXValue
+                                scaleY = cellScaleYValue
                                 translationX = cellTranslationX(index)
                                 translationY = cellTranslationY(index)
-                            },
+                            }.semantics { pinCellScale = cellScaleXValue },
                     contentAlignment = Alignment.Center,
                 ) {
                     Box(
@@ -157,31 +166,50 @@ internal fun PinCodeInput(
                                 Modifier
                                     .size(entryIndicatorSize)
                                     .border(2.dp, indicatorColor, CircleShape)
-                            }.testTag("${cellTestTagPrefix}_$index"),
+                            },
                     )
                 }
             }
         }
         if (useSystemInput) {
-            BasicTextField(
+            PinCodeSystemInput(
                 value = value,
-                onValueChange = { input ->
-                    val digits = input.filter(Char::isDigit).take(PIN_LENGTH)
-                    onValueChange(digits)
-                    if (digits.length == PIN_LENGTH) {
-                        onPinComplete(digits)
-                    }
-                },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
-                        .alpha(0f)
-                        .focusRequester(focusRequester)
-                        .testTag(inputTestTag),
+                inputTestTag = inputTestTag,
+                focusRequester = focusRequester,
+                onValueChange = onValueChange,
+                onPinComplete = onPinComplete,
                 enabled = enabled,
             )
         }
     }
+}
+
+@Composable
+private fun PinCodeSystemInput(
+    value: String,
+    inputTestTag: String,
+    focusRequester: FocusRequester,
+    onValueChange: (String) -> Unit,
+    onPinComplete: (String) -> Unit,
+    enabled: Boolean,
+) {
+    BasicTextField(
+        value = value,
+        onValueChange = { input ->
+            val digits = input.filter(Char::isDigit).take(PIN_LENGTH)
+            onValueChange(digits)
+            if (digits.length == PIN_LENGTH) {
+                onPinComplete(digits)
+            }
+        },
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .alpha(0f)
+                .focusRequester(focusRequester)
+                .testTag(inputTestTag),
+        enabled = enabled,
+    )
 }
