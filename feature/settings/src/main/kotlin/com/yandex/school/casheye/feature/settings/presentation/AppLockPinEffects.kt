@@ -42,7 +42,7 @@ internal fun CoroutineScope.launchPinEntryAnimation(
     entryScaleXs: List<Animatable<Float, AnimationVector1D>>,
     cellColors: List<Animatable<Color, AnimationVector4D>>,
     enteredColor: Color,
-) : Job =
+): Job =
     launch {
         coroutineScope {
             launch {

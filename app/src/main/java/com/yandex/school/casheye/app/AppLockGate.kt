@@ -198,8 +198,13 @@ internal fun shouldLockAfterBackground(
     policy: AppLockBackgroundLockPolicy = APP_LOCK_BACKGROUND_LOCK_POLICY,
 ): Boolean =
     when (policy) {
-        AppLockBackgroundLockPolicy.IMMEDIATELY -> backgroundedAtElapsedRealtime != null
-        AppLockBackgroundLockPolicy.AFTER_GRACE_PERIOD ->
+        AppLockBackgroundLockPolicy.IMMEDIATELY -> {
+            backgroundedAtElapsedRealtime != null
+        }
+
+        AppLockBackgroundLockPolicy.AFTER_GRACE_PERIOD -> {
             backgroundedAtElapsedRealtime != null &&
-                currentElapsedRealtime - backgroundedAtElapsedRealtime >= APP_LOCK_BACKGROUND_GRACE_PERIOD.inWholeMilliseconds
+                currentElapsedRealtime - backgroundedAtElapsedRealtime >=
+                APP_LOCK_BACKGROUND_GRACE_PERIOD.inWholeMilliseconds
+        }
     }

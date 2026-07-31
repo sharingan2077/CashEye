@@ -264,7 +264,10 @@ private fun CalendarMonthHeader(
     ) {
         CalendarNavigationButton(pointsRight = false, enabled = true, onClick = onPrevious)
         Text(
-            text = month.format(DateTimeFormatter.ofPattern("LLLL yyyy", locale)).replaceFirstChar { it.titlecase(locale) },
+            text =
+                month
+                    .format(DateTimeFormatter.ofPattern("LLLL yyyy", locale))
+                    .replaceFirstChar { it.titlecase(locale) },
             style = MaterialTheme.typography.titleMedium,
             textAlign = TextAlign.Center,
             modifier = Modifier.weight(1f),
@@ -348,7 +351,9 @@ private fun CalendarMonthGrid(
                             enabled = date <= currentDate,
                             isStart = date == selectedStartDate,
                             isEnd = date == selectedEndDate,
-                            isInRange = selectedStartDate != null && selectedEndDate != null && date > selectedStartDate && date < selectedEndDate,
+                            isInRange =
+                                selectedStartDate != null && selectedEndDate != null && date > selectedStartDate &&
+                                    date < selectedEndDate,
                             hasRangeBefore = selectedStartDate != null && date > selectedStartDate,
                             hasRangeAfter = selectedEndDate != null && date < selectedEndDate,
                             onClick = { onDateClick(date) },
@@ -395,11 +400,12 @@ private fun CalendarDay(
         Text(
             text = date.dayOfMonth.toString(),
             style = MaterialTheme.typography.bodyMedium,
-            color = when {
-                isStart || isEnd -> MaterialTheme.colorScheme.onPrimary
-                enabled -> MaterialTheme.colorScheme.onSurface
-                else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-            },
+            color =
+                when {
+                    isStart || isEnd -> MaterialTheme.colorScheme.onPrimary
+                    enabled -> MaterialTheme.colorScheme.onSurface
+                    else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                },
         )
     }
 }
