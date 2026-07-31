@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.yandex.school.casheye.domain.finance.AnalyticsLoadResult
 import com.yandex.school.casheye.domain.finance.AnalyticsQuery
 import com.yandex.school.casheye.domain.finance.AnalyticsSummary
-import com.yandex.school.casheye.domain.finance.AnalyticsTransaction
 import com.yandex.school.casheye.domain.finance.AnalyticsTransactionKind
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import com.yandex.school.casheye.domain.finance.FinanceRefreshResult
@@ -21,7 +20,6 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import java.math.BigDecimal
 import java.time.Clock
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -336,28 +334,25 @@ class AnalyticsViewModel(
 
     private fun renderSummary(isRefreshing: Boolean = refreshJob?.isActive == true) {
         val summary = latestSummary ?: return
-        val transactions = summary.transactions.sortedByDescending { it.transactionDate }
-        val unconvertedTransactions =
-            summary.unconvertedTransactions.sortedByDescending { it.transaction.transactionDate }
-        if (transactions.isEmpty() && unconvertedTransactions.isEmpty() && !initialRefreshCompleted) return
-        screenData =
-            screenData.copy(
-                accounts = summary.accounts,
-                categories = summary.availableCategories,
-            )
+        val models = AnalyticsUiMapper.map(summary, screenData)
+        if (models.transactions.isEmpty() && models.unconvertedTransactions.isEmpty() &&
+            !initialRefreshCompleted
+        ) {
+            return
+        }
+        screenData = models.data
         _state.value =
-            if (transactions.isEmpty() && unconvertedTransactions.isEmpty()) {
+            if (models.transactions.isEmpty() && models.unconvertedTransactions.isEmpty()) {
                 AnalyticsUiState.Empty(screenData, summary.currencyCode.isoCode, isRefreshing)
             } else {
-                val typeSummaries = transactions.toTypeSummaries()
                 AnalyticsUiState.Content(
                     data = screenData,
                     total = summary.total,
                     currencyCode = summary.currencyCode.isoCode,
-                    transactions = transactions,
-                    unconvertedTransactions = unconvertedTransactions,
-                    categorySummaries = transactions.toCategorySummaries(),
-                    typeSummaries = typeSummaries,
+                    transactions = models.transactions,
+                    unconvertedTransactions = models.unconvertedTransactions,
+                    categorySummaries = models.categorySummaries,
+                    typeSummaries = models.typeSummaries,
                     isRefreshing = isRefreshing,
                 )
             }
@@ -394,31 +389,6 @@ private fun AnalyticsType.toDomain(): AnalyticsTransactionKind =
         AnalyticsType.Income -> AnalyticsTransactionKind.Income
         AnalyticsType.All -> AnalyticsTransactionKind.All
     }
-
-private fun List<AnalyticsTransaction>.toCategorySummaries(): List<AnalyticsCategorySummary> =
-    groupBy { it.category.id }
-        .values
-        .map { transactions ->
-            AnalyticsCategorySummary(
-                category = transactions.first().category,
-                amount =
-                    transactions.fold(BigDecimal.ZERO) { total, transaction ->
-                        total + transaction.reportingAmount.amount
-                    },
-            )
-        }.sortedByDescending { it.amount }
-
-internal fun List<AnalyticsTransaction>.toTypeSummaries(): List<AnalyticsTypeSummary> =
-    listOf(
-        AnalyticsType.Expenses to filterNot { it.category.isIncome },
-        AnalyticsType.Income to filter { it.category.isIncome },
-    ).mapNotNull { (type, transactions) ->
-        val amount =
-            transactions.fold(BigDecimal.ZERO) { total, transaction ->
-                total + transaction.reportingAmount.amount.abs()
-            }
-        amount.takeIf { it.signum() != 0 }?.let { AnalyticsTypeSummary(type, it) }
-    }.sortedByDescending { it.amount.abs() }
 
 private fun AnalyticsUiState.withData(data: AnalyticsScreenData): AnalyticsUiState =
     when (this) {

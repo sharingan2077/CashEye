@@ -13,7 +13,8 @@ class FinanceDatabaseProvider(
     context: Context,
 ) {
     internal val database: FinanceDatabase =
-        Room.databaseBuilder(context.applicationContext, FinanceDatabase::class.java, DATABASE_NAME)
+        Room
+            .databaseBuilder(context.applicationContext, FinanceDatabase::class.java, DATABASE_NAME)
             .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
             .build()
 

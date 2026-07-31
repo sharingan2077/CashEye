@@ -201,6 +201,39 @@ class AnalyticsViewModelTest {
         }
 
     @Test
+    fun `loaded ui mapper updates filter data and creates sorted summaries`() {
+        val older = transaction(id = 1, categoryId = 10, amount = "5", date = "2026-07-02T10:00:00Z")
+        val newer = transaction(id = 2, categoryId = 10, amount = "7", date = "2026-07-17T10:00:00Z")
+        val summary =
+            successWithOptions().summary.copy(
+                transactions = listOf(older, newer).map { it.toAnalyticsTransaction() },
+                availableCategories = listOf(older.category),
+            )
+        val screenData =
+            AnalyticsScreenData(
+                filters =
+                    AnalyticsFilters(
+                        type = AnalyticsType.Expenses,
+                        period =
+                            AnalyticsPeriod(
+                                LocalDate.of(2026, 7, 1),
+                                LocalDate.of(2026, 7, 18),
+                                AnalyticsPeriodPreset.Month,
+                            ),
+                    ),
+                currentDate = LocalDate.of(2026, 7, 18),
+            )
+
+        val models = AnalyticsUiMapper.map(summary, screenData)
+
+        assertEquals(listOf(2, 1), models.transactions.map { it.id })
+        assertEquals(summary.accounts, models.data.accounts)
+        assertEquals(summary.availableCategories, models.data.categories)
+        assertEquals(BigDecimal("12"), models.categorySummaries.single().amount)
+        assertEquals(listOf(AnalyticsType.Expenses), models.typeSummaries.map { it.type })
+    }
+
+    @Test
     fun `all type aggregates expenses and income after filtering`() {
         val transactions =
             listOf(
