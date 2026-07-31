@@ -148,7 +148,7 @@ class ExpensesViewModel(
         refreshJob?.cancel()
         val observationReady = localObservationReady
         if (_state.value.isRefreshable()) {
-            _state.value = _state.value.withRefreshing(true)
+            _state.value = _state.value.markRefreshing()
         } else if (showLoadingForEmptyCache) {
             _state.value = ExpensesUiState.Loading
         }
@@ -212,11 +212,11 @@ private fun List<MoneyAmount>.subtract(amount: MoneyAmount): List<MoneyAmount> =
 
 private fun ExpensesUiState.isRefreshable(): Boolean = this is ExpensesUiState.Content || this is ExpensesUiState.Empty
 
-private fun ExpensesUiState.withRefreshing(isRefreshing: Boolean): ExpensesUiState =
+private fun ExpensesUiState.markRefreshing(): ExpensesUiState =
     when (this) {
-        is ExpensesUiState.Content -> copy(isRefreshing = isRefreshing)
+        is ExpensesUiState.Content -> copy(isRefreshing = true)
 
-        is ExpensesUiState.Empty -> copy(isRefreshing = isRefreshing)
+        is ExpensesUiState.Empty -> copy(isRefreshing = true)
 
         ExpensesUiState.Loading,
         is ExpensesUiState.Error,

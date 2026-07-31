@@ -313,7 +313,7 @@ class AnalyticsViewModel(
         refreshJob?.cancel()
         val observationReady = localObservationReady
         if (_state.value.isRefreshable()) {
-            _state.value = _state.value.withRefreshing(true)
+            _state.value = _state.value.markRefreshing()
         } else if (showLoadingForEmptyCache) {
             _state.value = AnalyticsUiState.Loading(screenData)
         }
@@ -401,11 +401,11 @@ private fun AnalyticsUiState.withData(data: AnalyticsScreenData): AnalyticsUiSta
 private fun AnalyticsUiState.isRefreshable(): Boolean =
     this is AnalyticsUiState.Content || this is AnalyticsUiState.Empty
 
-private fun AnalyticsUiState.withRefreshing(isRefreshing: Boolean): AnalyticsUiState =
+private fun AnalyticsUiState.markRefreshing(): AnalyticsUiState =
     when (this) {
-        is AnalyticsUiState.Content -> copy(isRefreshing = isRefreshing)
+        is AnalyticsUiState.Content -> copy(isRefreshing = true)
 
-        is AnalyticsUiState.Empty -> copy(isRefreshing = isRefreshing)
+        is AnalyticsUiState.Empty -> copy(isRefreshing = true)
 
         is AnalyticsUiState.Loading,
         is AnalyticsUiState.Error,

@@ -150,7 +150,7 @@ class IncomeViewModel(
         refreshJob?.cancel()
         val observationReady = localObservationReady
         if (_state.value.isRefreshable()) {
-            _state.value = _state.value.withRefreshing(true)
+            _state.value = _state.value.markRefreshing()
         } else if (showLoadingForEmptyCache) {
             _state.value = IncomeUiState.Loading
         }
@@ -214,11 +214,11 @@ private fun List<MoneyAmount>.subtract(amount: MoneyAmount): List<MoneyAmount> =
 
 private fun IncomeUiState.isRefreshable(): Boolean = this is IncomeUiState.Content || this is IncomeUiState.Empty
 
-private fun IncomeUiState.withRefreshing(isRefreshing: Boolean): IncomeUiState =
+private fun IncomeUiState.markRefreshing(): IncomeUiState =
     when (this) {
-        is IncomeUiState.Content -> copy(isRefreshing = isRefreshing)
+        is IncomeUiState.Content -> copy(isRefreshing = true)
 
-        is IncomeUiState.Empty -> copy(isRefreshing = isRefreshing)
+        is IncomeUiState.Empty -> copy(isRefreshing = true)
 
         IncomeUiState.Loading,
         is IncomeUiState.Error,
