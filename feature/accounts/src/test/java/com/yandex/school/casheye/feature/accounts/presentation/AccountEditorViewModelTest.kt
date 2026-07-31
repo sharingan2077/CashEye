@@ -2,6 +2,7 @@ package com.yandex.school.casheye.feature.accounts.presentation
 
 import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.CurrencyCode
+import com.yandex.school.casheye.core.model.FinanceEditorInputLimits
 import com.yandex.school.casheye.domain.finance.FinanceRepository
 import com.yandex.school.casheye.domain.finance.GetAccountCurrencyChangeEligibilityUseCase
 import com.yandex.school.casheye.domain.finance.GetAccountUseCase
@@ -75,6 +76,22 @@ class AccountEditorViewModelTest {
             advanceUntilIdle()
 
             assertEquals(SaveAccountCommand(null, "Основной", "💵", BigDecimal("100.00"), "RUB"), repository.saved)
+        }
+
+    @Test
+    fun `account name is limited to fifty characters`() =
+        runTest {
+            val repository = AccountEditorRepository()
+            val viewModel =
+                AccountEditorViewModel(
+                    GetAccountUseCase(repository),
+                    GetAccountCurrencyChangeEligibilityUseCase(repository),
+                    SaveAccountUseCase(repository),
+                )
+
+            viewModel.onIntent(AccountEditorIntent.NameChanged("a".repeat(51)))
+
+            assertEquals(FinanceEditorInputLimits.ACCOUNT_NAME_MAX_LENGTH, viewModel.state.value.name.length)
         }
 
     @Test

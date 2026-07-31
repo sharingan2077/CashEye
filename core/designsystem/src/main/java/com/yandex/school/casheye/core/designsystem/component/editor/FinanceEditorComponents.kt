@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
@@ -72,6 +73,8 @@ fun EditorRow(
             Text(
                 text = label,
                 style = MaterialTheme.typography.titleMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
         if (showDivider) HorizontalDivider()
@@ -94,7 +97,9 @@ private fun ValuePill(
                     1.dp,
                     MaterialTheme.colorScheme.outline,
                     CircleShape,
-                ).padding(horizontal = 12.dp, vertical = 6.dp),
+                )
+                .widthIn(max = 160.dp)
+                .padding(horizontal = 12.dp, vertical = 6.dp),
     )
 }
 
@@ -217,6 +222,7 @@ fun EditorTextContent(
     placeholder: String,
     singleLine: Boolean,
     onConfirm: (String) -> Unit,
+    maxLength: Int,
     modifier: Modifier = Modifier,
     onDismiss: () -> Unit = {},
 ) {
@@ -231,7 +237,7 @@ fun EditorTextContent(
         EditorSheetTitle(title)
         OutlinedTextField(
             value = draft,
-            onValueChange = { draft = it },
+            onValueChange = { draft = it.take(maxLength) },
             placeholder = { Text(placeholder) },
             modifier =
                 Modifier
@@ -242,6 +248,7 @@ fun EditorTextContent(
             singleLine = singleLine,
             minLines = if (singleLine) 1 else 4,
             maxLines = if (singleLine) 1 else 4,
+            supportingText = { Text(text = "${draft.length}/$maxLength") },
         )
         Row(
             modifier = Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 8.dp, end = 24.dp),

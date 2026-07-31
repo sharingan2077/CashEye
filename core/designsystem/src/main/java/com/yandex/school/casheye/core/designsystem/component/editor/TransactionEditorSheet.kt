@@ -15,6 +15,7 @@ import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
 import com.yandex.school.casheye.core.designsystem.R
 import com.yandex.school.casheye.core.designsystem.component.money.currencySymbol
+import com.yandex.school.casheye.core.model.FinanceEditorInputLimits
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -100,6 +101,7 @@ fun TransactionEditorSheet(
                     value = comment,
                     placeholder = stringResource(R.string.finance_editor_comment_placeholder),
                     singleLine = false,
+                    maxLength = FinanceEditorInputLimits.TRANSACTION_COMMENT_MAX_LENGTH,
                     onConfirm = {
                         onCommentChange(it)
                         nested = null

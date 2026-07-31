@@ -2,6 +2,7 @@ package com.yandex.school.casheye.feature.expenses.presentation
 
 import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.Category
+import com.yandex.school.casheye.core.model.FinanceEditorInputLimits
 import com.yandex.school.casheye.core.model.Transaction
 import com.yandex.school.casheye.domain.finance.FinanceDataLoadResult
 import com.yandex.school.casheye.domain.finance.FinanceRepository
@@ -93,6 +94,16 @@ class AddExpenseViewModelTest {
 
             viewModel.onIntent(AddExpenseIntent.DateChanged(LocalDate.of(2026, 8, 1)))
             assertEquals(LocalDate.of(2026, 7, 22), viewModel.state.value.date)
+        }
+
+    @Test
+    fun `expense comment is limited to two hundred characters`() =
+        runTest {
+            val viewModel = viewModel(EditorRepository(accounts = listOf(account(balance = "50"))))
+
+            viewModel.onIntent(AddExpenseIntent.CommentChanged("a".repeat(201)))
+
+            assertEquals(FinanceEditorInputLimits.TRANSACTION_COMMENT_MAX_LENGTH, viewModel.state.value.comment.length)
         }
 
     private fun viewModel(repository: FinanceRepository) =

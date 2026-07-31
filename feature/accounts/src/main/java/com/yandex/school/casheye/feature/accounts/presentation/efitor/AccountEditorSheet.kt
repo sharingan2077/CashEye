@@ -42,6 +42,7 @@ import com.yandex.school.casheye.core.designsystem.component.editor.EditorSheetT
 import com.yandex.school.casheye.core.designsystem.component.editor.EditorTextContent
 import com.yandex.school.casheye.core.designsystem.component.editor.FinanceEditorContent
 import com.yandex.school.casheye.core.designsystem.component.money.currencySymbol
+import com.yandex.school.casheye.core.model.FinanceEditorInputLimits
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -99,6 +100,7 @@ fun AccountEditorSheet(
                     value = name,
                     placeholder = stringResource(R.string.finance_editor_account_name_placeholder),
                     singleLine = true,
+                    maxLength = FinanceEditorInputLimits.ACCOUNT_NAME_MAX_LENGTH,
                     onConfirm = {
                         onNameChange(it)
                         nested = null

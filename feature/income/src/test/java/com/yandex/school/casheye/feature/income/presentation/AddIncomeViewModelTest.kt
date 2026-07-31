@@ -2,6 +2,7 @@ package com.yandex.school.casheye.feature.income.presentation
 
 import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.Category
+import com.yandex.school.casheye.core.model.FinanceEditorInputLimits
 import com.yandex.school.casheye.domain.finance.FinanceDataLoadResult
 import com.yandex.school.casheye.domain.finance.FinanceRepository
 import com.yandex.school.casheye.domain.finance.GetEditorAccountsUseCase
@@ -84,6 +85,24 @@ class AddIncomeViewModelTest {
 
             viewModel.onIntent(AddIncomeIntent.DateChanged(LocalDate.of(2026, 8, 1)))
             assertEquals(LocalDate.of(2026, 7, 22), viewModel.state.value.date)
+        }
+
+    @Test
+    fun `income comment is limited to two hundred characters`() =
+        runTest {
+            val repository = IncomeEditorRepository()
+            val viewModel =
+                AddIncomeViewModel(
+                    GetEditorAccountsUseCase(repository),
+                    GetEditorCategoriesUseCase(repository),
+                    GetTransactionUseCase(repository),
+                    SaveTransactionUseCase(repository),
+                    clock,
+                )
+
+            viewModel.onIntent(AddIncomeIntent.CommentChanged("a".repeat(201)))
+
+            assertEquals(FinanceEditorInputLimits.TRANSACTION_COMMENT_MAX_LENGTH, viewModel.state.value.comment.length)
         }
 }
 

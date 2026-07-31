@@ -2,6 +2,7 @@ package com.yandex.school.casheye.feature.accounts.presentation.efitor
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.yandex.school.casheye.core.model.FinanceEditorInputLimits
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import com.yandex.school.casheye.domain.finance.GetAccountCurrencyChangeEligibilityUseCase
 import com.yandex.school.casheye.domain.finance.GetAccountUseCase
@@ -35,7 +36,11 @@ class AccountEditorViewModel(
             }
 
             is AccountEditorIntent.NameChanged -> {
-                _state.value = _state.value.copy(name = intent.value, error = null)
+                _state.value =
+                    _state.value.copy(
+                        name = intent.value.take(FinanceEditorInputLimits.ACCOUNT_NAME_MAX_LENGTH),
+                        error = null,
+                    )
             }
 
             is AccountEditorIntent.BalanceChanged -> {
@@ -75,7 +80,7 @@ class AccountEditorViewModel(
                     _state.value =
                         _state.value.copy(
                             isLoading = false,
-                            name = result.value.name,
+                            name = result.value.name.take(FinanceEditorInputLimits.ACCOUNT_NAME_MAX_LENGTH),
                             balance = result.value.balance.toPlainString(),
                             currency = result.value.currency,
                             emoji = result.value.emoji,
