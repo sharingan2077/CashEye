@@ -13,7 +13,12 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.input.InputTransformation
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.maxLength
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -31,6 +36,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -97,8 +103,7 @@ private fun ValuePill(
                     1.dp,
                     MaterialTheme.colorScheme.outline,
                     CircleShape,
-                )
-                .widthIn(max = 160.dp)
+                ).widthIn(max = 160.dp)
                 .padding(horizontal = 12.dp, vertical = 6.dp),
     )
 }
@@ -226,9 +231,18 @@ fun EditorTextContent(
     modifier: Modifier = Modifier,
     onDismiss: () -> Unit = {},
 ) {
-    var draft by remember(value) { mutableStateOf(value) }
+    val textFieldState = rememberTextFieldState(initialText = value)
+    val inputTransformation = remember(maxLength) { InputTransformation.maxLength(maxLength) }
+    val lineLimits =
+        if (singleLine) {
+            TextFieldLineLimits.SingleLine
+        } else {
+            TextFieldLineLimits.MultiLine(minHeightInLines = 4, maxHeightInLines = 4)
+        }
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
+    val scrollState = rememberScrollState()
+    val gestureCoordinator = rememberSheetTextFieldGestureCoordinator(scrollState)
     LaunchedEffect(Unit) {
         awaitFrame()
         focusRequester.requestFocus()
@@ -236,19 +250,19 @@ fun EditorTextContent(
     Column(modifier.fillMaxWidth().imePadding()) {
         EditorSheetTitle(title)
         OutlinedTextField(
-            value = draft,
-            onValueChange = { draft = it.take(maxLength) },
+            state = textFieldState,
             placeholder = { Text(placeholder) },
             modifier =
                 Modifier
                     .fillMaxWidth()
                     .focusRequester(focusRequester)
                     .heightIn(min = if (singleLine) 56.dp else 128.dp)
+                    .nestedScroll(gestureCoordinator)
                     .padding(horizontal = 20.dp),
-            singleLine = singleLine,
-            minLines = if (singleLine) 1 else 4,
-            maxLines = if (singleLine) 1 else 4,
-            supportingText = { Text(text = "${draft.length}/$maxLength") },
+            lineLimits = lineLimits,
+            scrollState = scrollState,
+            inputTransformation = inputTransformation,
+            supportingText = { Text(text = "${textFieldState.text.length}/$maxLength") },
         )
         Row(
             modifier = Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 8.dp, end = 24.dp),
@@ -265,7 +279,7 @@ fun EditorTextContent(
             TextButton(
                 onClick = {
                     focusManager.clearFocus(force = true)
-                    onConfirm(draft)
+                    onConfirm(textFieldState.text.toString())
                 },
             ) {
                 Text(stringResource(R.string.finance_editor_done))

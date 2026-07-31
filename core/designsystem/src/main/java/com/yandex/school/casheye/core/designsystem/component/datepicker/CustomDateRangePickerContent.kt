@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -33,12 +34,14 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.yandex.school.casheye.core.designsystem.component.editor.rememberSheetListGestureCoordinator
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
@@ -120,7 +123,18 @@ private fun CalendarMonthSelector(
     onDateClick: (LocalDate) -> Unit,
 ) {
     val locale = LocalConfiguration.current.locales[0] ?: LocalLocale.current.platformLocale
-    LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = 400.dp)) {
+    val listState = rememberLazyListState()
+    val gestureCoordinator = rememberSheetListGestureCoordinator(listState)
+    LazyColumn(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .heightIn(max = 400.dp)
+                .nestedScroll(gestureCoordinator),
+        state = listState,
+        flingBehavior = gestureCoordinator,
+        overscrollEffect = null,
+    ) {
         item {
             CalendarMonthHeader(
                 month = firstVisibleMonth,

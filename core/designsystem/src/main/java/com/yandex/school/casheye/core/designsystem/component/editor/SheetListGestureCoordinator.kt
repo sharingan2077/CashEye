@@ -1,5 +1,6 @@
 package com.yandex.school.casheye.core.designsystem.component.editor
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.ScrollScope
 import androidx.compose.foundation.gestures.ScrollableDefaults
@@ -18,10 +19,31 @@ import androidx.compose.ui.unit.Velocity
 class SheetListGestureCoordinator(
     private val listState: LazyListState,
     private val listFlingBehavior: FlingBehavior,
-) : NestedScrollConnection,
+) : SheetGestureCoordinator(),
     FlingBehavior {
-    private var userGestureInProgress = false
-    private var blockSheetForGesture = true
+    override fun canScrollBackward(): Boolean = listState.canScrollBackward
+
+    override suspend fun ScrollScope.performFling(initialVelocity: Float): Float {
+        if (userGestureInProgress && !blockSheetForGesture) return initialVelocity
+
+        val scrollScope = this
+        return with(listFlingBehavior) {
+            scrollScope.performFling(initialVelocity)
+        }
+    }
+}
+
+private class SheetTextFieldGestureCoordinator(
+    private val scrollState: ScrollState,
+) : SheetGestureCoordinator() {
+    override fun canScrollBackward(): Boolean = scrollState.canScrollBackward
+}
+
+abstract class SheetGestureCoordinator : NestedScrollConnection {
+    protected var userGestureInProgress = false
+    protected var blockSheetForGesture = true
+
+    protected abstract fun canScrollBackward(): Boolean
 
     override fun onPreScroll(
         available: Offset,
@@ -33,7 +55,7 @@ class SheetListGestureCoordinator(
             available.y != 0f
         ) {
             userGestureInProgress = true
-            blockSheetForGesture = listState.canScrollBackward || available.y < 0f
+            blockSheetForGesture = canScrollBackward() || available.y < 0f
         }
         return Offset.Zero
     }
@@ -63,15 +85,6 @@ class SheetListGestureCoordinator(
         blockSheetForGesture = true
         return consumedVelocity
     }
-
-    override suspend fun ScrollScope.performFling(initialVelocity: Float): Float {
-        if (userGestureInProgress && !blockSheetForGesture) return initialVelocity
-
-        val scrollScope = this
-        return with(listFlingBehavior) {
-            scrollScope.performFling(initialVelocity)
-        }
-    }
 }
 
 /** Remembers one coordinator and the matching default fling behavior for a sheet list. */
@@ -85,3 +98,8 @@ fun rememberSheetListGestureCoordinator(listState: LazyListState): SheetListGest
         )
     }
 }
+
+/** Remembers a coordinator that prevents a scrolling text field from dragging its parent sheet. */
+@Composable
+fun rememberSheetTextFieldGestureCoordinator(scrollState: ScrollState): NestedScrollConnection =
+    remember(scrollState) { SheetTextFieldGestureCoordinator(scrollState) }

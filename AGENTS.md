@@ -131,3 +131,14 @@ when `ast-index` has no result.
 - Do not stage, commit or push unless explicitly asked. When suggesting commits, use short English
   Conventional Commits without scopes, list one `git add <path>` command per file, and never use
   `git add .`.
+
+### Commit handoff
+
+When code or project files were changed during the task, check for uncommitted changes before the
+final response and include ready-to-run commit commands based on the real changes.
+
+- Commit messages must be short, specific English Conventional Commits without scopes.
+- Group files into logical commits; do not mix unrelated worktree changes.
+- List every file with its own `git add <path>` command, then a separate `git commit -m "..."`
+  command for that group.
+- Do not run `git add`, `git commit` or `git push`; print the commands as text only.
