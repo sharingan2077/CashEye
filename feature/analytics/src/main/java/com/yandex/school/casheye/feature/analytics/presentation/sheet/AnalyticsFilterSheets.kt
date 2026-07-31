@@ -206,7 +206,6 @@ internal fun AccountSheet(
                 AccountRow(
                     title = stringResource(R.string.all_accounts),
                     emoji = "💳",
-                    subtitle = null,
                     isLast = false,
                     selected = data.filters.accountId == null,
                 ) { onIntent(AnalyticsIntent.SelectAccount(null)) }
@@ -215,7 +214,6 @@ internal fun AccountSheet(
                 AccountRow(
                     title = account.name,
                     emoji = account.emoji,
-                    subtitle = null,
                     isLast = index == data.accounts.lastIndex,
                     selected = data.filters.accountId == account.id,
                 ) { onIntent(AnalyticsIntent.SelectAccount(account.id)) }
@@ -229,7 +227,6 @@ internal fun AccountSheet(
 private fun AccountRow(
     title: String,
     emoji: String,
-    subtitle: String?,
     selected: Boolean,
     isLast: Boolean,
     onClick: () -> Unit,
@@ -248,7 +245,6 @@ private fun AccountRow(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
-                    subtitle?.let { Text(text = it, style = MaterialTheme.typography.bodySmall) }
                 }
             },
             trailingContent = { AccountSelectionIndicator(selected = selected) },
