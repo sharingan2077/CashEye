@@ -3,11 +3,17 @@
     <string name="empty_expenses_description">Выберите другую дату в верхней панели, чтобы посмотреть расходы</string>
     <string name="expenses_total">расходы, всего</string>
     <string name="retry">Повторить</string>
-    <string name="confirm">ОК</string>
-    <string name="cancel">Отмена</string>
-    <string name="select_date">Выберите дату</string>
     <string name="error_network">Проверьте подключение к интернету</string>
     <string name="error_authorization">Не удалось авторизоваться</string>
     <string name="error_server">Сервер временно недоступен</string>
     <string name="error_load_expenses">Не удалось загрузить расходы</string>
+    <string name="error_create_account">Сначала создайте счёт</string>
+    <string name="error_positive_amount">Введите положительную сумму</string>
+    <string name="error_select_account">Выберите счёт</string>
+    <string name="error_select_category">Выберите статью</string>
+    <string name="error_insufficient_balance">На счёте недостаточно средств</string>
+    <string name="error_save_expense">Не удалось сохранить расход</string>
+    <string name="delete_expense">Удалить расход</string>
+    <string name="expense_deleted">Расход удалён</string>
+    <string name="error_delete_expense">Не удалось удалить расход</string>
 </resources>

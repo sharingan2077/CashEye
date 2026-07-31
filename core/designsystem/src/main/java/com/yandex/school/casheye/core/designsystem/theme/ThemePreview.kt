@@ -1,5 +1,6 @@
 package com.yandex.school.casheye.core.designsystem.theme
 
+import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,7 +22,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
-@Preview(showBackground = true, widthDp = 412)
+@Preview(
+    name = "Theme Light",
+    showBackground = true,
+    widthDp = 412,
+    uiMode = Configuration.UI_MODE_NIGHT_NO,
+)
+@Preview(
+    name = "Theme Dark",
+    showBackground = true,
+    widthDp = 412,
+    uiMode = Configuration.UI_MODE_NIGHT_YES,
+)
 @Composable
 private fun ThemePreview() {
     CashEyeTheme(dynamicColor = false) {
@@ -34,6 +46,7 @@ private fun ThemePreview() {
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 ColorPreviewRow()
+                ExtendedColorPreviewRow()
                 TypographyPreviewBlock()
                 Button(onClick = {}) {
                     Text(text = "Primary action")
@@ -53,6 +66,18 @@ private fun ThemePreview() {
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ExtendedColorPreviewRow() {
+    val extendedColors = CashEyeExtendedTheme.colors
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        ColorSwatch(extendedColors.chartExpense)
+        ColorSwatch(extendedColors.chartIncome)
+        ColorSwatch(extendedColors.chartOther)
+        ColorSwatch(MaterialTheme.colorScheme.inverseSurface)
+        ColorSwatch(MaterialTheme.colorScheme.outlineVariant)
     }
 }
 

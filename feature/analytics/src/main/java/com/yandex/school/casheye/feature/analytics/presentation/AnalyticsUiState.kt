@@ -2,8 +2,9 @@ package com.yandex.school.casheye.feature.analytics.presentation
 
 import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.Category
-import com.yandex.school.casheye.core.model.Transaction
+import com.yandex.school.casheye.domain.finance.AnalyticsTransaction
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
+import com.yandex.school.casheye.domain.finance.UnconvertedAnalyticsTransaction
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -81,6 +82,11 @@ data class AnalyticsCategorySummary(
     val amount: BigDecimal,
 )
 
+data class AnalyticsTypeSummary(
+    val type: AnalyticsType,
+    val amount: BigDecimal,
+)
+
 sealed interface AnalyticsUiState {
     val data: AnalyticsScreenData
 
@@ -101,8 +107,10 @@ sealed interface AnalyticsUiState {
         override val data: AnalyticsScreenData,
         val total: BigDecimal,
         val currencyCode: String,
-        val transactions: List<Transaction>,
+        val transactions: List<AnalyticsTransaction>,
+        val unconvertedTransactions: List<UnconvertedAnalyticsTransaction>,
         val categorySummaries: List<AnalyticsCategorySummary>,
+        val typeSummaries: List<AnalyticsTypeSummary>,
         override val isRefreshing: Boolean = false,
     ) : AnalyticsUiState
 
@@ -157,6 +165,8 @@ sealed interface AnalyticsIntent {
     data object Retry : AnalyticsIntent
 
     data object Refresh : AnalyticsIntent
+
+    data object NetworkRecovered : AnalyticsIntent
 }
 
 sealed interface AnalyticsEffect {

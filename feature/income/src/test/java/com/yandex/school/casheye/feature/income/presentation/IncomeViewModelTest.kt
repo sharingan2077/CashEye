@@ -2,22 +2,31 @@ package com.yandex.school.casheye.feature.income.presentation
 
 import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.Category
+import com.yandex.school.casheye.core.model.CurrencyCode
+import com.yandex.school.casheye.core.model.MoneyAmount
 import com.yandex.school.casheye.core.model.Transaction
-import com.yandex.school.casheye.domain.finance.FinanceDataLoadResult
+import com.yandex.school.casheye.domain.finance.DeleteTransactionUseCase
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import com.yandex.school.casheye.domain.finance.FinanceLoadResult
+import com.yandex.school.casheye.domain.finance.FinanceRefreshResult
 import com.yandex.school.casheye.domain.finance.FinanceRepository
 import com.yandex.school.casheye.domain.finance.FinanceSummary
 import com.yandex.school.casheye.domain.finance.GetDailySummaryUseCase
 import com.yandex.school.casheye.domain.finance.TransactionsQuery
+import com.yandex.school.casheye.domain.finance.editor.EditorResult
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
@@ -50,14 +59,18 @@ class IncomeViewModelTest {
     @Test
     fun `successful income load exposes content`() =
         runTest {
-            val summary = FinanceSummary(BigDecimal("125000.00"), "RUB", listOf(incomeTransaction()))
+            val summary =
+                FinanceSummary(
+                    nativeTotals = listOf(MoneyAmount(BigDecimal("125000.00"), CurrencyCode.RUB)),
+                    transactions = listOf(incomeTransaction()),
+                )
             val repository = FakeIncomeFinanceRepository(FinanceLoadResult.Success(summary))
-            val viewModel = IncomeViewModel(GetDailySummaryUseCase(repository), clock)
+            val viewModel = incomeViewModel(repository, clock)
 
             advanceUntilIdle()
 
             assertEquals(
-                IncomeUiState.Content(summary.total, summary.currencyCode, summary.transactions),
+                IncomeUiState.Content(summary.nativeTotals, summary.transactions),
                 viewModel.state.value,
             )
         }
@@ -66,11 +79,9 @@ class IncomeViewModelTest {
     fun `empty income load exposes empty state`() =
         runTest {
             val viewModel =
-                IncomeViewModel(
-                    GetDailySummaryUseCase(
-                        FakeIncomeFinanceRepository(
-                            FinanceLoadResult.Success(FinanceSummary(BigDecimal.ZERO, "RUB", emptyList())),
-                        ),
+                incomeViewModel(
+                    FakeIncomeFinanceRepository(
+                        FinanceLoadResult.Success(FinanceSummary(emptyList(), emptyList())),
                     ),
                     clock,
                 )
@@ -84,10 +95,8 @@ class IncomeViewModelTest {
     fun `initial failure exposes error state`() =
         runTest {
             val viewModel =
-                IncomeViewModel(
-                    GetDailySummaryUseCase(
-                        FakeIncomeFinanceRepository(FinanceLoadResult.Failure(FinanceFailureReason.Network)),
-                    ),
+                incomeViewModel(
+                    FakeIncomeFinanceRepository(FinanceLoadResult.Failure(FinanceFailureReason.Network)),
                     clock,
                 )
 
@@ -99,14 +108,16 @@ class IncomeViewModelTest {
     @Test
     fun `failed refresh keeps content and emits show error effect`() =
         runTest {
-            val summary = FinanceSummary(BigDecimal("125000.00"), "RUB", listOf(incomeTransaction()))
+            val summary =
+                FinanceSummary(
+                    nativeTotals = listOf(MoneyAmount(BigDecimal("125000.00"), CurrencyCode.RUB)),
+                    transactions = listOf(incomeTransaction()),
+                )
             val viewModel =
-                IncomeViewModel(
-                    GetDailySummaryUseCase(
-                        FakeIncomeFinanceRepository(
-                            FinanceLoadResult.Success(summary),
-                            FinanceLoadResult.Failure(FinanceFailureReason.Network),
-                        ),
+                incomeViewModel(
+                    FakeIncomeFinanceRepository(
+                        FinanceLoadResult.Success(summary),
+                        FinanceLoadResult.Failure(FinanceFailureReason.Server),
                     ),
                     clock,
                 )
@@ -117,10 +128,10 @@ class IncomeViewModelTest {
             advanceUntilIdle()
 
             assertEquals(
-                IncomeUiState.Content(summary.total, summary.currencyCode, summary.transactions),
+                IncomeUiState.Content(summary.nativeTotals, summary.transactions),
                 viewModel.state.value,
             )
-            assertEquals(IncomeEffect.ShowError(FinanceFailureReason.Network), effect.await())
+            assertEquals(IncomeEffect.ShowError(FinanceFailureReason.Server), effect.await())
         }
 
     @Test
@@ -128,11 +139,11 @@ class IncomeViewModelTest {
         runTest {
             val repository =
                 FakeIncomeFinanceRepository(
-                    FinanceLoadResult.Success(FinanceSummary(BigDecimal.ZERO, "RUB", emptyList())),
-                    FinanceLoadResult.Success(FinanceSummary(BigDecimal.ZERO, "RUB", emptyList())),
-                    FinanceLoadResult.Success(FinanceSummary(BigDecimal.ZERO, "RUB", emptyList())),
+                    FinanceLoadResult.Success(FinanceSummary(emptyList(), emptyList())),
+                    FinanceLoadResult.Success(FinanceSummary(emptyList(), emptyList())),
+                    FinanceLoadResult.Success(FinanceSummary(emptyList(), emptyList())),
                 )
-            val viewModel = IncomeViewModel(GetDailySummaryUseCase(repository), clock)
+            val viewModel = incomeViewModel(repository, clock)
             val selectedDate = LocalDate.of(2026, 6, 18)
 
             advanceUntilIdle()
@@ -148,14 +159,30 @@ class IncomeViewModelTest {
         }
 
     @Test
+    fun `selecting a future date keeps the current income day`() =
+        runTest {
+            val repository =
+                FakeIncomeFinanceRepository(
+                    FinanceLoadResult.Success(FinanceSummary(emptyList(), emptyList())),
+                )
+            val viewModel = incomeViewModel(repository, clock)
+
+            advanceUntilIdle()
+            viewModel.onIntent(IncomeIntent.SelectDate(LocalDate.of(2026, 7, 18)))
+            advanceUntilIdle()
+
+            assertEquals(listOf(LocalDate.of(2026, 7, 17)), repository.requestedDates)
+        }
+
+    @Test
     fun `refresh reloads the current date as income`() =
         runTest {
             val repository =
                 FakeIncomeFinanceRepository(
-                    FinanceLoadResult.Success(FinanceSummary(BigDecimal.ZERO, "RUB", emptyList())),
-                    FinanceLoadResult.Success(FinanceSummary(BigDecimal.ZERO, "RUB", emptyList())),
+                    FinanceLoadResult.Success(FinanceSummary(emptyList(), emptyList())),
+                    FinanceLoadResult.Success(FinanceSummary(emptyList(), emptyList())),
                 )
-            val viewModel = IncomeViewModel(GetDailySummaryUseCase(repository), clock)
+            val viewModel = incomeViewModel(repository, clock)
 
             advanceUntilIdle()
             viewModel.onIntent(IncomeIntent.Refresh)
@@ -163,35 +190,236 @@ class IncomeViewModelTest {
 
             assertEquals(listOf(LocalDate.of(2026, 7, 17), LocalDate.of(2026, 7, 17)), repository.requestedDates)
         }
+
+    @Test
+    fun `network recovery shows loading after an empty-cache error`() =
+        runTest {
+            val refresh = CompletableDeferred<FinanceRefreshResult>()
+            var refreshCount = 0
+            val repository =
+                object : StubFinanceRepository() {
+                    override fun observeAccounts(): Flow<List<Account>> = MutableStateFlow(emptyList())
+
+                    override fun observeTransactions(query: TransactionsQuery): Flow<List<Transaction>> =
+                        MutableStateFlow(emptyList())
+
+                    override suspend fun refreshPeriod(
+                        startDate: LocalDate,
+                        endDate: LocalDate,
+                    ): FinanceRefreshResult =
+                        if (++refreshCount == 1) {
+                            FinanceRefreshResult.Failure(FinanceFailureReason.Network, hasUsableCache = false)
+                        } else {
+                            refresh.await()
+                        }
+                }
+            val viewModel = incomeViewModel(repository, clock)
+
+            advanceUntilIdle()
+            assertEquals(IncomeUiState.Error(FinanceFailureReason.Network), viewModel.state.value)
+
+            viewModel.onIntent(IncomeIntent.NetworkRecovered)
+            runCurrent()
+            assertEquals(IncomeUiState.Loading, viewModel.state.value)
+
+            refresh.complete(FinanceRefreshResult.Success)
+            advanceUntilIdle()
+            assertEquals(IncomeUiState.Empty(), viewModel.state.value)
+        }
+
+    @Test
+    fun `cached income stays visible while initial refresh is running`() =
+        runTest {
+            val cached = incomeTransaction()
+            val refresh = CompletableDeferred<FinanceRefreshResult>()
+            val repository =
+                object : StubFinanceRepository() {
+                    override fun observeAccounts(): Flow<List<Account>> = MutableStateFlow(listOf(cached.account))
+
+                    override fun observeTransactions(query: TransactionsQuery): Flow<List<Transaction>> =
+                        MutableStateFlow(listOf(cached))
+
+                    override suspend fun refreshPeriod(
+                        startDate: LocalDate,
+                        endDate: LocalDate,
+                    ): FinanceRefreshResult = refresh.await()
+                }
+            val viewModel = incomeViewModel(repository, clock)
+
+            runCurrent()
+
+            val state = viewModel.state.value as IncomeUiState.Content
+            assertTrue(state.isRefreshing)
+            assertEquals(listOf(1), state.transactions.map { it.id })
+
+            refresh.complete(FinanceRefreshResult.Success)
+            advanceUntilIdle()
+            assertEquals(false, (viewModel.state.value as IncomeUiState.Content).isRefreshing)
+        }
+
+    @Test
+    fun `network failure waits for cached income without emitting error`() =
+        runTest {
+            val cached = incomeTransaction()
+            val cacheReady = CompletableDeferred<Unit>()
+            val repository =
+                object : StubFinanceRepository() {
+                    override fun observeAccounts(): Flow<List<Account>> =
+                        flow {
+                            cacheReady.await()
+                            emit(listOf(cached.account))
+                        }
+
+                    override fun observeTransactions(query: TransactionsQuery): Flow<List<Transaction>> =
+                        flow {
+                            cacheReady.await()
+                            emit(listOf(cached))
+                        }
+
+                    override suspend fun refreshPeriod(
+                        startDate: LocalDate,
+                        endDate: LocalDate,
+                    ): FinanceRefreshResult =
+                        FinanceRefreshResult.Failure(
+                            FinanceFailureReason.Network,
+                            hasUsableCache = true,
+                        )
+                }
+            val viewModel = incomeViewModel(repository, clock)
+
+            runCurrent()
+            assertEquals(IncomeUiState.Loading, viewModel.state.value)
+
+            val effects = mutableListOf<IncomeEffect>()
+            val collector =
+                backgroundScope.async(start = CoroutineStart.UNDISPATCHED) {
+                    viewModel.effects.collect { effects += it }
+                }
+            cacheReady.complete(Unit)
+            advanceUntilIdle()
+
+            assertTrue(viewModel.state.value is IncomeUiState.Content)
+            assertTrue(effects.isEmpty())
+            collector.cancel()
+        }
+
+    @Test
+    fun `offline refresh exposes empty income when cache is initialized`() =
+        runTest {
+            val repository =
+                object : StubFinanceRepository() {
+                    override fun observeAccounts(): Flow<List<Account>> = MutableStateFlow(emptyList())
+
+                    override fun observeTransactions(query: TransactionsQuery): Flow<List<Transaction>> =
+                        MutableStateFlow(emptyList())
+
+                    override suspend fun refreshPeriod(
+                        startDate: LocalDate,
+                        endDate: LocalDate,
+                    ): FinanceRefreshResult =
+                        FinanceRefreshResult.Failure(
+                            FinanceFailureReason.Network,
+                            hasUsableCache = true,
+                        )
+                }
+
+            val viewModel = incomeViewModel(repository, clock)
+            val effects = mutableListOf<IncomeEffect>()
+            val collector =
+                backgroundScope.async(start = CoroutineStart.UNDISPATCHED) {
+                    viewModel.effects.collect { effects += it }
+                }
+            advanceUntilIdle()
+
+            assertEquals(IncomeUiState.Empty(), viewModel.state.value)
+            assertTrue(effects.isEmpty())
+            collector.cancel()
+        }
+
+    @Test
+    fun `deleting income removes it and emits success effect`() =
+        runTest {
+            val summary =
+                FinanceSummary(
+                    nativeTotals = listOf(MoneyAmount(BigDecimal("125000.00"), CurrencyCode.RUB)),
+                    transactions = listOf(incomeTransaction()),
+                )
+            val repository = FakeIncomeFinanceRepository(FinanceLoadResult.Success(summary))
+            val viewModel = incomeViewModel(repository, clock)
+
+            advanceUntilIdle()
+            val effect = async(start = CoroutineStart.UNDISPATCHED) { viewModel.effects.first() }
+            viewModel.onIntent(IncomeIntent.DeleteTransaction(1))
+            advanceUntilIdle()
+
+            assertEquals(listOf(1), repository.deletedTransactionIds)
+            assertEquals(IncomeUiState.Empty(), viewModel.state.value)
+            assertEquals(IncomeEffect.TransactionDeleted, effect.await())
+        }
+}
+
+private fun incomeViewModel(
+    repository: FinanceRepository,
+    clock: Clock,
+): IncomeViewModel =
+    IncomeViewModel(
+        GetDailySummaryUseCase(repository),
+        DeleteTransactionUseCase(repository),
+        clock,
+    )
+
+private open class StubFinanceRepository : FinanceRepository {
+    override suspend fun getAccounts() = error("Not used")
+
+    override suspend fun getTransactions(query: TransactionsQuery) = error("Not used")
 }
 
 private class FakeIncomeFinanceRepository(
     vararg results: FinanceLoadResult,
-) : FinanceRepository {
+) : StubFinanceRepository() {
     private val results = ArrayDeque(results.toList())
+    private val firstSummary = (results.firstOrNull() as? FinanceLoadResult.Success)?.summary
+    private val accounts =
+        MutableStateFlow(
+            firstSummary
+                ?.transactions
+                .orEmpty()
+                .map { it.account }
+                .distinctBy { it.id },
+        )
+    private val transactions = MutableStateFlow(firstSummary?.transactions.orEmpty())
     val requestedDates = mutableListOf<LocalDate>()
+    val deletedTransactionIds = mutableListOf<Int>()
 
-    override suspend fun getAccounts(): FinanceDataLoadResult<List<Account>> =
-        when (val result = results.first()) {
+    override fun observeAccounts(): Flow<List<Account>> = accounts
+
+    override fun observeTransactions(query: TransactionsQuery): Flow<List<Transaction>> = transactions
+
+    override suspend fun refreshPeriod(
+        startDate: LocalDate,
+        endDate: LocalDate,
+    ): FinanceRefreshResult {
+        requestedDates += startDate
+        return when (val result = results.removeFirst()) {
             is FinanceLoadResult.Success -> {
-                FinanceDataLoadResult.Success(
+                accounts.value =
                     result.summary.transactions
                         .map { it.account }
-                        .distinctBy { it.id },
-                )
+                        .distinctBy { it.id }
+                transactions.value = result.summary.transactions
+                FinanceRefreshResult.Success
             }
 
             is FinanceLoadResult.Failure -> {
-                FinanceDataLoadResult.Failure(result.reason)
+                FinanceRefreshResult.Failure(result.reason, hasUsableCache = false)
             }
         }
+    }
 
-    override suspend fun getTransactions(query: TransactionsQuery): FinanceDataLoadResult<List<Transaction>> {
-        requestedDates += query.startDate
-        return when (val result = results.removeFirst()) {
-            is FinanceLoadResult.Success -> FinanceDataLoadResult.Success(result.summary.transactions)
-            is FinanceLoadResult.Failure -> FinanceDataLoadResult.Failure(result.reason)
-        }
+    override suspend fun deleteTransaction(id: Int): EditorResult<Unit> {
+        deletedTransactionIds += id
+        transactions.value = transactions.value.filterNot { it.id == id }
+        return EditorResult.Success(Unit)
     }
 }
 

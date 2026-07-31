@@ -2,6 +2,7 @@ package com.yandex.school.casheye.feature.income.di
 
 import androidx.lifecycle.ViewModel
 import com.yandex.school.casheye.feature.income.presentation.IncomeViewModel
+import com.yandex.school.casheye.feature.income.presentation.edtior.AddIncomeViewModel
 import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.Binds
 import dev.zacsweers.metro.IntoMap
@@ -13,4 +14,9 @@ interface IncomeViewModelBindings {
     @IntoMap
     @ViewModelKey(IncomeViewModel::class)
     val IncomeViewModel.bindIncomeViewModel: ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(AddIncomeViewModel::class)
+    val AddIncomeViewModel.bindAddIncomeViewModel: ViewModel
 }

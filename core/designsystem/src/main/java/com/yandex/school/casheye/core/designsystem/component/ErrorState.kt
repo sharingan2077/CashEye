@@ -44,11 +44,11 @@ fun ErrorState(
         Image(
             painter = painterResource(content.imageRes),
             contentDescription = stringResource(content.titleRes),
-            modifier = Modifier.size(200.dp),
+            modifier = Modifier.size(150.dp),
         )
         Text(
             text = stringResource(content.titleRes),
-            modifier = Modifier.padding(top = 16.dp),
+            modifier = Modifier.padding(top = 8.dp),
             color = MaterialTheme.colorScheme.onSurface,
             style = MaterialTheme.typography.headlineSmall,
             textAlign = TextAlign.Center,
@@ -63,7 +63,7 @@ fun ErrorState(
         if (onRetry != null && retryLabel != null) {
             Button(
                 onClick = onRetry,
-                modifier = Modifier.padding(top = 24.dp),
+                modifier = Modifier.padding(top = 8.dp),
             ) {
                 Text(text = retryLabel)
             }
@@ -119,7 +119,7 @@ private fun ErrorStatePreview(
     @PreviewParameter(ErrorStateTypeProvider::class) type: ErrorStateType,
 ) {
     CashEyeTheme(dynamicColor = false) {
-        Surface(color = MaterialTheme.colorScheme.background) {
+        Surface(color = MaterialTheme.colorScheme.surface) {
             ErrorState(type = type)
         }
     }

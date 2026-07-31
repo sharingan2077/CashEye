@@ -2,9 +2,34 @@
     <string name="empty_accounts">No accounts yet</string>
     <string name="empty_accounts_description">Add your first account to track your balance.</string>
     <string name="balance_total">balance, total</string>
+    <string name="balance_valuation">≈ %1$s</string>
+    <string name="balance_valuation_dated">≈ %1$s · rates as of %2$s</string>
+    <string name="balance_valuation_partial">Included ≈ %1$s</string>
+    <string name="balance_valuation_partial_dated">Included ≈ %1$s · rates as of %2$s</string>
+    <string name="balance_not_included">Not included: %1$s</string>
     <string name="retry">Retry</string>
     <string name="error_network">Check your internet connection</string>
     <string name="error_authorization">Authorization failed</string>
     <string name="error_server">Server is temporarily unavailable</string>
     <string name="error_load_accounts">Failed to load accounts</string>
+    <string name="error_account_name_required">Enter an account name</string>
+    <string name="error_invalid_balance">Enter a valid balance</string>
+    <string name="error_select_currency">Select a currency</string>
+    <string name="error_save_account">Could not save account</string>
+    <string name="error_account_currency_has_transactions">You cannot change an account currency while it has transactions</string>
+    <string name="error_account_currency_history_unavailable">Connect to the internet to verify this account has no transactions</string>
+    <string name="delete_account">Delete account</string>
+    <string name="account_deleted">Account deleted</string>
+    <string name="error_delete_account">Could not delete account</string>
+    <string name="delete_account_confirmation_title">Delete account?</string>
+    <string name="delete">Delete</string>
+    <string name="cancel">Cancel</string>
+    <plurals name="delete_account_confirmation">
+        <item quantity="one">This account has %d transaction. The account and transaction will be deleted permanently.</item>
+        <item quantity="other">This account has %d transactions. The account and all transactions will be deleted permanently.</item>
+    </plurals>
+    <plurals name="account_with_transactions_deleted">
+        <item quantity="one">Account and %d transaction deleted</item>
+        <item quantity="other">Account and %d transactions deleted</item>
+    </plurals>
 </resources>

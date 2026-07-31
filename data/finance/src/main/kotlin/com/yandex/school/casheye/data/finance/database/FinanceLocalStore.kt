@@ -1,0 +1,443 @@
+package com.yandex.school.casheye.data.finance.database
+
+import android.content.Context
+import androidx.room.Room
+import androidx.room.withTransaction
+import com.yandex.school.casheye.core.model.Account
+import com.yandex.school.casheye.core.model.Category
+import com.yandex.school.casheye.core.model.Transaction
+import com.yandex.school.casheye.data.finance.database.entity.AccountTransactionHistoryVerificationEntity
+import com.yandex.school.casheye.data.finance.database.entity.PendingEntityType
+import com.yandex.school.casheye.data.finance.database.entity.PendingOperationEntity
+import com.yandex.school.casheye.data.finance.database.mapper.toDomain
+import com.yandex.school.casheye.data.finance.database.mapper.toEntity
+import com.yandex.school.casheye.data.finance.dto.AccountDto
+import com.yandex.school.casheye.data.finance.dto.AccountResponseDto
+import com.yandex.school.casheye.data.finance.dto.CategoryDto
+import com.yandex.school.casheye.data.finance.dto.TransactionDto
+import com.yandex.school.casheye.data.finance.dto.TransactionResponseDto
+import com.yandex.school.casheye.domain.finance.editor.SaveAccountCommand
+import com.yandex.school.casheye.domain.finance.editor.SaveTransactionCommand
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.Inject
+import dev.zacsweers.metro.SingleIn
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
+import java.time.Instant
+import com.yandex.school.casheye.data.finance.mapper.toDomain as toNetworkDomain
+
+interface FinanceLocalStore {
+    fun observeAccounts(): Flow<List<Account>> = flow { emit(getAccounts()) }
+
+    fun observeTransactions(
+        accountId: Int?,
+        startInclusive: Instant,
+        endInclusive: Instant,
+    ): Flow<List<Transaction>> =
+        flow {
+            emit(getTransactions(accountId, startInclusive, endInclusive))
+        }
+
+    suspend fun getAccounts(): List<Account>
+
+    suspend fun getAccount(id: Int): Account?
+
+    suspend fun getCategories(isIncome: Boolean): List<Category>
+
+    suspend fun hasUsableCache(): Boolean
+
+    suspend fun getTransaction(id: Int): Transaction?
+
+    suspend fun getTransactions(
+        accountId: Int?,
+        startInclusive: Instant,
+        endInclusive: Instant,
+    ): List<Transaction>
+
+    suspend fun refreshAccounts(accounts: List<AccountDto>)
+
+    suspend fun refreshCategories(categories: List<CategoryDto>)
+
+    suspend fun refreshPeriod(
+        accounts: List<AccountDto>,
+        categories: List<CategoryDto>,
+        transactions: List<TransactionResponseDto>,
+        startInclusive: Instant,
+        endInclusive: Instant,
+    )
+
+    suspend fun cacheAccount(account: AccountResponseDto)
+
+    suspend fun cacheTransaction(transaction: TransactionResponseDto)
+
+    suspend fun cacheCompleteAccountTransactionHistory(
+        accountId: Int,
+        transactions: List<TransactionResponseDto>,
+        verifiedAt: Instant,
+    )
+
+    suspend fun isAccountTransactionHistoryVerified(id: Int): Boolean
+
+    suspend fun saveAccount(
+        command: SaveAccountCommand,
+        now: Instant,
+    )
+
+    suspend fun saveTransaction(
+        command: SaveTransactionCommand,
+        now: Instant,
+    )
+
+    suspend fun getAccountTransactionCount(id: Int): Int
+
+    suspend fun deleteTransaction(
+        id: Int,
+        now: Instant,
+    )
+
+    suspend fun deleteAccount(
+        id: Int,
+        now: Instant,
+    ): Int
+}
+
+@Inject
+@SingleIn(AppScope::class)
+class FinanceDatabaseProvider(
+    context: Context,
+) {
+    internal val database: FinanceDatabase =
+        Room
+            .databaseBuilder(
+                context.applicationContext,
+                FinanceDatabase::class.java,
+                DATABASE_NAME,
+            ).addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+            .build()
+
+    private companion object {
+        const val DATABASE_NAME = "finance.db"
+    }
+}
+
+internal interface FinanceSyncStore {
+    suspend fun getPendingOperations(): List<PendingOperationEntity>
+
+    suspend fun completeAccountCreate(
+        sentOperations: List<PendingOperationEntity>,
+        response: AccountDto,
+    )
+
+    suspend fun completeAccountUpdate(
+        sentOperations: List<PendingOperationEntity>,
+        response: AccountDto,
+    )
+
+    suspend fun completeTransactionCreate(
+        sentOperations: List<PendingOperationEntity>,
+        response: TransactionDto,
+    )
+
+    suspend fun completeTransactionUpdate(
+        sentOperations: List<PendingOperationEntity>,
+        response: TransactionResponseDto,
+    )
+
+    suspend fun completeDelete(sentOperations: List<PendingOperationEntity>)
+
+    suspend fun refreshAfterSync(
+        accounts: List<AccountDto>,
+        categories: List<CategoryDto>,
+        transactions: List<TransactionResponseDto>,
+        startInclusive: Instant,
+        endInclusive: Instant,
+    )
+}
+
+@Inject
+@SingleIn(AppScope::class)
+class RoomFinanceLocalStore(
+    databaseProvider: FinanceDatabaseProvider,
+) : FinanceLocalStore {
+    private val database = databaseProvider.database
+
+    override fun observeAccounts(): Flow<List<Account>> =
+        database.accountDao().observeAll().map { accounts -> accounts.map { it.toDomain() } }
+
+    override fun observeTransactions(
+        accountId: Int?,
+        startInclusive: Instant,
+        endInclusive: Instant,
+    ): Flow<List<Transaction>> =
+        database
+            .transactionDao()
+            .observeForPeriod(accountId, startInclusive.toEpochMilli(), endInclusive.toEpochMilli())
+            .map { transactions -> transactions.map { it.toDomain() } }
+
+    override suspend fun getAccounts(): List<Account> = database.accountDao().getAll().map { it.toDomain() }
+
+    override suspend fun getAccount(id: Int): Account? = database.accountDao().getById(id)?.toDomain()
+
+    override suspend fun getCategories(isIncome: Boolean): List<Category> =
+        database.categoryDao().getByType(isIncome).map { it.toDomain() }
+
+    override suspend fun hasUsableCache(): Boolean = database.categoryDao().count() > 0
+
+    override suspend fun getTransaction(id: Int): Transaction? = database.transactionDao().getById(id)?.toDomain()
+
+    override suspend fun getTransactions(
+        accountId: Int?,
+        startInclusive: Instant,
+        endInclusive: Instant,
+    ): List<Transaction> =
+        database
+            .transactionDao()
+            .getForPeriod(accountId, startInclusive.toEpochMilli(), endInclusive.toEpochMilli())
+            .map { it.toDomain() }
+
+    override suspend fun refreshAccounts(accounts: List<AccountDto>) {
+        database.withTransaction {
+            val pendingIds = pendingAccountIds()
+            database.accountDao().upsertAll(
+                accounts.filterNot { it.id in pendingIds }.map { it.toNetworkDomain().toEntity() },
+            )
+        }
+    }
+
+    override suspend fun refreshCategories(categories: List<CategoryDto>) {
+        database.categoryDao().upsertAll(categories.map { it.toNetworkDomain().toEntity() })
+    }
+
+    override suspend fun refreshPeriod(
+        accounts: List<AccountDto>,
+        categories: List<CategoryDto>,
+        transactions: List<TransactionResponseDto>,
+        startInclusive: Instant,
+        endInclusive: Instant,
+    ) {
+        database.withTransaction {
+            val pendingAccounts = pendingAccountIds()
+            val pendingTransactions =
+                database.pendingOperationDao().getPendingEntityIds(PendingEntityType.TRANSACTION).toSet()
+
+            database.accountDao().upsertAll(
+                accounts.filterNot { it.id in pendingAccounts }.map { it.toNetworkDomain().toEntity() },
+            )
+            database.categoryDao().upsertAll(categories.map { it.toNetworkDomain().toEntity() })
+            // Remote deletion is not part of the current feature contract. Merge instead of replacing the
+            // whole period so a recently remapped offline transaction cannot disappear while the period
+            // endpoint is still returning a stale snapshot.
+            database.transactionDao().upsertAll(
+                transactions
+                    .filterNot { it.id in pendingTransactions }
+                    .map { transaction ->
+                        transaction
+                            .toNetworkDomain()
+                            .toEntity()
+                            .copy(
+                                currency =
+                                    database.transactionDao().getCurrencyById(transaction.id)
+                                        ?: transaction.account.currency,
+                            )
+                    },
+            )
+        }
+    }
+
+    override suspend fun cacheAccount(account: AccountResponseDto) {
+        database.withTransaction {
+            val pendingIds = pendingAccountIds()
+            if (account.id !in pendingIds) database.accountDao().upsert(account.toNetworkDomain().toEntity())
+        }
+    }
+
+    override suspend fun cacheTransaction(transaction: TransactionResponseDto) {
+        database.withTransaction {
+            val pendingAccounts = pendingAccountIds()
+            val pendingTransactions = database.pendingOperationDao().getPendingEntityIds(PendingEntityType.TRANSACTION)
+            if (transaction.account.id !in pendingAccounts) {
+                database.accountDao().upsert(transaction.account.toNetworkDomain().toEntity())
+            }
+            database.categoryDao().upsertAll(listOf(transaction.category.toNetworkDomain().toEntity()))
+            if (transaction.id !in pendingTransactions) {
+                database.transactionDao().upsert(
+                    transaction
+                        .toNetworkDomain()
+                        .toEntity()
+                        .copy(
+                            currency =
+                                database.transactionDao().getCurrencyById(transaction.id)
+                                    ?: transaction.account.currency,
+                        ),
+                )
+            }
+        }
+    }
+
+    override suspend fun cacheCompleteAccountTransactionHistory(
+        accountId: Int,
+        transactions: List<TransactionResponseDto>,
+        verifiedAt: Instant,
+    ) {
+        database.withTransaction {
+            for (transaction in transactions) {
+                cacheTransaction(transaction)
+            }
+            if (database.accountDao().getById(accountId) != null) {
+                database
+                    .accountTransactionHistoryVerificationDao()
+                    .upsert(
+                        AccountTransactionHistoryVerificationEntity(
+                            accountId = accountId,
+                            verifiedAt = verifiedAt.toEpochMilli(),
+                        ),
+                    )
+            }
+        }
+    }
+
+    private suspend fun pendingAccountIds(): Set<Int> =
+        database.pendingOperationDao().run {
+            getPendingEntityIds(PendingEntityType.ACCOUNT).toSet() + getPendingRelatedAccountIds().filterNotNull()
+        }
+
+    override suspend fun saveAccount(
+        command: SaveAccountCommand,
+        now: Instant,
+    ) {
+        if (command.id == null) {
+            database.offlineWriteDao().createAccount(command, now)
+        } else {
+            database.offlineWriteDao().updateAccount(command, now)
+        }
+    }
+
+    override suspend fun saveTransaction(
+        command: SaveTransactionCommand,
+        now: Instant,
+    ) {
+        if (command.id == null) {
+            database.offlineWriteDao().createTransaction(command, now)
+        } else {
+            database.offlineWriteDao().updateTransaction(command, now)
+        }
+    }
+
+    override suspend fun getAccountTransactionCount(id: Int): Int = database.transactionDao().countByAccountId(id)
+
+    override suspend fun isAccountTransactionHistoryVerified(id: Int): Boolean =
+        database.accountTransactionHistoryVerificationDao().isVerified(id)
+
+    override suspend fun deleteTransaction(
+        id: Int,
+        now: Instant,
+    ) {
+        database.offlineWriteDao().deleteTransaction(id, now)
+    }
+
+    override suspend fun deleteAccount(
+        id: Int,
+        now: Instant,
+    ): Int = database.offlineWriteDao().deleteAccount(id, now)
+
+    internal suspend fun getPendingOperations(): List<PendingOperationEntity> = database.pendingOperationDao().getAll()
+
+    internal suspend fun completeAccountCreate(
+        sentOperations: List<PendingOperationEntity>,
+        response: AccountDto,
+    ) {
+        database.offlineWriteDao().completeAccountCreate(sentOperations, response.toNetworkDomain().toEntity())
+    }
+
+    internal suspend fun completeAccountUpdate(
+        sentOperations: List<PendingOperationEntity>,
+        response: AccountDto,
+    ) {
+        database.offlineWriteDao().completeAccountUpdate(sentOperations, response.toNetworkDomain().toEntity())
+    }
+
+    internal suspend fun completeTransactionCreate(
+        sentOperations: List<PendingOperationEntity>,
+        response: TransactionDto,
+    ) {
+        database.offlineWriteDao().completeTransactionCreate(
+            sentOperations,
+            com.yandex.school.casheye.data.finance.database.entity.TransactionEntity(
+                id = response.id,
+                accountId = response.accountId,
+                categoryId = response.categoryId,
+                amount = response.amount,
+                currency =
+                    database.accountDao().getById(response.accountId)?.currency
+                        ?: com.yandex.school.casheye.core.model.CurrencyCode.RUB.isoCode,
+                transactionDate = response.transactionDate.toEpochMilli(),
+                comment = response.comment,
+                createdAt = response.createdAt.toEpochMilli(),
+                updatedAt = response.updatedAt.toEpochMilli(),
+            ),
+        )
+    }
+
+    internal suspend fun completeTransactionUpdate(
+        sentOperations: List<PendingOperationEntity>,
+        response: TransactionResponseDto,
+    ) {
+        database.offlineWriteDao().completeTransactionUpdate(
+            sentOperations,
+            response.toNetworkDomain().toEntity(),
+        )
+    }
+
+    internal suspend fun completeDelete(sentOperations: List<PendingOperationEntity>) {
+        database.offlineWriteDao().completeDelete(sentOperations)
+    }
+}
+
+internal class RoomFinanceSyncStore(
+    private val localStore: RoomFinanceLocalStore,
+) : FinanceSyncStore {
+    override suspend fun getPendingOperations(): List<PendingOperationEntity> = localStore.getPendingOperations()
+
+    override suspend fun completeAccountCreate(
+        sentOperations: List<PendingOperationEntity>,
+        response: AccountDto,
+    ) {
+        localStore.completeAccountCreate(sentOperations, response)
+    }
+
+    override suspend fun completeAccountUpdate(
+        sentOperations: List<PendingOperationEntity>,
+        response: AccountDto,
+    ) {
+        localStore.completeAccountUpdate(sentOperations, response)
+    }
+
+    override suspend fun completeTransactionCreate(
+        sentOperations: List<PendingOperationEntity>,
+        response: TransactionDto,
+    ) {
+        localStore.completeTransactionCreate(sentOperations, response)
+    }
+
+    override suspend fun completeTransactionUpdate(
+        sentOperations: List<PendingOperationEntity>,
+        response: TransactionResponseDto,
+    ) {
+        localStore.completeTransactionUpdate(sentOperations, response)
+    }
+
+    override suspend fun completeDelete(sentOperations: List<PendingOperationEntity>) {
+        localStore.completeDelete(sentOperations)
+    }
+
+    override suspend fun refreshAfterSync(
+        accounts: List<AccountDto>,
+        categories: List<CategoryDto>,
+        transactions: List<TransactionResponseDto>,
+        startInclusive: Instant,
+        endInclusive: Instant,
+    ) {
+        localStore.refreshPeriod(accounts, categories, transactions, startInclusive, endInclusive)
+    }
+}

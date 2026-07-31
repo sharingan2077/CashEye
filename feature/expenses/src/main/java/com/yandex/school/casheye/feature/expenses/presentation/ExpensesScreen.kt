@@ -6,19 +6,22 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -26,22 +29,26 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.yandex.school.casheye.core.designsystem.component.DelayedCircularProgressIndicator
 import com.yandex.school.casheye.core.designsystem.component.ErrorState
 import com.yandex.school.casheye.core.designsystem.component.ErrorStateType
-import com.yandex.school.casheye.core.designsystem.component.MoneyListItem
 import com.yandex.school.casheye.core.designsystem.component.PullToRefreshContainer
+import com.yandex.school.casheye.core.designsystem.component.SwipeToRevealDeleteItem
+import com.yandex.school.casheye.core.designsystem.component.money.MoneyListItem
+import com.yandex.school.casheye.core.designsystem.component.money.NativeMoneySummary
 import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
 import com.yandex.school.casheye.core.format.formatAmount
 import com.yandex.school.casheye.core.model.Transaction
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import com.yandex.school.casheye.feature.expenses.R
+import com.yandex.school.casheye.feature.expenses.presentation.preview.expensesUiStateMock
 
 @Composable
 fun ExpenseScreen(
     state: ExpensesUiState,
     onIntent: (ExpensesIntent) -> Unit,
     modifier: Modifier = Modifier,
+    onTransactionClick: (Int) -> Unit = {},
 ) {
     PullToRefreshContainer(
         isRefreshing = state.isRefreshing,
@@ -52,11 +59,11 @@ fun ExpenseScreen(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background),
+                    .background(MaterialTheme.colorScheme.surface),
         ) {
             when (state) {
                 ExpensesUiState.Loading -> {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                    DelayedCircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 }
 
                 is ExpensesUiState.Empty -> {
@@ -64,7 +71,11 @@ fun ExpenseScreen(
                 }
 
                 is ExpensesUiState.Content -> {
-                    ExpensesContent(state = state)
+                    ExpensesContent(
+                        state = state,
+                        onTransactionClick = onTransactionClick,
+                        onTransactionDelete = { onIntent(ExpensesIntent.DeleteTransaction(it)) },
+                    )
                 }
 
                 is ExpensesUiState.Error -> {
@@ -82,35 +93,59 @@ fun ExpenseScreen(
 @Composable
 private fun ExpensesContent(
     state: ExpensesUiState.Content,
+    onTransactionClick: (Int) -> Unit,
+    onTransactionDelete: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var revealedTransactionId by remember { mutableStateOf<Int?>(null) }
+
     Column(modifier = modifier.fillMaxSize()) {
-        ExpensesHero(
-            total =
-                formatAmount(
-                    amount = state.total,
-                    currencyCode = state.currencyCode,
-                ),
+        NativeMoneySummary(
+            title = stringResource(R.string.expenses_total),
+            nativeTotals =
+                state.nativeTotals.map {
+                    formatAmount(
+                        amount = it.amount,
+                        currencyCode = it.currency.isoCode,
+                    )
+                },
         )
         LazyColumn(
             modifier =
                 Modifier
                     .fillMaxWidth()
                     .weight(1f),
+            contentPadding = PaddingValues(bottom = 60.dp),
         ) {
             items(
                 items = state.transactions,
                 key = Transaction::id,
             ) { transaction ->
-                MoneyListItem(
-                    emoji = transaction.category.emoji,
-                    title = transaction.category.name,
-                    amount =
-                        formatAmount(
-                            amount = transaction.amount,
-                            currencyCode = transaction.account.currency,
-                        ),
-                )
+                SwipeToRevealDeleteItem(
+                    actionLabel = stringResource(R.string.delete_expense),
+                    isRevealed = revealedTransactionId == transaction.id,
+                    onReveal = { revealedTransactionId = transaction.id },
+                    onDismissReveal = {
+                        if (revealedTransactionId == transaction.id) {
+                            revealedTransactionId = null
+                        }
+                    },
+                    onClick = {
+                        revealedTransactionId = null
+                        onTransactionClick(transaction.id)
+                    },
+                    onDelete = { onTransactionDelete(transaction.id) },
+                ) {
+                    MoneyListItem(
+                        emoji = transaction.category.emoji,
+                        title = transaction.category.name,
+                        amount =
+                            formatAmount(
+                                amount = transaction.amount,
+                                currencyCode = transaction.currency.isoCode,
+                            ),
+                    )
+                }
             }
         }
     }
@@ -128,7 +163,7 @@ private fun EmptyExpenses(modifier: Modifier = Modifier) {
             contentDescription = stringResource(R.string.empty_expenses),
             modifier =
                 Modifier
-                    .size(200.dp),
+                    .size(150.dp),
         )
         Text(
             text = stringResource(R.string.empty_expenses),
@@ -142,30 +177,6 @@ private fun EmptyExpenses(modifier: Modifier = Modifier) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center,
-        )
-    }
-}
-
-@Composable
-private fun ExpensesHero(total: String) {
-    Column(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .height(117.dp)
-                .padding(start = 20.dp, top = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        Text(
-            text = stringResource(R.string.expenses_total),
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-            style = MaterialTheme.typography.labelLarge.copy(lineHeight = 16.sp),
-        )
-        Text(
-            text = total,
-            color = MaterialTheme.colorScheme.onSurface,
-            style = MaterialTheme.typography.displayMedium,
-            modifier = Modifier.fillMaxWidth(),
         )
     }
 }
@@ -195,7 +206,7 @@ private fun FinanceFailureReason.toErrorStateType(): ErrorStateType =
 @Composable
 private fun ExpenseScreenPreview() {
     CashEyeTheme(dynamicColor = false) {
-        Surface(color = MaterialTheme.colorScheme.background) {
+        Surface(color = MaterialTheme.colorScheme.surface) {
             ExpenseScreen(
                 state = expensesUiStateMock,
                 onIntent = {},

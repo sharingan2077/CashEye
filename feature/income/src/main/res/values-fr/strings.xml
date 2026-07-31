@@ -7,4 +7,12 @@
     <string name="error_authorization">Échec de l’autorisation</string>
     <string name="error_server">Le serveur est temporairement indisponible</string>
     <string name="error_load_income">Impossible de charger les revenus</string>
+    <string name="error_create_account">Créez d’abord un compte</string>
+    <string name="error_positive_amount">Saisissez un montant positif</string>
+    <string name="error_select_account">Sélectionnez un compte</string>
+    <string name="error_select_category">Sélectionnez une catégorie</string>
+    <string name="error_save_income">Impossible d’enregistrer le revenu</string>
+    <string name="delete_income">Supprimer le revenu</string>
+    <string name="income_deleted">Revenu supprimé</string>
+    <string name="error_delete_income">Impossible de supprimer le revenu</string>
 </resources>

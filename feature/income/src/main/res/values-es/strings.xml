@@ -7,4 +7,12 @@
     <string name="error_authorization">Error de autorización</string>
     <string name="error_server">El servidor no está disponible temporalmente</string>
     <string name="error_load_income">No se pudieron cargar los ingresos</string>
+    <string name="error_create_account">Primero crea una cuenta</string>
+    <string name="error_positive_amount">Introduce un importe positivo</string>
+    <string name="error_select_account">Selecciona una cuenta</string>
+    <string name="error_select_category">Selecciona una categoría</string>
+    <string name="error_save_income">No se pudieron guardar los ingresos</string>
+    <string name="delete_income">Eliminar ingreso</string>
+    <string name="income_deleted">Ingreso eliminado</string>
+    <string name="error_delete_income">No se pudo eliminar el ingreso</string>
 </resources>

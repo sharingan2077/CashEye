@@ -3,11 +3,17 @@
     <string name="empty_expenses_description">Wählen Sie oben ein anderes Datum, um Ausgaben zu sehen</string>
     <string name="expenses_total">Ausgaben, gesamt</string>
     <string name="retry">Wiederholen</string>
-    <string name="confirm">OK</string>
-    <string name="cancel">Abbrechen</string>
-    <string name="select_date">Datum auswählen</string>
     <string name="error_network">Internetverbindung prüfen</string>
     <string name="error_authorization">Anmeldung fehlgeschlagen</string>
     <string name="error_server">Server ist vorübergehend nicht verfügbar</string>
     <string name="error_load_expenses">Ausgaben konnten nicht geladen werden</string>
+    <string name="error_create_account">Erstellen Sie zuerst ein Konto</string>
+    <string name="error_positive_amount">Geben Sie einen positiven Betrag ein</string>
+    <string name="error_select_account">Wählen Sie ein Konto</string>
+    <string name="error_select_category">Wählen Sie eine Kategorie</string>
+    <string name="error_insufficient_balance">Unzureichendes Guthaben auf dem Konto</string>
+    <string name="error_save_expense">Ausgabe konnte nicht gespeichert werden</string>
+    <string name="delete_expense">Ausgabe löschen</string>
+    <string name="expense_deleted">Ausgabe gelöscht</string>
+    <string name="error_delete_expense">Ausgabe konnte nicht gelöscht werden</string>
 </resources>

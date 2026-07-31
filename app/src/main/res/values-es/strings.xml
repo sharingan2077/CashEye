@@ -7,4 +7,5 @@
     <string name="content_description_back">Atrás</string>
     <string name="content_description_add">Añadir</string>
     <string name="analytics_title">Analítica</string>
+    <string name="network_offline_message">Sin conexión a Internet</string>
 </resources>

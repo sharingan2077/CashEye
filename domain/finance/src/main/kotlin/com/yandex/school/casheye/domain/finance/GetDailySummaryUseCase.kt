@@ -1,51 +1,57 @@
 package com.yandex.school.casheye.domain.finance
 
-import java.math.BigDecimal
+import com.yandex.school.casheye.core.model.MoneyAmount
+import com.yandex.school.casheye.domain.finance.currency.DefaultReportingCurrencyRepository
+import com.yandex.school.casheye.domain.finance.currency.ReportingCurrencyRepository
+import com.yandex.school.casheye.domain.finance.currency.aggregateNativeMoney
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
 import java.time.LocalDate
 
 class GetDailySummaryUseCase(
-    private val repository: FinanceRepository,
+    private val repository: FinanceQueryRepository,
+    private val reportingCurrencyRepository: ReportingCurrencyRepository = DefaultReportingCurrencyRepository,
 ) {
-    suspend operator fun invoke(
+    operator fun invoke(
         date: LocalDate,
-        currencyCode: String,
         transactionKind: TransactionKind,
-    ): FinanceLoadResult {
-        val accounts =
-            when (val result = repository.getAccounts()) {
-                is FinanceDataLoadResult.Success -> result.data
-                is FinanceDataLoadResult.Failure -> return FinanceLoadResult.Failure(result.reason)
-            }
-
-        val transactions =
-            repository.getTransactions(
+    ): Flow<FinanceLoadResult> =
+        combine(
+            repository.observeAccounts(),
+            repository.observeTransactions(
                 TransactionsQuery(
-                    accountIds = accounts.mapTo(mutableSetOf()) { it.id },
+                    accountIds = emptySet(),
                     startDate = date,
                     endDate = date,
                 ),
-            )
-        val transactionList =
-            when (transactions) {
-                is FinanceDataLoadResult.Success -> transactions.data
-                is FinanceDataLoadResult.Failure -> return FinanceLoadResult.Failure(transactions.reason)
-            }
-
-        val finance =
-            transactionList
-                .filter { transaction ->
-                    when (transactionKind) {
-                        TransactionKind.Income -> transaction.category.isIncome
-                        TransactionKind.Expense -> !transaction.category.isIncome
-                    }
-                }.sortedByDescending { it.transactionDate }
-
-        return FinanceLoadResult.Success(
-            FinanceSummary(
-                total = finance.fold(BigDecimal.ZERO) { total, transaction -> total + transaction.amount },
-                currencyCode = currencyCode,
-                transactions = finance,
             ),
-        )
-    }
+            reportingCurrencyRepository.observe(),
+        ) { accounts, transactions, reportingCurrency ->
+            val accountIds = accounts.mapTo(mutableSetOf()) { it.id }
+            val finance =
+                transactions
+                    .filter { transaction ->
+                        transaction.account.id in accountIds &&
+                            when (transactionKind) {
+                                TransactionKind.Income -> transaction.category.isIncome
+                                TransactionKind.Expense -> !transaction.category.isIncome
+                            }
+                    }.sortedByDescending { it.transactionDate }
+
+            val result: FinanceLoadResult =
+                FinanceLoadResult.Success(
+                    FinanceSummary(
+                        nativeTotals =
+                            aggregateNativeMoney(
+                                amounts = finance.map { MoneyAmount(it.amount, it.currency) },
+                                reportingCurrency = reportingCurrency,
+                            ),
+                        transactions = finance,
+                    ),
+                )
+            result
+        }.catch { emit(FinanceLoadResult.Failure(FinanceFailureReason.Unknown)) }
+
+    suspend fun refresh(date: LocalDate): FinanceRefreshResult = repository.refreshPeriod(date, date)
 }

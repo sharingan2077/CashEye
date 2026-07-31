@@ -1,3 +1,68 @@
+## Current Homework
+
+local/HW_3_android_HW_3_Android.md
+
+## Current Project State
+
+HW-3 is implemented in source. Do not plan Room/offline mode from scratch before inspecting the
+current implementation.
+
+### Implemented HW-3 scope
+
+- Expense, income, and account create/edit/delete flows write locally first.
+- `:data:finance` owns Retrofit, Room, the durable `pending_operations` outbox, WorkManager, and
+  connectivity monitoring.
+- Room is the UI source of truth. Remote refreshes update Room; cached content remains available
+  when the network is unavailable.
+- Offline writes use a `local-wins` policy. New entities receive negative temporary IDs. Account
+  operations are synchronized before dependent transactions, and successful creates remap local
+  IDs to server IDs.
+- Editing an unsynced create updates/collapses its outbox payload instead of appending redundant
+  updates. Preserve pending entities and account references while merging server refreshes.
+- Account balances are updated immediately for local transaction create/edit/delete operations.
+- Unique WorkManager jobs run immediately at app startup, after local writes, after reconnect, and
+  periodically every two hours. Work requires network connectivity.
+- HTTP 5xx requests use up to three attempts with two-second delays. Temporary worker failures use
+  WorkManager retry; non-5xx HTTP failures are permanent.
+- The UI reports offline state and requests a screen refresh after an offline-to-online transition.
+- Unit and instrumented test sources cover repository fallback, sync ordering/collapsing, offline
+  DAO writes, and Worker result mapping. Their presence is not proof they passed in the current
+  checkout.
+
+### Sync boundaries
+
+- Screen Refresh is a pull operation: it downloads API data and merges it into Room.
+- Outbox sync is a push-then-pull operation: it sends pending local writes, remaps IDs, then
+  refreshes server history.
+- Do not make feature ViewModels call WorkManager or Retrofit directly. Keep these responsibilities
+  in `:data:finance`.
+- The API has no idempotency key. POST synchronization is at-least-once and can theoretically
+  duplicate a server record if a successful response is lost before the outbox is completed.
+
+### Known refresh UX follow-up
+
+`NavigationRoot` passes additive, persistent `refreshKey` counters to Routes. Each Route starts
+`LaunchedEffect(refreshKey)` and refreshes whenever the value is greater than zero. If a Route
+leaves and re-enters composition after any counter increment, the same positive key can replay
+Refresh and briefly show the pull-to-refresh indicator. Treat this as event-consumption/lifecycle
+behavior to fix, not as a requirement of outgoing synchronization.
+
+### HW-3 acceptance flow
+
+Runtime acceptance must cover this device scenario:
+
+1. Disable the network.
+2. Create an account, then create and edit a transaction that references it.
+3. Confirm negative IDs, the collapsed durable outbox, and the immediate account balance in
+   Database Inspector.
+4. Restart the app and confirm cached data and pending operations survive.
+5. Restore the network and inspect `finance_immediate_sync` / `finance_periodic_sync`.
+6. Confirm account-before-transaction ordering, server-ID remapping, an empty completed outbox,
+   correct balances, and no duplicates on the server.
+
+Static inspection cannot confirm Room, KSP, DI, Worker startup, reconnect behavior, or device UI.
+Do not claim HW-3 runtime acceptance without performing this flow.
+
 ## Code search
 
 For any code search or project exploration in CashEye, use the
@@ -151,3 +216,26 @@ Before using the Read tool on any file longer than 500 lines, first run
 `ast-index outline <file>` to get its structure, then Read only the targeted
 slice via offset/limit. Never bulk-read large files.
 ```
+
+## Kotlin imports and package moves
+
+- Never leave the IDE pseudo-prefix `_root_ide_package_` in source files.
+- Use regular Kotlin imports and short type names instead of fully qualified names in code whenever
+  an import can resolve the type.
+- After moving Kotlin files or changing package declarations, update imports in every affected
+  file.
+- Before completing a package refactor, search all tracked source files for
+  `_root_ide_package_` and replace every occurrence with a correct import and short type name.
+- Use a fully qualified name in code only to resolve a real short-name conflict, and explain that
+  exception in the final response.
+
+## Kotlin and coroutines conventions
+
+- Prefer type-safe Kotlin duration APIs:
+    - `delay(300.milliseconds)`, not `delay(300L)`.
+    - `withTimeout(5.seconds)`, not `withTimeout(5_000L)`.
+- Import duration extensions explicitly:
+    - `kotlin.time.Duration.Companion.milliseconds`
+    - `kotlin.time.Duration.Companion.seconds`
+- Avoid unexplained raw numeric time values.
+- Extract repeated delays and timeouts into named `Duration` constants.

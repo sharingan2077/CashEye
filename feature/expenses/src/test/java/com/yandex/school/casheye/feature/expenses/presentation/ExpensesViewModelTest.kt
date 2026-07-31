@@ -2,22 +2,31 @@ package com.yandex.school.casheye.feature.expenses.presentation
 
 import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.Category
+import com.yandex.school.casheye.core.model.CurrencyCode
+import com.yandex.school.casheye.core.model.MoneyAmount
 import com.yandex.school.casheye.core.model.Transaction
-import com.yandex.school.casheye.domain.finance.FinanceDataLoadResult
+import com.yandex.school.casheye.domain.finance.DeleteTransactionUseCase
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import com.yandex.school.casheye.domain.finance.FinanceLoadResult
+import com.yandex.school.casheye.domain.finance.FinanceRefreshResult
 import com.yandex.school.casheye.domain.finance.FinanceRepository
 import com.yandex.school.casheye.domain.finance.FinanceSummary
 import com.yandex.school.casheye.domain.finance.GetDailySummaryUseCase
 import com.yandex.school.casheye.domain.finance.TransactionsQuery
+import com.yandex.school.casheye.domain.finance.editor.EditorResult
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
@@ -50,14 +59,18 @@ class ExpensesViewModelTest {
     @Test
     fun `successful load exposes content for expenses`() =
         runTest {
-            val summary = FinanceSummary(BigDecimal("25.00"), "RUB", listOf(transaction()))
+            val summary =
+                FinanceSummary(
+                    nativeTotals = listOf(MoneyAmount(BigDecimal("25.00"), CurrencyCode.RUB)),
+                    transactions = listOf(transaction()),
+                )
             val repository = FakeFinanceRepository(FinanceLoadResult.Success(summary))
-            val viewModel = ExpensesViewModel(GetDailySummaryUseCase(repository), clock)
+            val viewModel = expensesViewModel(repository, clock)
 
             advanceUntilIdle()
 
             assertEquals(
-                ExpensesUiState.Content(summary.total, summary.currencyCode, summary.transactions),
+                ExpensesUiState.Content(summary.nativeTotals, summary.transactions),
                 viewModel.state.value,
             )
         }
@@ -66,11 +79,9 @@ class ExpensesViewModelTest {
     fun `empty load exposes empty state`() =
         runTest {
             val viewModel =
-                ExpensesViewModel(
-                    GetDailySummaryUseCase(
-                        FakeFinanceRepository(
-                            FinanceLoadResult.Success(FinanceSummary(BigDecimal.ZERO, "RUB", emptyList())),
-                        ),
+                expensesViewModel(
+                    FakeFinanceRepository(
+                        FinanceLoadResult.Success(FinanceSummary(emptyList(), emptyList())),
                     ),
                     clock,
                 )
@@ -84,10 +95,8 @@ class ExpensesViewModelTest {
     fun `initial failure exposes error state`() =
         runTest {
             val viewModel =
-                ExpensesViewModel(
-                    GetDailySummaryUseCase(
-                        FakeFinanceRepository(FinanceLoadResult.Failure(FinanceFailureReason.Network)),
-                    ),
+                expensesViewModel(
+                    FakeFinanceRepository(FinanceLoadResult.Failure(FinanceFailureReason.Network)),
                     clock,
                 )
 
@@ -99,14 +108,16 @@ class ExpensesViewModelTest {
     @Test
     fun `failed refresh keeps content and emits show error effect`() =
         runTest {
-            val summary = FinanceSummary(BigDecimal("25.00"), "RUB", listOf(transaction()))
+            val summary =
+                FinanceSummary(
+                    nativeTotals = listOf(MoneyAmount(BigDecimal("25.00"), CurrencyCode.RUB)),
+                    transactions = listOf(transaction()),
+                )
             val viewModel =
-                ExpensesViewModel(
-                    GetDailySummaryUseCase(
-                        FakeFinanceRepository(
-                            FinanceLoadResult.Success(summary),
-                            FinanceLoadResult.Failure(FinanceFailureReason.Network),
-                        ),
+                expensesViewModel(
+                    FakeFinanceRepository(
+                        FinanceLoadResult.Success(summary),
+                        FinanceLoadResult.Failure(FinanceFailureReason.Server),
                     ),
                     clock,
                 )
@@ -117,10 +128,10 @@ class ExpensesViewModelTest {
             advanceUntilIdle()
 
             assertEquals(
-                ExpensesUiState.Content(summary.total, summary.currencyCode, summary.transactions),
+                ExpensesUiState.Content(summary.nativeTotals, summary.transactions),
                 viewModel.state.value,
             )
-            assertEquals(ExpensesEffect.ShowError(FinanceFailureReason.Network), effect.await())
+            assertEquals(ExpensesEffect.ShowError(FinanceFailureReason.Server), effect.await())
         }
 
     @Test
@@ -128,10 +139,10 @@ class ExpensesViewModelTest {
         runTest {
             val repository =
                 FakeFinanceRepository(
-                    FinanceLoadResult.Success(FinanceSummary(BigDecimal.ZERO, "RUB", emptyList())),
-                    FinanceLoadResult.Success(FinanceSummary(BigDecimal.ZERO, "RUB", emptyList())),
+                    FinanceLoadResult.Success(FinanceSummary(emptyList(), emptyList())),
+                    FinanceLoadResult.Success(FinanceSummary(emptyList(), emptyList())),
                 )
-            val viewModel = ExpensesViewModel(GetDailySummaryUseCase(repository), clock)
+            val viewModel = expensesViewModel(repository, clock)
             val selectedDate = LocalDate.of(2026, 6, 18)
 
             advanceUntilIdle()
@@ -142,14 +153,30 @@ class ExpensesViewModelTest {
         }
 
     @Test
+    fun `selecting a future date keeps the current day`() =
+        runTest {
+            val repository =
+                FakeFinanceRepository(
+                    FinanceLoadResult.Success(FinanceSummary(emptyList(), emptyList())),
+                )
+            val viewModel = expensesViewModel(repository, clock)
+
+            advanceUntilIdle()
+            viewModel.onIntent(ExpensesIntent.SelectDate(LocalDate.of(2026, 7, 18)))
+            advanceUntilIdle()
+
+            assertEquals(listOf(LocalDate.of(2026, 7, 17)), repository.requestedDates)
+        }
+
+    @Test
     fun `refresh reloads the current date`() =
         runTest {
             val repository =
                 FakeFinanceRepository(
-                    FinanceLoadResult.Success(FinanceSummary(BigDecimal.ZERO, "RUB", emptyList())),
-                    FinanceLoadResult.Success(FinanceSummary(BigDecimal.ZERO, "RUB", emptyList())),
+                    FinanceLoadResult.Success(FinanceSummary(emptyList(), emptyList())),
+                    FinanceLoadResult.Success(FinanceSummary(emptyList(), emptyList())),
                 )
-            val viewModel = ExpensesViewModel(GetDailySummaryUseCase(repository), clock)
+            val viewModel = expensesViewModel(repository, clock)
 
             advanceUntilIdle()
             viewModel.onIntent(ExpensesIntent.Refresh)
@@ -157,35 +184,236 @@ class ExpensesViewModelTest {
 
             assertEquals(listOf(LocalDate.of(2026, 7, 17), LocalDate.of(2026, 7, 17)), repository.requestedDates)
         }
+
+    @Test
+    fun `network recovery shows loading after an empty-cache error`() =
+        runTest {
+            val refresh = CompletableDeferred<FinanceRefreshResult>()
+            var refreshCount = 0
+            val repository =
+                object : StubFinanceRepository() {
+                    override fun observeAccounts(): Flow<List<Account>> = MutableStateFlow(emptyList())
+
+                    override fun observeTransactions(query: TransactionsQuery): Flow<List<Transaction>> =
+                        MutableStateFlow(emptyList())
+
+                    override suspend fun refreshPeriod(
+                        startDate: LocalDate,
+                        endDate: LocalDate,
+                    ): FinanceRefreshResult =
+                        if (++refreshCount == 1) {
+                            FinanceRefreshResult.Failure(FinanceFailureReason.Network, hasUsableCache = false)
+                        } else {
+                            refresh.await()
+                        }
+                }
+            val viewModel = expensesViewModel(repository, clock)
+
+            advanceUntilIdle()
+            assertEquals(ExpensesUiState.Error(FinanceFailureReason.Network), viewModel.state.value)
+
+            viewModel.onIntent(ExpensesIntent.NetworkRecovered)
+            runCurrent()
+            assertEquals(ExpensesUiState.Loading, viewModel.state.value)
+
+            refresh.complete(FinanceRefreshResult.Success)
+            advanceUntilIdle()
+            assertEquals(ExpensesUiState.Empty(), viewModel.state.value)
+        }
+
+    @Test
+    fun `cached expenses stay visible while initial refresh is running`() =
+        runTest {
+            val cached = transaction()
+            val refresh = CompletableDeferred<FinanceRefreshResult>()
+            val repository =
+                object : StubFinanceRepository() {
+                    override fun observeAccounts(): Flow<List<Account>> = MutableStateFlow(listOf(cached.account))
+
+                    override fun observeTransactions(query: TransactionsQuery): Flow<List<Transaction>> =
+                        MutableStateFlow(listOf(cached))
+
+                    override suspend fun refreshPeriod(
+                        startDate: LocalDate,
+                        endDate: LocalDate,
+                    ): FinanceRefreshResult = refresh.await()
+                }
+            val viewModel = expensesViewModel(repository, clock)
+
+            runCurrent()
+
+            val state = viewModel.state.value as ExpensesUiState.Content
+            assertTrue(state.isRefreshing)
+            assertEquals(listOf(1), state.transactions.map { it.id })
+
+            refresh.complete(FinanceRefreshResult.Success)
+            advanceUntilIdle()
+            assertEquals(false, (viewModel.state.value as ExpensesUiState.Content).isRefreshing)
+        }
+
+    @Test
+    fun `network failure waits for cached expenses without emitting error`() =
+        runTest {
+            val cached = transaction()
+            val cacheReady = CompletableDeferred<Unit>()
+            val repository =
+                object : StubFinanceRepository() {
+                    override fun observeAccounts(): Flow<List<Account>> =
+                        flow {
+                            cacheReady.await()
+                            emit(listOf(cached.account))
+                        }
+
+                    override fun observeTransactions(query: TransactionsQuery): Flow<List<Transaction>> =
+                        flow {
+                            cacheReady.await()
+                            emit(listOf(cached))
+                        }
+
+                    override suspend fun refreshPeriod(
+                        startDate: LocalDate,
+                        endDate: LocalDate,
+                    ): FinanceRefreshResult =
+                        FinanceRefreshResult.Failure(
+                            FinanceFailureReason.Network,
+                            hasUsableCache = true,
+                        )
+                }
+            val viewModel = expensesViewModel(repository, clock)
+
+            runCurrent()
+            assertEquals(ExpensesUiState.Loading, viewModel.state.value)
+
+            val effects = mutableListOf<ExpensesEffect>()
+            val collector =
+                backgroundScope.async(start = CoroutineStart.UNDISPATCHED) {
+                    viewModel.effects.collect { effects += it }
+                }
+            cacheReady.complete(Unit)
+            advanceUntilIdle()
+
+            assertTrue(viewModel.state.value is ExpensesUiState.Content)
+            assertTrue(effects.isEmpty())
+            collector.cancel()
+        }
+
+    @Test
+    fun `offline refresh exposes empty state when cache is initialized`() =
+        runTest {
+            val repository =
+                object : StubFinanceRepository() {
+                    override fun observeAccounts(): Flow<List<Account>> = MutableStateFlow(emptyList())
+
+                    override fun observeTransactions(query: TransactionsQuery): Flow<List<Transaction>> =
+                        MutableStateFlow(emptyList())
+
+                    override suspend fun refreshPeriod(
+                        startDate: LocalDate,
+                        endDate: LocalDate,
+                    ): FinanceRefreshResult =
+                        FinanceRefreshResult.Failure(
+                            FinanceFailureReason.Network,
+                            hasUsableCache = true,
+                        )
+                }
+
+            val viewModel = expensesViewModel(repository, clock)
+            val effects = mutableListOf<ExpensesEffect>()
+            val collector =
+                backgroundScope.async(start = CoroutineStart.UNDISPATCHED) {
+                    viewModel.effects.collect { effects += it }
+                }
+            advanceUntilIdle()
+
+            assertEquals(ExpensesUiState.Empty(), viewModel.state.value)
+            assertTrue(effects.isEmpty())
+            collector.cancel()
+        }
+
+    @Test
+    fun `deleting expense removes it and emits success effect`() =
+        runTest {
+            val summary =
+                FinanceSummary(
+                    nativeTotals = listOf(MoneyAmount(BigDecimal("25.00"), CurrencyCode.RUB)),
+                    transactions = listOf(transaction()),
+                )
+            val repository = FakeFinanceRepository(FinanceLoadResult.Success(summary))
+            val viewModel = expensesViewModel(repository, clock)
+
+            advanceUntilIdle()
+            val effect = async(start = CoroutineStart.UNDISPATCHED) { viewModel.effects.first() }
+            viewModel.onIntent(ExpensesIntent.DeleteTransaction(1))
+            advanceUntilIdle()
+
+            assertEquals(listOf(1), repository.deletedTransactionIds)
+            assertEquals(ExpensesUiState.Empty(), viewModel.state.value)
+            assertEquals(ExpensesEffect.TransactionDeleted, effect.await())
+        }
+}
+
+private fun expensesViewModel(
+    repository: FinanceRepository,
+    clock: Clock,
+): ExpensesViewModel =
+    ExpensesViewModel(
+        GetDailySummaryUseCase(repository),
+        DeleteTransactionUseCase(repository),
+        clock,
+    )
+
+private open class StubFinanceRepository : FinanceRepository {
+    override suspend fun getAccounts() = error("Not used")
+
+    override suspend fun getTransactions(query: TransactionsQuery) = error("Not used")
 }
 
 private class FakeFinanceRepository(
     vararg results: FinanceLoadResult,
-) : FinanceRepository {
+) : StubFinanceRepository() {
     private val results = ArrayDeque(results.toList())
+    private val firstSummary = (results.firstOrNull() as? FinanceLoadResult.Success)?.summary
+    private val accounts =
+        MutableStateFlow(
+            firstSummary
+                ?.transactions
+                .orEmpty()
+                .map { it.account }
+                .distinctBy { it.id },
+        )
+    private val transactions = MutableStateFlow(firstSummary?.transactions.orEmpty())
     val requestedDates = mutableListOf<LocalDate>()
+    val deletedTransactionIds = mutableListOf<Int>()
 
-    override suspend fun getAccounts(): FinanceDataLoadResult<List<Account>> =
-        when (val result = results.first()) {
+    override fun observeAccounts(): Flow<List<Account>> = accounts
+
+    override fun observeTransactions(query: TransactionsQuery): Flow<List<Transaction>> = transactions
+
+    override suspend fun refreshPeriod(
+        startDate: LocalDate,
+        endDate: LocalDate,
+    ): FinanceRefreshResult {
+        requestedDates += startDate
+        return when (val result = results.removeFirst()) {
             is FinanceLoadResult.Success -> {
-                FinanceDataLoadResult.Success(
+                accounts.value =
                     result.summary.transactions
                         .map { it.account }
-                        .distinctBy { it.id },
-                )
+                        .distinctBy { it.id }
+                transactions.value = result.summary.transactions
+                FinanceRefreshResult.Success
             }
 
             is FinanceLoadResult.Failure -> {
-                FinanceDataLoadResult.Failure(result.reason)
+                FinanceRefreshResult.Failure(result.reason, hasUsableCache = false)
             }
         }
+    }
 
-    override suspend fun getTransactions(query: TransactionsQuery): FinanceDataLoadResult<List<Transaction>> {
-        requestedDates += query.startDate
-        return when (val result = results.removeFirst()) {
-            is FinanceLoadResult.Success -> FinanceDataLoadResult.Success(result.summary.transactions)
-            is FinanceLoadResult.Failure -> FinanceDataLoadResult.Failure(result.reason)
-        }
+    override suspend fun deleteTransaction(id: Int): EditorResult<Unit> {
+        deletedTransactionIds += id
+        transactions.value = transactions.value.filterNot { it.id == id }
+        return EditorResult.Success(Unit)
     }
 }
 

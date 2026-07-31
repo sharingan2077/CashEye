@@ -3,6 +3,7 @@
 package com.yandex.school.casheye.feature.analytics.presentation
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,7 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -35,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.patrykandpatrick.vico.compose.pie.data.PieChartModelProducer
 import com.patrykandpatrick.vico.compose.pie.data.pieSeries
+import com.yandex.school.casheye.core.designsystem.component.DelayedCircularProgressIndicator
 import com.yandex.school.casheye.core.designsystem.component.EmojiCircle
 import com.yandex.school.casheye.core.designsystem.component.ErrorState
 import com.yandex.school.casheye.core.designsystem.component.ErrorStateType
@@ -44,9 +46,20 @@ import com.yandex.school.casheye.core.designsystem.component.ListItem
 import com.yandex.school.casheye.core.designsystem.component.PullToRefreshContainer
 import com.yandex.school.casheye.core.format.formatAmount
 import com.yandex.school.casheye.core.model.Category
-import com.yandex.school.casheye.core.model.Transaction
+import com.yandex.school.casheye.domain.finance.AnalyticsTransaction
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
+import com.yandex.school.casheye.domain.finance.UnconvertedAnalyticsTransaction
 import com.yandex.school.casheye.feature.analytics.R
+import com.yandex.school.casheye.feature.analytics.presentation.chart.AnalyticsPieChart
+import com.yandex.school.casheye.feature.analytics.presentation.chart.analyticsChartPalette
+import com.yandex.school.casheye.feature.analytics.presentation.chart.analyticsOverviewPieChartItems
+import com.yandex.school.casheye.feature.analytics.presentation.chart.analyticsPieChartValues
+import com.yandex.school.casheye.feature.analytics.presentation.chart.analyticsTypePieChartItems
+import com.yandex.school.casheye.feature.analytics.presentation.sheet.AnalyticsBottomSheet
+import com.yandex.school.casheye.feature.analytics.presentation.sheet.formatted
+import java.math.BigDecimal
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @Composable
 fun AnalyticsScreen(
@@ -59,10 +72,15 @@ fun AnalyticsScreen(
         onRefresh = { onIntent(AnalyticsIntent.Refresh) },
         modifier = modifier.fillMaxSize(),
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.surface),
+        ) {
             when (state) {
                 is AnalyticsUiState.Loading -> {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                    DelayedCircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 }
 
                 is AnalyticsUiState.Content -> {
@@ -93,45 +111,206 @@ private fun AnalyticsContent(
 ) {
     val chartModelProducer = remember { PieChartModelProducer() }
     var animateChartIn by remember { mutableStateOf(true) }
-    LaunchedEffect(state.categorySummaries) {
+    val chartPalette = analyticsChartPalette()
+    val otherLabel = stringResource(R.string.other)
+    val expensesLabel = stringResource(R.string.type_expenses)
+    val incomeLabel = stringResource(R.string.type_income)
+    val chartItems =
+        remember(
+            state.data.filters.type,
+            state.categorySummaries,
+            state.typeSummaries,
+            otherLabel,
+            expensesLabel,
+            incomeLabel,
+            chartPalette,
+        ) {
+            if (state.data.filters.type == AnalyticsType.All) {
+                analyticsTypePieChartItems(state.typeSummaries, expensesLabel, incomeLabel, chartPalette)
+            } else {
+                analyticsOverviewPieChartItems(state.categorySummaries, otherLabel, chartPalette)
+            }
+        }
+    LaunchedEffect(chartItems) {
         chartModelProducer.runTransaction {
-            pieSeries { series(analyticsPieChartValues(state.categorySummaries)) }
+            pieSeries { series(analyticsPieChartValues(chartItems)) }
         }
     }
 
     LazyColumn(modifier = Modifier.fillMaxSize()) {
-        item {
-            AnalyticsPieChart(
-                total = formatAmount(state.total, state.currencyCode),
-                categories = state.categorySummaries,
-                modelProducer = chartModelProducer,
-                animateIn = animateChartIn,
-                onChartDispose = { animateChartIn = false },
-                modifier =
-                    Modifier.clickable(
-                        role = Role.Button,
-                        onClick = { onIntent(AnalyticsIntent.OpenDetails) },
-                    ),
-            )
+        if (state.transactions.isNotEmpty()) {
+            item {
+                AnalyticsPieChart(
+                    total =
+                        formatAnalyticsDisplayAmount(
+                            amount = state.total,
+                            amountType = AnalyticsType.All,
+                            selectedType = state.data.filters.type,
+                            currencyCode = state.currencyCode,
+                        ),
+                    items = chartItems,
+                    modelProducer = chartModelProducer,
+                    animateIn = animateChartIn,
+                    onChartDispose = { animateChartIn = false },
+                    modifier =
+                        Modifier.clickable(
+                            role = Role.Button,
+                            onClick = { onIntent(AnalyticsIntent.OpenDetails) },
+                        ),
+                )
+            }
         }
         item { FilterView(data = state.data, onIntent = onIntent) }
+        if (state.unconvertedTransactions.isNotEmpty()) {
+            item {
+                MissingRatesNotice(
+                    transactions = state.unconvertedTransactions,
+                    onRetry = { onIntent(AnalyticsIntent.Retry) },
+                )
+            }
+        }
         item { TransactionsHeading() }
         itemsIndexed(
             items = state.transactions,
             key = { _, transaction -> transaction.id },
-        ) { index: Int, transaction: Transaction ->
+        ) { index: Int, transaction: AnalyticsTransaction ->
             TransactionItem(
                 emoji = transaction.category.emoji,
                 title = transaction.category.name,
-                comment = transaction.comment,
-                amount = formatAmount(transaction.amount, state.currencyCode),
+                comment = transaction.transaction.comment,
+                amount =
+                    formatAnalyticsDisplayAmount(
+                        amount = transaction.reportingAmount.amount,
+                        amountType =
+                            if (transaction.category.isIncome) {
+                                AnalyticsType.Income
+                            } else {
+                                AnalyticsType.Expenses
+                            },
+                        selectedType = state.data.filters.type,
+                        currencyCode = state.currencyCode,
+                    ),
+                amountSubtitle = transaction.originalAmountSubtitle(state.data.filters.type),
             )
-            if (index != state.transactions.lastIndex) {
-                HorizontalDivider(color = MaterialTheme.colorScheme.outline)
+            if (index != state.transactions.lastIndex || state.unconvertedTransactions.isNotEmpty()) {
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            }
+        }
+        itemsIndexed(
+            items = state.unconvertedTransactions,
+            key = { _, transaction -> "missing-${transaction.id}" },
+        ) { index, transaction ->
+            TransactionItem(
+                emoji = transaction.transaction.category.emoji,
+                title = transaction.transaction.category.name,
+                comment = transaction.transaction.comment,
+                amount =
+                    formatAnalyticsDisplayAmount(
+                        amount = transaction.originalAmount.amount,
+                        amountType =
+                            if (transaction.transaction.category.isIncome) {
+                                AnalyticsType.Income
+                            } else {
+                                AnalyticsType.Expenses
+                            },
+                        selectedType = state.data.filters.type,
+                        currencyCode = transaction.originalAmount.currency.isoCode,
+                    ),
+                amountSubtitle = stringResource(R.string.not_included_missing_rate),
+            )
+            if (index != state.unconvertedTransactions.lastIndex) {
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             }
         }
     }
 }
+
+@Composable
+private fun AnalyticsTransaction.originalAmountSubtitle(selectedType: AnalyticsType): String? {
+    if (originalAmount.currency == reportingAmount.currency) return null
+    val original =
+        formatAnalyticsDisplayAmount(
+            amount = originalAmount.amount,
+            amountType = if (category.isIncome) AnalyticsType.Income else AnalyticsType.Expenses,
+            selectedType = selectedType,
+            currencyCode = originalAmount.currency.isoCode,
+        )
+    val formattedDate =
+        rateDate?.format(DateTimeFormatter.ofPattern("dd.MM", Locale.getDefault()))
+            ?: return original
+    return stringResource(R.string.original_amount_rate, original, formattedDate)
+}
+
+@Composable
+internal fun MissingRatesNotice(
+    transactions: List<UnconvertedAnalyticsTransaction>,
+    onRetry: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val currencies =
+        transactions
+            .flatMap { it.missingCurrencies }
+            .distinct()
+            .sortedBy { it.isoCode }
+            .joinToString { it.isoCode }
+    Column(
+        modifier =
+            modifier
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .background(MaterialTheme.colorScheme.errorContainer, RoundedCornerShape(16.dp))
+                .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.missing_rates_title),
+            color = MaterialTheme.colorScheme.onErrorContainer,
+            style = MaterialTheme.typography.titleMedium,
+        )
+        Text(
+            text = stringResource(R.string.missing_rates_description, transactions.size, currencies),
+            color = MaterialTheme.colorScheme.onErrorContainer,
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        Text(
+            text = stringResource(R.string.retry),
+            modifier = Modifier.clickable(role = Role.Button, onClick = onRetry),
+            color = MaterialTheme.colorScheme.primary,
+            style = MaterialTheme.typography.labelLarge,
+        )
+    }
+}
+
+internal fun formatAnalyticsDisplayAmount(
+    amount: BigDecimal,
+    amountType: AnalyticsType,
+    selectedType: AnalyticsType,
+    currencyCode: String,
+): String =
+    if (selectedType == AnalyticsType.All) {
+        formatAnalyticsAmount(amount, amountType, currencyCode)
+    } else {
+        formatAmount(amount.abs(), currencyCode)
+    }
+
+internal fun formatAnalyticsAmount(
+    amount: BigDecimal,
+    type: AnalyticsType,
+    currencyCode: String,
+): String {
+    val signedAmount = signedAnalyticsAmount(amount, type)
+    val formatted = formatAmount(signedAmount, currencyCode)
+    return if (signedAmount.signum() >= 0) "+$formatted" else formatted
+}
+
+internal fun signedAnalyticsAmount(
+    amount: BigDecimal,
+    type: AnalyticsType,
+): BigDecimal =
+    when (type) {
+        AnalyticsType.Expenses -> amount.abs().negate()
+        AnalyticsType.Income -> amount.abs()
+        AnalyticsType.All -> amount
+    }
 
 @Composable
 private fun AnalyticsEmpty(
@@ -198,6 +377,7 @@ internal fun TransactionItem(
     comment: String?,
     amount: String,
     modifier: Modifier = Modifier,
+    amountSubtitle: String? = null,
 ) {
     ListItem(
         modifier = modifier,
@@ -215,7 +395,17 @@ internal fun TransactionItem(
             }
         },
         trail = {
-            Text(text = amount, style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.End)
+            Column(horizontalAlignment = Alignment.End) {
+                Text(text = amount, style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.End)
+                amountSubtitle?.let {
+                    Text(
+                        text = it,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall,
+                        textAlign = TextAlign.End,
+                    )
+                }
+            }
         },
     )
 }
@@ -233,21 +423,21 @@ private fun FilterView(
             value = filters.type.title(),
             onClick = { onIntent(AnalyticsIntent.OpenFilter(AnalyticsFilterKind.Type)) },
         )
-        HorizontalDivider(color = MaterialTheme.colorScheme.outline)
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         AnalyticsFilterItem(
             iconPainter = painterResource(R.drawable.calendar),
             title = stringResource(R.string.filter_period),
             value = filters.period.formatted(),
             onClick = { onIntent(AnalyticsIntent.OpenFilter(AnalyticsFilterKind.Period)) },
         )
-        HorizontalDivider(color = MaterialTheme.colorScheme.outline)
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         AnalyticsFilterItem(
             iconPainter = painterResource(R.drawable.tag),
             title = stringResource(R.string.filter_categories),
             value = categoriesTitle(filters.categoryIds, data.categories),
             onClick = { onIntent(AnalyticsIntent.OpenFilter(AnalyticsFilterKind.Categories)) },
         )
-        HorizontalDivider(color = MaterialTheme.colorScheme.outline)
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         AnalyticsFilterItem(
             iconPainter = painterResource(R.drawable.credit_card),
             title = stringResource(R.string.filter_account),

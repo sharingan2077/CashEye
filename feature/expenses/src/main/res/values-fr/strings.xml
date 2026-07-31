@@ -3,11 +3,17 @@
     <string name="empty_expenses_description">Choisissez une autre date dans la barre supérieure pour voir les dépenses</string>
     <string name="expenses_total">dépenses, total</string>
     <string name="retry">Réessayer</string>
-    <string name="confirm">OK</string>
-    <string name="cancel">Annuler</string>
-    <string name="select_date">Sélectionner une date</string>
     <string name="error_network">Vérifiez votre connexion Internet</string>
     <string name="error_authorization">Échec de l’autorisation</string>
     <string name="error_server">Le serveur est temporairement indisponible</string>
     <string name="error_load_expenses">Impossible de charger les dépenses</string>
+    <string name="error_create_account">Créez d’abord un compte</string>
+    <string name="error_positive_amount">Saisissez un montant positif</string>
+    <string name="error_select_account">Sélectionnez un compte</string>
+    <string name="error_select_category">Sélectionnez une catégorie</string>
+    <string name="error_insufficient_balance">Solde insuffisant sur le compte</string>
+    <string name="error_save_expense">Impossible d’enregistrer la dépense</string>
+    <string name="delete_expense">Supprimer la dépense</string>
+    <string name="expense_deleted">Dépense supprimée</string>
+    <string name="error_delete_expense">Impossible de supprimer la dépense</string>
 </resources>

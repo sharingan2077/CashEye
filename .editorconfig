@@ -21,6 +21,7 @@ ij_kotlin_packages_to_use_import_on_demand = unset
 ktlint_function_naming_ignore_when_annotated_with = Composable
 
 compose_disallow_material2 = true
+compose_allowed_composition_locals = LocalCashEyeExtendedColors
 compose_preview_naming_enabled = true
 compose_preview_naming_strategy = suffix
 compose_check_modifiers_for_visibility = only_public

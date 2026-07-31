@@ -2,9 +2,11 @@ package com.yandex.school.casheye.data.finance.mapper
 
 import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.Category
+import com.yandex.school.casheye.core.model.CurrencyCode
 import com.yandex.school.casheye.core.model.Transaction
 import com.yandex.school.casheye.data.finance.dto.AccountBriefDto
 import com.yandex.school.casheye.data.finance.dto.AccountDto
+import com.yandex.school.casheye.data.finance.dto.AccountResponseDto
 import com.yandex.school.casheye.data.finance.dto.CategoryDto
 import com.yandex.school.casheye.data.finance.dto.TransactionResponseDto
 import java.math.BigDecimal
@@ -15,7 +17,7 @@ internal fun AccountDto.toDomain(): Account =
         name = name,
         emoji = emoji,
         balance = BigDecimal(balance),
-        currency = currency,
+        currency = CurrencyCode.fromIsoCode(currency),
     )
 
 internal fun AccountBriefDto.toDomain(): Account =
@@ -24,7 +26,16 @@ internal fun AccountBriefDto.toDomain(): Account =
         name = name,
         emoji = emoji,
         balance = BigDecimal(balance),
-        currency = currency,
+        currency = CurrencyCode.fromIsoCode(currency),
+    )
+
+internal fun AccountResponseDto.toDomain(): Account =
+    Account(
+        id = id,
+        name = name,
+        emoji = emoji,
+        balance = BigDecimal(balance),
+        currency = CurrencyCode.fromIsoCode(currency),
     )
 
 internal fun CategoryDto.toDomain(): Category =
@@ -41,6 +52,7 @@ internal fun TransactionResponseDto.toDomain(): Transaction =
         account = account.toDomain(),
         category = category.toDomain(),
         amount = BigDecimal(amount),
+        currency = CurrencyCode.fromIsoCode(account.currency),
         transactionDate = transactionDate,
         comment = comment,
         createdAt = createdAt,

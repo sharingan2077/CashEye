@@ -6,42 +6,53 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.yandex.school.casheye.core.designsystem.component.DelayedCircularProgressIndicator
 import com.yandex.school.casheye.core.designsystem.component.ErrorState
 import com.yandex.school.casheye.core.designsystem.component.ErrorStateType
-import com.yandex.school.casheye.core.designsystem.component.MoneyListItem
 import com.yandex.school.casheye.core.designsystem.component.PullToRefreshContainer
+import com.yandex.school.casheye.core.designsystem.component.SwipeToRevealDeleteItem
+import com.yandex.school.casheye.core.designsystem.component.money.MoneyListItem
+import com.yandex.school.casheye.core.designsystem.component.money.NativeMoneySummary
 import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
 import com.yandex.school.casheye.core.format.formatAmount
 import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import com.yandex.school.casheye.feature.accounts.R
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 
 @Composable
 fun AccountsScreen(
     state: AccountsUiState,
     onIntent: (AccountsIntent) -> Unit,
     modifier: Modifier = Modifier,
+    onAccountClick: (Int) -> Unit = {},
 ) {
     PullToRefreshContainer(
         isRefreshing = state.isRefreshing,
@@ -52,11 +63,11 @@ fun AccountsScreen(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background),
+                    .background(MaterialTheme.colorScheme.surface),
         ) {
             when (state) {
                 AccountsUiState.Loading -> {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                    DelayedCircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 }
 
                 is AccountsUiState.Empty -> {
@@ -64,7 +75,11 @@ fun AccountsScreen(
                 }
 
                 is AccountsUiState.Content -> {
-                    AccountsContent(state = state)
+                    AccountsContent(
+                        state = state,
+                        onAccountClick = onAccountClick,
+                        onAccountDelete = { onIntent(AccountsIntent.RequestAccountDelete(it)) },
+                    )
                 }
 
                 is AccountsUiState.Error -> {
@@ -77,40 +92,84 @@ fun AccountsScreen(
             }
         }
     }
+
+    val confirmation = (state as? AccountsUiState.Content)?.deleteConfirmation
+    if (confirmation != null) {
+        AlertDialog(
+            onDismissRequest = { onIntent(AccountsIntent.CancelAccountDelete) },
+            title = { Text(stringResource(R.string.delete_account_confirmation_title)) },
+            text = {
+                Text(
+                    pluralStringResource(
+                        R.plurals.delete_account_confirmation,
+                        confirmation.transactionCount,
+                        confirmation.transactionCount,
+                    ),
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { onIntent(AccountsIntent.ConfirmAccountDelete) }) {
+                    Text(stringResource(R.string.delete))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { onIntent(AccountsIntent.CancelAccountDelete) }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            },
+        )
+    }
 }
 
 @Composable
 private fun AccountsContent(
     state: AccountsUiState.Content,
+    onAccountClick: (Int) -> Unit,
+    onAccountDelete: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var revealedAccountId by remember { mutableStateOf<Int?>(null) }
+
     Column(modifier = modifier.fillMaxSize()) {
         AccountsHero(
-            total =
-                formatAmount(
-                    amount = state.total,
-                    currencyCode = state.currencyCode,
-                ),
+            state = state,
         )
         LazyColumn(
             modifier =
                 Modifier
                     .fillMaxWidth()
                     .weight(1f),
+            contentPadding = PaddingValues(bottom = 60.dp),
         ) {
             items(
                 items = state.accounts,
                 key = Account::id,
             ) { accountItem ->
-                MoneyListItem(
-                    emoji = accountItem.emoji,
-                    title = accountItem.name,
-                    amount =
-                        formatAmount(
-                            amount = accountItem.balance,
-                            currencyCode = accountItem.currency,
-                        ),
-                )
+                SwipeToRevealDeleteItem(
+                    actionLabel = stringResource(R.string.delete_account),
+                    isRevealed = revealedAccountId == accountItem.id,
+                    onReveal = { revealedAccountId = accountItem.id },
+                    onDismissReveal = {
+                        if (revealedAccountId == accountItem.id) {
+                            revealedAccountId = null
+                        }
+                    },
+                    onClick = {
+                        revealedAccountId = null
+                        onAccountClick(accountItem.id)
+                    },
+                    onDelete = { onAccountDelete(accountItem.id) },
+                ) {
+                    MoneyListItem(
+                        emoji = accountItem.emoji,
+                        title = accountItem.name,
+                        amount =
+                            formatAmount(
+                                amount = accountItem.balance,
+                                currencyCode = accountItem.currency.isoCode,
+                            ),
+                    )
+                }
             }
         }
     }
@@ -147,27 +206,53 @@ private fun EmptyAccounts(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun AccountsHero(total: String) {
-    Column(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .height(117.dp)
-                .padding(start = 20.dp, top = 12.dp, end = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        Text(
-            text = stringResource(R.string.balance_total),
-            style = MaterialTheme.typography.labelLarge.copy(lineHeight = 16.sp),
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-        )
-        Text(
-            text = total,
-            modifier = Modifier.fillMaxWidth(),
-            style = MaterialTheme.typography.displayMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-    }
+private fun AccountsHero(state: AccountsUiState.Content) {
+    val valuation = state.currentValuation
+    val included =
+        valuation
+            ?.includedTotal
+            ?.let { formatAmount(it.amount, it.currency.isoCode) }
+    val date =
+        valuation
+            ?.rateDate
+            ?.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))
+    val valuationText =
+        included?.let {
+            when {
+                valuation.isComplete && date != null -> {
+                    stringResource(R.string.balance_valuation_dated, it, date)
+                }
+
+                valuation.isComplete -> {
+                    stringResource(R.string.balance_valuation, it)
+                }
+
+                date != null -> {
+                    stringResource(R.string.balance_valuation_partial_dated, it, date)
+                }
+
+                else -> {
+                    stringResource(R.string.balance_valuation_partial, it)
+                }
+            }
+        }
+    val excluded =
+        valuation
+            ?.excludedNativeTotals
+            ?.takeIf { it.isNotEmpty() }
+            ?.joinToString(separator = " · ") {
+                formatAmount(it.amount, it.currency.isoCode)
+            }?.let { stringResource(R.string.balance_not_included, it) }
+
+    NativeMoneySummary(
+        title = stringResource(R.string.balance_total),
+        nativeTotals =
+            state.nativeTotals.map {
+                formatAmount(it.amount, it.currency.isoCode)
+            },
+        valuation = valuationText,
+        warning = excluded,
+    )
 }
 
 private fun FinanceFailureReason.toErrorStateType(): ErrorStateType =
@@ -195,7 +280,7 @@ private fun FinanceFailureReason.toErrorStateType(): ErrorStateType =
 @Composable
 private fun AccountsScreenPreview() {
     CashEyeTheme(dynamicColor = false) {
-        Surface(color = MaterialTheme.colorScheme.background) {
+        Surface(color = MaterialTheme.colorScheme.surface) {
             AccountsScreen(state = accountsUiStateMock, onIntent = {})
         }
     }

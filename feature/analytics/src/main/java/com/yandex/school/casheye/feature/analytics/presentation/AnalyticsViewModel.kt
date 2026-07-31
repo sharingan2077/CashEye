@@ -4,10 +4,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.yandex.school.casheye.domain.finance.AnalyticsLoadResult
 import com.yandex.school.casheye.domain.finance.AnalyticsQuery
+import com.yandex.school.casheye.domain.finance.AnalyticsSummary
+import com.yandex.school.casheye.domain.finance.AnalyticsTransaction
 import com.yandex.school.casheye.domain.finance.AnalyticsTransactionKind
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
+import com.yandex.school.casheye.domain.finance.FinanceRefreshResult
 import com.yandex.school.casheye.domain.finance.GetAnalyticsUseCase
 import dev.zacsweers.metro.Inject
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,6 +19,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import java.time.Clock
@@ -39,26 +44,80 @@ class AnalyticsViewModel(
     val effects: SharedFlow<AnalyticsEffect> = _effects.asSharedFlow()
 
     private var initialized = false
-    private var loadJob: Job? = null
+    private var observeJob: Job? = null
+    private var refreshJob: Job? = null
+    private var latestSummary: AnalyticsSummary? = null
+    private var initialRefreshCompleted = false
+    private var localObservationReady = CompletableDeferred<Unit>()
 
     @Suppress("CyclomaticComplexMethod")
     fun onIntent(intent: AnalyticsIntent) {
         when (intent) {
-            is AnalyticsIntent.Initialize -> initialize(intent.entryPoint)
-            is AnalyticsIntent.OpenFilter -> openFilter(intent.kind)
-            AnalyticsIntent.DismissSheet -> updateSheet(null)
-            is AnalyticsIntent.SelectDraftType -> selectDraftType(intent.type)
-            AnalyticsIntent.ApplyDraftType -> applyDraftType()
-            is AnalyticsIntent.SelectPeriodPreset -> applyPeriodPreset(intent.preset)
-            AnalyticsIntent.OpenCustomPeriod -> openCustomPeriod()
-            is AnalyticsIntent.UpdateCustomPeriod -> updateCustomPeriod(intent.startDate, intent.endDate)
-            AnalyticsIntent.ApplyCustomPeriod -> applyCustomPeriod()
-            is AnalyticsIntent.ToggleDraftCategory -> toggleDraftCategory(intent.categoryId)
-            AnalyticsIntent.ApplyDraftCategories -> applyDraftCategories()
-            is AnalyticsIntent.SelectAccount -> applyAccount(intent.accountId)
-            AnalyticsIntent.OpenDetails -> updateSheet(AnalyticsSheet.Details)
-            AnalyticsIntent.Retry -> loadAnalytics(preserveContent = _state.value.isRefreshable())
-            AnalyticsIntent.Refresh -> loadAnalytics(preserveContent = true)
+            is AnalyticsIntent.Initialize -> {
+                initialize(intent.entryPoint)
+            }
+
+            is AnalyticsIntent.OpenFilter -> {
+                openFilter(intent.kind)
+            }
+
+            AnalyticsIntent.DismissSheet -> {
+                updateSheet(null)
+            }
+
+            is AnalyticsIntent.SelectDraftType -> {
+                selectDraftType(intent.type)
+            }
+
+            AnalyticsIntent.ApplyDraftType -> {
+                applyDraftType()
+            }
+
+            is AnalyticsIntent.SelectPeriodPreset -> {
+                applyPeriodPreset(intent.preset)
+            }
+
+            AnalyticsIntent.OpenCustomPeriod -> {
+                openCustomPeriod()
+            }
+
+            is AnalyticsIntent.UpdateCustomPeriod -> {
+                updateCustomPeriod(intent.startDate, intent.endDate)
+            }
+
+            AnalyticsIntent.ApplyCustomPeriod -> {
+                applyCustomPeriod()
+            }
+
+            is AnalyticsIntent.ToggleDraftCategory -> {
+                toggleDraftCategory(intent.categoryId)
+            }
+
+            AnalyticsIntent.ApplyDraftCategories -> {
+                applyDraftCategories()
+            }
+
+            is AnalyticsIntent.SelectAccount -> {
+                applyAccount(intent.accountId)
+            }
+
+            AnalyticsIntent.OpenDetails -> {
+                updateSheet(AnalyticsSheet.Details)
+            }
+
+            AnalyticsIntent.Retry -> {
+                refreshAnalytics(currentQuery())
+            }
+
+            AnalyticsIntent.Refresh -> {
+                refreshAnalytics(currentQuery())
+            }
+
+            AnalyticsIntent.NetworkRecovered -> {
+                if (initialized) {
+                    refreshAnalytics(currentQuery(), showLoadingForEmptyCache = true)
+                }
+            }
         }
     }
 
@@ -67,7 +126,7 @@ class AnalyticsViewModel(
         initialized = true
         val type = if (entryPoint == AnalyticsEntryPoint.Income) AnalyticsType.Income else AnalyticsType.Expenses
         screenData = initialScreenData(type)
-        loadAnalytics()
+        startAnalytics(currentQuery())
     }
 
     private fun initialScreenData(type: AnalyticsType): AnalyticsScreenData {
@@ -197,7 +256,7 @@ class AnalyticsViewModel(
 
     private fun applyFilters(filters: AnalyticsFilters) {
         screenData = screenData.copy(filters = filters, currentDate = today, activeSheet = null)
-        loadAnalytics(cancelPrevious = true)
+        startAnalytics(currentQuery())
     }
 
     private fun updateSheet(sheet: AnalyticsSheet?) {
@@ -205,79 +264,122 @@ class AnalyticsViewModel(
         _state.value = _state.value.withData(screenData)
     }
 
-    private fun loadAnalytics(
-        preserveContent: Boolean = false,
-        cancelPrevious: Boolean = false,
-    ) {
-        if (cancelPrevious) {
-            loadJob?.cancel()
-        } else if (loadJob?.isActive == true) {
-            return
-        }
-        val keepsVisibleContent = preserveContent && _state.value.isRefreshable()
-        loadJob =
+    private fun currentQuery(): AnalyticsQuery {
+        val filters = screenData.filters
+        return AnalyticsQuery(
+            startDate = filters.period.startDate,
+            endDate = filters.period.endDate,
+            transactionKind = filters.type.toDomain(),
+            accountId = filters.accountId,
+            categoryIds = filters.categoryIds,
+        )
+    }
+
+    private fun startAnalytics(query: AnalyticsQuery) {
+        observeJob?.cancel()
+        refreshJob?.cancel()
+        latestSummary = null
+        initialRefreshCompleted = false
+        localObservationReady = CompletableDeferred()
+        _state.value = AnalyticsUiState.Loading(screenData)
+        val observationReady = localObservationReady
+        observeJob =
             viewModelScope.launch {
-                _state.value =
-                    if (keepsVisibleContent) {
-                        _state.value.withRefreshing(true)
-                    } else {
-                        AnalyticsUiState.Loading(screenData)
+                getAnalytics(query).collectLatest { result ->
+                    observationReady.complete(Unit)
+                    when (result) {
+                        is AnalyticsLoadResult.Success -> {
+                            latestSummary = result.summary
+                            renderSummary()
+                        }
+
+                        is AnalyticsLoadResult.Failure -> {
+                            if (!_state.value.isRefreshable()) {
+                                _state.value = AnalyticsUiState.Error(screenData, result.reason)
+                            }
+                        }
                     }
-                val filters = screenData.filters
-                when (
-                    val result =
-                        getAnalytics(
-                            AnalyticsQuery(
-                                startDate = filters.period.startDate,
-                                endDate = filters.period.endDate,
-                                currencyCode = CURRENCY_RUB,
-                                transactionKind = filters.type.toDomain(),
-                                accountId = filters.accountId,
-                                categoryIds = filters.categoryIds,
-                            ),
-                        )
-                ) {
-                    is AnalyticsLoadResult.Success -> handleSuccess(result)
-                    is AnalyticsLoadResult.Failure -> handleFailure(result.reason, keepsVisibleContent)
+                }
+            }
+        refreshAnalytics(query)
+    }
+
+    private fun refreshAnalytics(
+        query: AnalyticsQuery,
+        showLoadingForEmptyCache: Boolean = false,
+    ) {
+        refreshJob?.cancel()
+        val observationReady = localObservationReady
+        if (_state.value.isRefreshable()) {
+            _state.value = _state.value.withRefreshing(true)
+        } else if (showLoadingForEmptyCache) {
+            _state.value = AnalyticsUiState.Loading(screenData)
+        }
+        refreshJob =
+            viewModelScope.launch {
+                when (val result = getAnalytics.refresh(query)) {
+                    FinanceRefreshResult.Success -> {
+                        initialRefreshCompleted = true
+                        renderSummary(isRefreshing = false)
+                    }
+
+                    is FinanceRefreshResult.Failure -> {
+                        handleRefreshFailure(result, observationReady)
+                    }
                 }
             }
     }
 
-    private fun handleSuccess(result: AnalyticsLoadResult.Success) {
-        val summary = result.summary
+    private fun renderSummary(isRefreshing: Boolean = refreshJob?.isActive == true) {
+        val summary = latestSummary ?: return
         val transactions = summary.transactions.sortedByDescending { it.transactionDate }
+        val unconvertedTransactions =
+            summary.unconvertedTransactions.sortedByDescending { it.transaction.transactionDate }
+        if (transactions.isEmpty() && unconvertedTransactions.isEmpty() && !initialRefreshCompleted) return
         screenData =
             screenData.copy(
                 accounts = summary.accounts,
                 categories = summary.availableCategories,
-                activeSheet = null,
             )
         _state.value =
-            if (transactions.isEmpty()) {
-                AnalyticsUiState.Empty(screenData, summary.currencyCode)
+            if (transactions.isEmpty() && unconvertedTransactions.isEmpty()) {
+                AnalyticsUiState.Empty(screenData, summary.currencyCode.isoCode, isRefreshing)
             } else {
+                val typeSummaries = transactions.toTypeSummaries()
                 AnalyticsUiState.Content(
                     data = screenData,
                     total = summary.total,
-                    currencyCode = summary.currencyCode,
+                    currencyCode = summary.currencyCode.isoCode,
                     transactions = transactions,
+                    unconvertedTransactions = unconvertedTransactions,
                     categorySummaries = transactions.toCategorySummaries(),
+                    typeSummaries = typeSummaries,
+                    isRefreshing = isRefreshing,
                 )
             }
     }
 
-    private suspend fun handleFailure(
-        reason: FinanceFailureReason,
-        keepsVisibleContent: Boolean,
+    private suspend fun handleRefreshFailure(
+        failure: FinanceRefreshResult.Failure,
+        observationReady: CompletableDeferred<Unit>,
     ) {
-        _state.value =
-            if (keepsVisibleContent) {
-                _state.value.withRefreshing(false)
-            } else {
-                AnalyticsUiState.Error(screenData, reason)
-            }
-        if (keepsVisibleContent) {
-            _effects.emit(AnalyticsEffect.ShowError(reason))
+        observationReady.await()
+        initialRefreshCompleted = true
+        val hasVisibleCache =
+            _state.value.isRefreshable() ||
+                latestSummary?.transactions?.isNotEmpty() == true ||
+                latestSummary?.unconvertedTransactions?.isNotEmpty() == true
+        if (
+            failure.reason == FinanceFailureReason.Network &&
+            failure.hasUsableCache &&
+            latestSummary != null
+        ) {
+            renderSummary(isRefreshing = false)
+        } else if (hasVisibleCache) {
+            renderSummary(isRefreshing = false)
+            _effects.emit(AnalyticsEffect.ShowError(failure.reason))
+        } else {
+            _state.value = AnalyticsUiState.Error(screenData, failure.reason)
         }
     }
 }
@@ -289,16 +391,30 @@ private fun AnalyticsType.toDomain(): AnalyticsTransactionKind =
         AnalyticsType.All -> AnalyticsTransactionKind.All
     }
 
-private fun List<com.yandex.school.casheye.core.model.Transaction>.toCategorySummaries():
-    List<AnalyticsCategorySummary> =
+private fun List<AnalyticsTransaction>.toCategorySummaries(): List<AnalyticsCategorySummary> =
     groupBy { it.category.id }
         .values
         .map { transactions ->
             AnalyticsCategorySummary(
                 category = transactions.first().category,
-                amount = transactions.fold(BigDecimal.ZERO) { total, transaction -> total + transaction.amount },
+                amount =
+                    transactions.fold(BigDecimal.ZERO) { total, transaction ->
+                        total + transaction.reportingAmount.amount
+                    },
             )
         }.sortedByDescending { it.amount }
+
+internal fun List<AnalyticsTransaction>.toTypeSummaries(): List<AnalyticsTypeSummary> =
+    listOf(
+        AnalyticsType.Expenses to filterNot { it.category.isIncome },
+        AnalyticsType.Income to filter { it.category.isIncome },
+    ).mapNotNull { (type, transactions) ->
+        val amount =
+            transactions.fold(BigDecimal.ZERO) { total, transaction ->
+                total + transaction.reportingAmount.amount.abs()
+            }
+        amount.takeIf { it.signum() != 0 }?.let { AnalyticsTypeSummary(type, it) }
+    }.sortedByDescending { it.amount.abs() }
 
 private fun AnalyticsUiState.withData(data: AnalyticsScreenData): AnalyticsUiState =
     when (this) {
@@ -321,5 +437,3 @@ private fun AnalyticsUiState.withRefreshing(isRefreshing: Boolean): AnalyticsUiS
         is AnalyticsUiState.Error,
         -> this
     }
-
-private const val CURRENCY_RUB = "RUB"

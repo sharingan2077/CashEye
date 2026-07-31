@@ -1,7 +1,9 @@
 package com.yandex.school.casheye.data.finance.network
 
+import com.yandex.school.casheye.core.model.CurrencyCode
 import com.yandex.school.casheye.data.finance.dto.AccountBriefDto
 import com.yandex.school.casheye.data.finance.dto.AccountDto
+import com.yandex.school.casheye.data.finance.dto.AccountResponseDto
 import com.yandex.school.casheye.data.finance.dto.CategoryDto
 import com.yandex.school.casheye.data.finance.dto.TransactionResponseDto
 import com.yandex.school.casheye.data.finance.mapper.toDomain
@@ -13,6 +15,15 @@ import java.math.BigDecimal
 import java.time.Instant
 
 class ExpensesMappersTest {
+    @Test
+    fun `account response maps editor account`() {
+        val account = AccountResponseDto(3, "Резерв", "💳", "99.50", "USD").toDomain()
+
+        assertEquals(3, account.id)
+        assertEquals(BigDecimal("99.50"), account.balance)
+        assertEquals(CurrencyCode.USD, account.currency)
+    }
+
     @Test
     fun `account dto maps string balance to domain amount`() {
         val account =
@@ -30,7 +41,7 @@ class ExpensesMappersTest {
         assertEquals(7, account.id)
         assertEquals("Основной счёт", account.name)
         assertEquals(BigDecimal("1250.75"), account.balance)
-        assertEquals("RUB", account.currency)
+        assertEquals(CurrencyCode.RUB, account.currency)
     }
 
     @Test
@@ -44,6 +55,7 @@ class ExpensesMappersTest {
         assertNull(transaction.comment)
         assertEquals("Основной счёт", transaction.account.name)
         assertEquals(BigDecimal("1250.75"), transaction.account.balance)
+        assertEquals(CurrencyCode.RUB, transaction.currency)
         assertEquals("Продукты", transaction.category.name)
         assertFalse(transaction.category.isIncome)
     }

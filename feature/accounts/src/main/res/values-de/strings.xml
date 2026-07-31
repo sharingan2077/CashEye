@@ -2,9 +2,34 @@
     <string name="empty_accounts">Noch keine Konten</string>
     <string name="empty_accounts_description">Fügen Sie Ihr erstes Konto hinzu, um Ihren Kontostand zu verfolgen.</string>
     <string name="balance_total">Kontostand, gesamt</string>
+    <string name="balance_valuation">≈ %1$s</string>
+    <string name="balance_valuation_dated">≈ %1$s · Kurse vom %2$s</string>
+    <string name="balance_valuation_partial">Berücksichtigt ≈ %1$s</string>
+    <string name="balance_valuation_partial_dated">Berücksichtigt ≈ %1$s · Kurse vom %2$s</string>
+    <string name="balance_not_included">Nicht berücksichtigt: %1$s</string>
     <string name="retry">Wiederholen</string>
     <string name="error_network">Internetverbindung prüfen</string>
     <string name="error_authorization">Anmeldung fehlgeschlagen</string>
     <string name="error_server">Server ist vorübergehend nicht verfügbar</string>
     <string name="error_load_accounts">Konten konnten nicht geladen werden</string>
+    <string name="error_account_name_required">Geben Sie einen Kontonamen ein</string>
+    <string name="error_invalid_balance">Geben Sie einen gültigen Kontostand ein</string>
+    <string name="error_select_currency">Wählen Sie eine Währung</string>
+    <string name="error_save_account">Konto konnte nicht gespeichert werden</string>
+    <string name="error_account_currency_has_transactions">Die Währung eines Kontos mit Transaktionen kann nicht geändert werden</string>
+    <string name="error_account_currency_history_unavailable">Stellen Sie eine Internetverbindung her, um die Transaktionen dieses Kontos zu prüfen</string>
+    <string name="delete_account">Konto löschen</string>
+    <string name="account_deleted">Konto gelöscht</string>
+    <string name="error_delete_account">Konto konnte nicht gelöscht werden</string>
+    <string name="delete_account_confirmation_title">Konto löschen?</string>
+    <string name="delete">Löschen</string>
+    <string name="cancel">Abbrechen</string>
+    <plurals name="delete_account_confirmation">
+        <item quantity="one">Dieses Konto enthält %d Transaktion. Das Konto und die Transaktion werden dauerhaft gelöscht.</item>
+        <item quantity="other">Dieses Konto enthält %d Transaktionen. Das Konto und alle Transaktionen werden dauerhaft gelöscht.</item>
+    </plurals>
+    <plurals name="account_with_transactions_deleted">
+        <item quantity="one">Konto und %d Transaktion gelöscht</item>
+        <item quantity="other">Konto und %d Transaktionen gelöscht</item>
+    </plurals>
 </resources>
