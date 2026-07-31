@@ -23,7 +23,17 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 
 internal val APP_LOCK_BACKGROUND_GRACE_PERIOD = 5.minutes
+internal val APP_LOCK_BACKGROUND_LOCK_POLICY = AppLockBackgroundLockPolicy.IMMEDIATELY
 private val APP_LOCK_PIN_ERROR_VIBRATION_DURATION = 50.milliseconds
+
+/**
+ * Keeps the grace-period implementation available for a future product decision without exposing
+ * it as a user setting.
+ */
+internal enum class AppLockBackgroundLockPolicy {
+    IMMEDIATELY,
+    AFTER_GRACE_PERIOD,
+}
 
 /**
  * Keeps authentication state over Activity recreation, but not process death.
@@ -181,10 +191,15 @@ private fun shouldRequestBiometricAuthentication(
     isAppInForeground: Boolean,
 ): Boolean = locked && biometricsEnabled && !biometricRequested && isAppInForeground
 
-/** Applies the grace period in elapsed-realtime units so wall-clock changes cannot affect locking. */
+/** Uses elapsed-realtime units for the grace-period policy so wall-clock changes cannot affect it. */
 internal fun shouldLockAfterBackground(
     backgroundedAtElapsedRealtime: Long?,
     currentElapsedRealtime: Long,
+    policy: AppLockBackgroundLockPolicy = APP_LOCK_BACKGROUND_LOCK_POLICY,
 ): Boolean =
-    backgroundedAtElapsedRealtime != null &&
-        currentElapsedRealtime - backgroundedAtElapsedRealtime >= APP_LOCK_BACKGROUND_GRACE_PERIOD.inWholeMilliseconds
+    when (policy) {
+        AppLockBackgroundLockPolicy.IMMEDIATELY -> backgroundedAtElapsedRealtime != null
+        AppLockBackgroundLockPolicy.AFTER_GRACE_PERIOD ->
+            backgroundedAtElapsedRealtime != null &&
+                currentElapsedRealtime - backgroundedAtElapsedRealtime >= APP_LOCK_BACKGROUND_GRACE_PERIOD.inWholeMilliseconds
+    }
