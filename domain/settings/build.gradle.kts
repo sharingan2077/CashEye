@@ -7,5 +7,6 @@ kotlin {
 }
 
 dependencies {
+    // Coroutines
     implementation(libs.kotlinx.coroutines.core)
 }

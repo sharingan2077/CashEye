@@ -1,6 +1,7 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
+    // Android and Kotlin
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.compose)
 }
@@ -32,7 +33,10 @@ kotlin {
 }
 
 dependencies {
+    // Project modules
     implementation(project(":core:model"))
+
+    // Compose
     implementation(platform(libs.androidx.compose.bom))
 
     implementation(libs.androidx.activity.compose)
@@ -40,10 +44,13 @@ dependencies {
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
 
+    // Compose tooling
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation(libs.androidx.compose.ui.tooling.preview)
 
-    testImplementation(libs.junit)
-
+    // Coroutines
     implementation(libs.kotlinx.coroutines.android)
+
+    // Unit tests
+    testImplementation(libs.junit)
 }

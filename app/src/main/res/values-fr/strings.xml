@@ -1,10 +1,8 @@
 <resources>
-    <string name="app_name" translatable="false">CashEye</string>
     <string name="nav_expenses">Dépenses</string>
     <string name="nav_income">Revenus</string>
     <string name="nav_accounts">Comptes</string>
     <string name="content_description_analytics">Analyses</string>
-    <string name="content_description_filters">Filtres</string>
     <string name="content_description_settings">Paramètres</string>
     <string name="content_description_back">Retour</string>
     <string name="content_description_add">Ajouter</string>
