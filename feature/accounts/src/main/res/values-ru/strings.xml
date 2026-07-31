@@ -2,10 +2,6 @@
     <string name="empty_accounts">Счетов пока нет</string>
     <string name="empty_accounts_description">Добавьте первый счёт, чтобы отслеживать баланс.</string>
     <string name="balance_total">баланс, всего</string>
-    <string name="balance_valuation">≈ %1$s</string>
-    <string name="balance_valuation_dated">≈ %1$s · курс на %2$s</string>
-    <string name="balance_valuation_partial">Учтено ≈ %1$s</string>
-    <string name="balance_valuation_partial_dated">Учтено ≈ %1$s · курс на %2$s</string>
     <string name="balance_not_included">Не включено: %1$s</string>
     <string name="balance_rate_date">Курс на %1$s</string>
     <string name="retry">Повторить</string>
@@ -15,7 +11,6 @@
     <string name="error_load_accounts">Не удалось загрузить счета</string>
     <string name="error_account_name_required">Введите название счёта</string>
     <string name="error_invalid_balance">Введите корректный баланс</string>
-    <string name="error_select_currency">Выберите валюту</string>
     <string name="error_save_account">Не удалось сохранить счёт</string>
     <string name="error_account_currency_has_transactions">Нельзя изменить валюту счёта, пока в нём есть операции</string>
     <string name="error_account_currency_history_unavailable">Подключитесь к интернету, чтобы проверить, что у счёта нет операций</string>
