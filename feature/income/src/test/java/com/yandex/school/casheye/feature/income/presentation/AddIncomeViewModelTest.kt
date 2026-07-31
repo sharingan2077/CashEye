@@ -3,6 +3,7 @@ package com.yandex.school.casheye.feature.income.presentation
 import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.Category
 import com.yandex.school.casheye.core.model.FinanceEditorInputLimits
+import com.yandex.school.casheye.core.model.Transaction
 import com.yandex.school.casheye.domain.finance.FinanceDataLoadResult
 import com.yandex.school.casheye.domain.finance.FinanceRepository
 import com.yandex.school.casheye.domain.finance.GetEditorAccountsUseCase
@@ -59,11 +60,36 @@ class AddIncomeViewModelTest {
             advanceUntilIdle()
             viewModel.onIntent(AddIncomeIntent.CategorySelected(9))
             viewModel.onIntent(AddIncomeIntent.AmountChanged("500"))
+            viewModel.onIntent(AddIncomeIntent.CommentChanged(" \nЗарплата\n "))
+            assertEquals("Зарплата", viewModel.state.value.comment)
             viewModel.onIntent(AddIncomeIntent.Save)
             advanceUntilIdle()
 
             assertTrue(repository.requestedIncome)
             assertEquals(BigDecimal("500"), repository.saved?.amount)
+            assertEquals("Зарплата", repository.saved?.comment)
+        }
+
+    @Test
+    fun `editing income saves comment without surrounding whitespace`() =
+        runTest {
+            val transaction = incomeTransaction()
+            val repository = IncomeEditorRepository(transaction)
+            val viewModel =
+                AddIncomeViewModel(
+                    GetEditorAccountsUseCase(repository),
+                    GetEditorCategoriesUseCase(repository),
+                    GetTransactionUseCase(repository),
+                    SaveTransactionUseCase(repository),
+                    clock,
+                )
+            viewModel.onIntent(AddIncomeIntent.Open(transaction.id, LocalDate.of(2026, 7, 22)))
+            advanceUntilIdle()
+            viewModel.onIntent(AddIncomeIntent.CommentChanged(" \nЗарплата\n "))
+            viewModel.onIntent(AddIncomeIntent.Save)
+            advanceUntilIdle()
+
+            assertEquals("Зарплата", repository.saved?.comment)
         }
 
     @Test
@@ -106,7 +132,9 @@ class AddIncomeViewModelTest {
         }
 }
 
-private class IncomeEditorRepository : FinanceRepository {
+private class IncomeEditorRepository(
+    private val transaction: Transaction? = null,
+) : FinanceRepository {
     var requestedIncome = false
     var saved: SaveTransactionCommand? = null
 
@@ -120,8 +148,22 @@ private class IncomeEditorRepository : FinanceRepository {
         return EditorResult.Success(listOf(Category(9, "Зарплата", "💰", true)))
     }
 
+    override suspend fun getTransaction(id: Int) = EditorResult.Success(requireNotNull(transaction))
+
     override suspend fun saveTransaction(command: SaveTransactionCommand): EditorResult<Unit> {
         saved = command
         return EditorResult.Success(Unit)
     }
 }
+
+private fun incomeTransaction() =
+    Transaction(
+        id = 7,
+        account = Account(1, "Основной", "💵", BigDecimal.ZERO, "RUB"),
+        category = Category(9, "Зарплата", "💰", true),
+        amount = BigDecimal("500"),
+        transactionDate = Instant.parse("2026-07-22T08:00:00Z"),
+        comment = null,
+        createdAt = Instant.parse("2026-07-22T08:00:00Z"),
+        updatedAt = Instant.parse("2026-07-22T08:00:00Z"),
+    )

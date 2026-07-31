@@ -67,7 +67,10 @@ class AddIncomeViewModel(
             is AddIncomeIntent.CommentChanged -> {
                 _state.value =
                     _state.value.copy(
-                        comment = intent.value.take(FinanceEditorInputLimits.TRANSACTION_COMMENT_MAX_LENGTH),
+                        comment =
+                            intent.value
+                                .trim()
+                                .take(FinanceEditorInputLimits.TRANSACTION_COMMENT_MAX_LENGTH),
                     )
             }
 

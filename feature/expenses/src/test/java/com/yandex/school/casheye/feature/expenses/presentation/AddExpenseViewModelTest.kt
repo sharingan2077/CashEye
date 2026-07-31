@@ -74,12 +74,31 @@ class AddExpenseViewModelTest {
             viewModel.onIntent(AddExpenseIntent.Open(original.id, LocalDate.of(2026, 7, 22)))
             advanceUntilIdle()
             viewModel.onIntent(AddExpenseIntent.AmountChanged("45"))
+            viewModel.onIntent(AddExpenseIntent.CommentChanged(" \nПродукты\n "))
             val effect = async(start = CoroutineStart.UNDISPATCHED) { viewModel.effects.first() }
             viewModel.onIntent(AddExpenseIntent.Save)
             advanceUntilIdle()
 
             assertEquals(BigDecimal("45"), repository.saved?.amount)
+            assertEquals("Продукты", repository.saved?.comment)
             assertEquals(AddExpenseEffect.Saved, effect.await())
+        }
+
+    @Test
+    fun `new expense saves comment without surrounding whitespace`() =
+        runTest {
+            val repository = EditorRepository(accounts = listOf(account(balance = "50")))
+            val viewModel = viewModel(repository)
+            viewModel.onIntent(AddExpenseIntent.Open(null, LocalDate.of(2026, 7, 22)))
+            advanceUntilIdle()
+            viewModel.onIntent(AddExpenseIntent.CategorySelected(2))
+            viewModel.onIntent(AddExpenseIntent.AmountChanged("10"))
+            viewModel.onIntent(AddExpenseIntent.CommentChanged(" \nПродукты\n "))
+            assertEquals("Продукты", viewModel.state.value.comment)
+            viewModel.onIntent(AddExpenseIntent.Save)
+            advanceUntilIdle()
+
+            assertEquals("Продукты", repository.saved?.comment)
         }
 
     @Test

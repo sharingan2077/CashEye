@@ -38,7 +38,10 @@ class AccountEditorViewModel(
             is AccountEditorIntent.NameChanged -> {
                 _state.value =
                     _state.value.copy(
-                        name = intent.value.take(FinanceEditorInputLimits.ACCOUNT_NAME_MAX_LENGTH),
+                        name =
+                            intent.value
+                                .trim()
+                                .take(FinanceEditorInputLimits.ACCOUNT_NAME_MAX_LENGTH),
                         error = null,
                     )
             }
