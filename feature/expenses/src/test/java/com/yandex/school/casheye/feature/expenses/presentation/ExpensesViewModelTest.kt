@@ -118,6 +118,11 @@ class ExpensesViewModelTest {
                 FinanceSummary(
                     nativeTotals = listOf(MoneyAmount(BigDecimal("25.00"), CurrencyCode.RUB)),
                     transactions = listOf(transaction()),
+                    currentValuation =
+                        DailyCurrentValuation(
+                            includedTotal = MoneyAmount(BigDecimal("25.00"), CurrencyCode.RUB),
+                            excludedNativeTotals = emptyList(),
+                        ),
                 )
             val viewModel =
                 expensesViewModel(
@@ -134,7 +139,11 @@ class ExpensesViewModelTest {
             advanceUntilIdle()
 
             assertEquals(
-                ExpensesUiState.Content(summary.nativeTotals, summary.transactions),
+                ExpensesUiState.Content(
+                    summary.nativeTotals,
+                    summary.transactions,
+                    summary.currentValuation,
+                ),
                 viewModel.state.value,
             )
             assertEquals(ExpensesEffect.ShowError(FinanceFailureReason.Server), effect.await())
