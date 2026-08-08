@@ -12,19 +12,19 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import com.yandex.school.casheye.app.navigation.chrome.APP_CHROME_ANIMATION_DURATION_MILLIS
+import com.yandex.school.casheye.core.model.DatePeriod
 import com.yandex.school.casheye.feature.accounts.presentation.AccountsRoute
 import com.yandex.school.casheye.feature.analytics.presentation.AnalyticsEntryPoint
 import com.yandex.school.casheye.feature.analytics.presentation.AnalyticsRoute
 import com.yandex.school.casheye.feature.expenses.presentation.ExpensesRoute
 import com.yandex.school.casheye.feature.income.presentation.IncomeRoute
-import java.time.LocalDate
 
 @Composable
 internal fun NavigationContent(
     navigationState: NavigationState,
     snackbarHostState: SnackbarHostState,
     navigator: Navigator,
-    selectedDate: LocalDate,
+    selectedPeriod: DatePeriod,
     networkRecoveryRefresh: NetworkRecoveryRefresh?,
     onNetworkRecoveryRefresh: (Long) -> Unit,
     onEditExpense: (Int) -> Unit,
@@ -48,7 +48,7 @@ internal fun NavigationContent(
                 entryProvider {
                     entry<Route.Expenses> {
                         ExpensesRoute(
-                            selectedDate = selectedDate,
+                            selectedPeriod = selectedPeriod,
                             snackbarHostState = snackbarHostState,
                             onTransactionClick = onEditExpense,
                             networkRecoveryRefreshId =
@@ -58,7 +58,7 @@ internal fun NavigationContent(
                     }
                     entry<Route.Income> {
                         IncomeRoute(
-                            selectedDate = selectedDate,
+                            selectedPeriod = selectedPeriod,
                             snackbarHostState = snackbarHostState,
                             onTransactionClick = onEditIncome,
                             networkRecoveryRefreshId =

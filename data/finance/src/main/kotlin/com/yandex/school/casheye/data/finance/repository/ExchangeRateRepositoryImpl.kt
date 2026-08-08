@@ -21,6 +21,11 @@ import java.time.Clock
 import java.time.Duration
 import java.time.LocalDate
 
+/**
+ * Caches EUR exchange quotes and records complete historical coverage.
+ * Refreshes keep valid cached rates on failure and distinguish incomplete API responses from
+ * transport failures.
+ */
 internal class RoomExchangeRateRepository(
     private val api: ExchangeRateApi,
     private val cache: ExchangeRateCache,
@@ -51,7 +56,7 @@ internal class RoomExchangeRateRepository(
     override suspend fun refreshLatest(force: Boolean): ExchangeRateRefreshResult {
         val cached = cache.getLatest()
         val fetchedAt = cache.latestFetchedAt()
-        if (!force && cached.hasAllQuotes() && fetchedAt != null && isFresh(fetchedAt)) {
+        if (hasFreshCompleteCache(force, cached, fetchedAt)) {
             return ExchangeRateRefreshResult.Fresh
         }
 
@@ -81,8 +86,8 @@ internal class RoomExchangeRateRepository(
             val response =
                 try {
                     api.getRates(from = range.start.toString(), to = range.endInclusive.toString())
-                } catch (error: Throwable) {
-                    return error.toRefreshFailure(cachedRangeIsComplete(requestedStart, endDate))
+                } catch (failure: Throwable) {
+                    return failure.toRefreshFailure(cachedRangeIsComplete(requestedStart, endDate))
                 }
             val missing = missingQuotes(response)
             if (missing.isNotEmpty()) {
@@ -136,6 +141,7 @@ internal class RoomExchangeRateRepository(
         if (entities.isNotEmpty()) cache.upsertRates(entities)
     }
 
+    /** Returns uncovered date intervals so historical refreshes request only the missing data. */
     private suspend fun missingRanges(
         startDate: LocalDate,
         endDate: LocalDate,
@@ -205,7 +211,7 @@ internal class RoomExchangeRateRepository(
                 ExchangeRateRefreshResult.TemporaryFailure(cachedDataAvailable, this)
             }
 
-            is HttpException if code() in 500..599 -> {
+            is HttpException if code() in SERVER_ERROR_STATUS_CODES -> {
                 ExchangeRateRefreshResult.TemporaryFailure(cachedDataAvailable, this)
             }
 
@@ -223,6 +229,12 @@ internal class RoomExchangeRateRepository(
             fetchedAt = fetchedAt,
         )
 
+    private fun hasFreshCompleteCache(
+        force: Boolean,
+        cached: List<ExchangeRateEntity>,
+        fetchedAt: Long?,
+    ): Boolean = !force && cached.hasAllQuotes() && fetchedAt != null && isFresh(fetchedAt)
+
     private fun ExchangeRateEntity.toDomain(): ExchangeRate =
         ExchangeRate(
             baseCurrency = CurrencyCode.fromIsoCode(baseCurrency),
@@ -234,6 +246,7 @@ internal class RoomExchangeRateRepository(
     private companion object {
         val QUOTE_CURRENCIES = CurrencyCode.entries.toSet() - CurrencyCode.EUR
         val LATEST_CACHE_TTL: Duration = Duration.ofHours(24)
+        val SERVER_ERROR_STATUS_CODES = 500..599
         const val HISTORICAL_LOOKBACK_DAYS = 7L
     }
 }

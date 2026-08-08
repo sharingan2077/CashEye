@@ -2,6 +2,7 @@
     <string name="empty_expenses">За выбранную дату расходов нет</string>
     <string name="empty_expenses_description">Выберите другую дату в верхней панели, чтобы посмотреть расходы</string>
     <string name="expenses_total">расходы, всего</string>
+    <string name="expenses_not_included">Не включено: %1$s</string>
     <string name="retry">Повторить</string>
     <string name="error_network">Проверьте подключение к интернету</string>
     <string name="error_authorization">Не удалось авторизоваться</string>

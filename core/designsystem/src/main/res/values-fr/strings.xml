@@ -45,4 +45,12 @@
     <string name="finance_editor_enter_time">Saisissez l’heure</string>
     <string name="finance_editor_switch_to_time_picker">Passer au sélecteur d’heure avec cadran</string>
     <string name="finance_editor_switch_to_time_input">Passer à la saisie textuelle de l’heure</string>
+    <string name="date_period_title">Période</string>
+    <string name="date_period_today">Aujourd’hui</string>
+    <string name="date_period_week">Dernière semaine</string>
+    <string name="date_period_month">Dernier mois</string>
+    <string name="date_period_quarter">Dernier trimestre</string>
+    <string name="date_period_year">Dernière année</string>
+    <string name="date_period_custom">Personnalisée</string>
+    <string name="scroll_to_top">Revenir au début de la liste</string>
 </resources>

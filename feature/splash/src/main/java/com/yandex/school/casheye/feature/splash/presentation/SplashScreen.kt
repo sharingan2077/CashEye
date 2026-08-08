@@ -136,6 +136,7 @@ private fun SplashSystemBarStyleEffect() {
     DisposableEffect(view) {
         val window = view.context.findActivity().window
         val insetsController = WindowCompat.getInsetsController(window, view)
+        val previousLightStatusBars = insetsController.isAppearanceLightStatusBars
         val previousLightIcons = insetsController.isAppearanceLightNavigationBars
         val previousContrastEnforced =
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -144,12 +145,14 @@ private fun SplashSystemBarStyleEffect() {
                 null
             }
 
+        insetsController.isAppearanceLightStatusBars = false
         insetsController.isAppearanceLightNavigationBars = true
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             window.isNavigationBarContrastEnforced = false
         }
 
         onDispose {
+            insetsController.isAppearanceLightStatusBars = previousLightStatusBars
             insetsController.isAppearanceLightNavigationBars = previousLightIcons
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && previousContrastEnforced != null) {
                 window.isNavigationBarContrastEnforced = previousContrastEnforced

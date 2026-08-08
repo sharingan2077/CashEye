@@ -1,7 +1,6 @@
 package com.yandex.school.casheye.feature.accounts.presentation.efitor
 
 import androidx.activity.compose.BackHandler
-import androidx.annotation.StringRes
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -36,13 +35,14 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.yandex.school.casheye.core.designsystem.R
+import com.yandex.school.casheye.core.designsystem.component.editor.CurrencySelectionContent
 import com.yandex.school.casheye.core.designsystem.component.editor.EditorModalSheet
 import com.yandex.school.casheye.core.designsystem.component.editor.EditorRow
-import com.yandex.school.casheye.core.designsystem.component.editor.EditorSelectionRow
 import com.yandex.school.casheye.core.designsystem.component.editor.EditorSheetTitle
 import com.yandex.school.casheye.core.designsystem.component.editor.EditorTextContent
 import com.yandex.school.casheye.core.designsystem.component.editor.FinanceEditorContent
 import com.yandex.school.casheye.core.designsystem.component.money.currencySymbol
+import com.yandex.school.casheye.core.model.FinanceEditorInputLimits
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -100,6 +100,7 @@ fun AccountEditorSheet(
                     value = name,
                     placeholder = stringResource(R.string.finance_editor_account_name_placeholder),
                     singleLine = true,
+                    maxLength = FinanceEditorInputLimits.ACCOUNT_NAME_MAX_LENGTH,
                     onConfirm = {
                         onNameChange(it)
                         nested = null
@@ -258,22 +259,11 @@ private fun EmojiOption(
 private fun CurrencyContent(
     selectedCurrency: String,
     onSelect: (String) -> Unit,
-) {
-    Column(Modifier.fillMaxWidth()) {
-        EditorSheetTitle(stringResource(R.string.finance_editor_currency))
-        accountCurrencies.forEachIndexed { index, currency ->
-            EditorSelectionRow(
-                emoji = currency.flag,
-                title = stringResource(currency.titleRes),
-                subtitle = currency.code,
-                selected = currency.code == selectedCurrency,
-                isLast = index == accountCurrencies.lastIndex,
-                onClick = { onSelect(currency.code) },
-            )
-        }
-        Spacer(Modifier.height(20.dp))
-    }
-}
+) = CurrencySelectionContent(
+    title = stringResource(R.string.finance_editor_currency),
+    selectedCurrency = selectedCurrency,
+    onSelect = onSelect,
+)
 
 private val accountEmojis =
     listOf(
@@ -293,21 +283,6 @@ private val accountEmojis =
         "🐷",
         "🧾",
         "💼",
-    )
-
-private data class AccountCurrencyOption(
-    val code: String,
-    val flag: String,
-    @StringRes val titleRes: Int,
-)
-
-private val accountCurrencies =
-    listOf(
-        AccountCurrencyOption("RUB", "🇷🇺", R.string.finance_editor_currency_rub),
-        AccountCurrencyOption("USD", "🇺🇸", R.string.finance_editor_currency_usd),
-        AccountCurrencyOption("EUR", "🇪🇺", R.string.finance_editor_currency_eur),
-        AccountCurrencyOption("GBP", "🇬🇧", R.string.finance_editor_currency_gbp),
-        AccountCurrencyOption("CNY", "🇨🇳", R.string.finance_editor_currency_cny),
     )
 
 @Composable

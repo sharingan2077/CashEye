@@ -11,12 +11,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -43,6 +41,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.yandex.school.casheye.core.designsystem.component.EmojiCircle
 import com.yandex.school.casheye.core.designsystem.component.ListItem
+import com.yandex.school.casheye.core.designsystem.component.ListItemDefaults
+import com.yandex.school.casheye.core.designsystem.component.editor.rememberSheetListGestureCoordinator
 import com.yandex.school.casheye.core.model.Category
 import com.yandex.school.casheye.feature.analytics.R
 import com.yandex.school.casheye.feature.analytics.presentation.AnalyticsIntent
@@ -87,16 +87,28 @@ internal fun PeriodSheet(
     AnalyticsModalBottomSheet(onDismissRequest = { onIntent(AnalyticsIntent.DismissSheet) }) {
         SheetTitle(stringResource(R.string.filter_period))
         AnalyticsPeriodPreset.entries.forEachIndexed { index, preset ->
-            Row(
+            ListItem(
                 modifier =
                     Modifier
-                        .fillMaxWidth()
                         .clickable {
                             onIntent(AnalyticsIntent.SelectPeriodPreset(preset))
-                        }.padding(horizontal = 20.dp, vertical = 16.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                        },
+                minHeight = ListItemDefaults.CompactMinHeight,
+                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
+                trailingContent =
+                    if (preset == period.preset) {
+                        {
+                            Icon(
+                                painter = painterResource(R.drawable.check_purple),
+                                contentDescription = stringResource(R.string.period_selected),
+                                tint = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                    } else {
+                        null
+                    },
             ) {
-                Column(modifier = Modifier.weight(1f)) {
+                Column {
                     Text(
                         text = preset.title(),
                         style = MaterialTheme.typography.titleMedium,
@@ -109,13 +121,6 @@ internal fun PeriodSheet(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
-                }
-                if (preset == period.preset) {
-                    Icon(
-                        painter = painterResource(R.drawable.check_purple),
-                        contentDescription = stringResource(R.string.period_selected),
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
                 }
             }
             if (index != AnalyticsPeriodPreset.entries.lastIndex) HorizontalDivider()
@@ -146,27 +151,25 @@ internal fun CategoriesSheet(
             overscrollEffect = null,
         ) {
             itemsIndexed(items = categories, key = { _, category -> category.id }) { index, category ->
-                Row(
+                ListItem(
                     modifier =
                         Modifier
-                            .fillMaxWidth()
                             .clickable {
                                 onIntent(AnalyticsIntent.ToggleDraftCategory(category.id))
-                            }.padding(horizontal = 20.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+                            },
+                    minHeight = ListItemDefaults.CompactMinHeight,
+                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
+                    leadingContent = { EmojiCircle(emoji = category.emoji) },
+                    trailingContent = {
+                        Checkbox(
+                            checked = category.id in sheet.selectedIds,
+                            onCheckedChange = { onIntent(AnalyticsIntent.ToggleDraftCategory(category.id)) },
+                        )
+                    },
                 ) {
-                    EmojiCircle(emoji = category.emoji)
                     Text(
                         text = category.name,
-                        modifier =
-                            Modifier
-                                .weight(1f)
-                                .padding(horizontal = 16.dp),
                         style = MaterialTheme.typography.titleMedium,
-                    )
-                    Checkbox(
-                        checked = category.id in sheet.selectedIds,
-                        onCheckedChange = { onIntent(AnalyticsIntent.ToggleDraftCategory(category.id)) },
                     )
                 }
                 if (index != categories.lastIndex) HorizontalDivider()
@@ -203,7 +206,6 @@ internal fun AccountSheet(
                 AccountRow(
                     title = stringResource(R.string.all_accounts),
                     emoji = "💳",
-                    subtitle = null,
                     isLast = false,
                     selected = data.filters.accountId == null,
                 ) { onIntent(AnalyticsIntent.SelectAccount(null)) }
@@ -212,7 +214,6 @@ internal fun AccountSheet(
                 AccountRow(
                     title = account.name,
                     emoji = account.emoji,
-                    subtitle = null,
                     isLast = index == data.accounts.lastIndex,
                     selected = data.filters.accountId == account.id,
                 ) { onIntent(AnalyticsIntent.SelectAccount(account.id)) }
@@ -226,7 +227,6 @@ internal fun AccountSheet(
 private fun AccountRow(
     title: String,
     emoji: String,
-    subtitle: String?,
     selected: Boolean,
     isLast: Boolean,
     onClick: () -> Unit,
@@ -236,7 +236,7 @@ private fun AccountRow(
     ) {
         ListItem(
             modifier = Modifier.clickable(onClick = onClick),
-            lead = { EmojiCircle(emoji = emoji) },
+            leadingContent = { EmojiCircle(emoji = emoji) },
             content = {
                 Column {
                     Text(
@@ -245,11 +245,10 @@ private fun AccountRow(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
-                    subtitle?.let { Text(text = it, style = MaterialTheme.typography.bodySmall) }
                 }
             },
-            trail = { AccountSelectionIndicator(selected = selected) },
-            height = 64.dp,
+            trailingContent = { AccountSelectionIndicator(selected = selected) },
+            minHeight = ListItemDefaults.MediumMinHeight,
         )
         if (!isLast) HorizontalDivider()
     }
@@ -265,21 +264,17 @@ private fun SelectionRow(
     Column(
         modifier = Modifier,
     ) {
-        Row(
+        ListItem(
             modifier =
                 Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .clickable(onClick = onClick)
-                    .padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
+                    .clickable(onClick = onClick),
+            minHeight = ListItemDefaults.CompactMinHeight,
+            trailingContent = { TypeSelectionIndicator(selected = selected) },
         ) {
             Text(
                 text = title,
-                modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.titleMedium,
             )
-            TypeSelectionIndicator(selected = selected)
         }
         if (!isLast) HorizontalDivider()
     }
@@ -363,6 +358,7 @@ private fun AnalyticsType.title(): String =
 private fun AnalyticsPeriodPreset.title(): String =
     stringResource(
         when (this) {
+            AnalyticsPeriodPreset.Today -> R.string.period_today
             AnalyticsPeriodPreset.Custom -> R.string.period_custom
             AnalyticsPeriodPreset.Week -> R.string.period_week
             AnalyticsPeriodPreset.Month -> R.string.period_month

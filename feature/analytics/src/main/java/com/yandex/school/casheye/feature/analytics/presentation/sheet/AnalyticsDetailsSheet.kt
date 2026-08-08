@@ -21,6 +21,11 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,6 +34,9 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.patrykandpatrick.vico.compose.pie.data.PieChartModelProducer
+import com.patrykandpatrick.vico.compose.pie.data.pieSeries
+import com.yandex.school.casheye.core.designsystem.component.editor.rememberSheetListGestureCoordinator
 import com.yandex.school.casheye.feature.analytics.R
 import com.yandex.school.casheye.feature.analytics.presentation.AnalyticsIntent
 import com.yandex.school.casheye.feature.analytics.presentation.AnalyticsType
@@ -39,6 +47,7 @@ import com.yandex.school.casheye.feature.analytics.presentation.chart.analyticsC
 import com.yandex.school.casheye.feature.analytics.presentation.chart.analyticsColorForCategory
 import com.yandex.school.casheye.feature.analytics.presentation.chart.analyticsColorForType
 import com.yandex.school.casheye.feature.analytics.presentation.chart.analyticsPieChartItems
+import com.yandex.school.casheye.feature.analytics.presentation.chart.analyticsPieChartValues
 import com.yandex.school.casheye.feature.analytics.presentation.chart.analyticsTypePieChartItems
 import com.yandex.school.casheye.feature.analytics.presentation.formatAnalyticsDisplayAmount
 import java.math.BigDecimal
@@ -51,6 +60,8 @@ internal fun DetailsSheet(
     onIntent: (AnalyticsIntent) -> Unit,
 ) {
     val listState = rememberLazyListState()
+    val chartModelProducer = remember { PieChartModelProducer() }
+    var animateChartIn by remember { mutableStateOf(true) }
     val gestureCoordinator = rememberSheetListGestureCoordinator(listState)
     val expensesLabel = stringResource(R.string.type_expenses)
     val incomeLabel = stringResource(R.string.type_income)
@@ -73,6 +84,13 @@ internal fun DetailsSheet(
         } else {
             state.total.abs()
         }
+    LaunchedEffect(chartItems) {
+        chartModelProducer.runTransaction {
+            pieSeries {
+                series(analyticsPieChartValues(chartItems))
+            }
+        }
+    }
     AnalyticsModalBottomSheet(onDismissRequest = { onIntent(AnalyticsIntent.DismissSheet) }) {
         SheetTitle(
             title = stringResource(R.string.details),
@@ -103,6 +121,9 @@ internal fun DetailsSheet(
                         items = chartItems,
                         paddingValues = PaddingValues(bottom = 32.dp),
                         showLegend = false,
+                        modelProducer = chartModelProducer,
+                        animateIn = animateChartIn,
+                        onChartDispose = { animateChartIn = false },
                     )
                 }
             }

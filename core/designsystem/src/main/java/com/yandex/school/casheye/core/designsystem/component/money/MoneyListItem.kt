@@ -18,10 +18,10 @@ fun MoneyListItem(
 ) {
     ListItem(
         modifier = modifier,
-        lead = {
+        leadingContent = {
             EmojiCircle(emoji = emoji)
         },
-        trail = {
+        trailingContent = {
             Text(
                 text = amount,
                 color = MaterialTheme.colorScheme.onSurface,

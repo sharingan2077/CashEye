@@ -2,6 +2,7 @@
     <string name="empty_expenses">Keine Ausgaben für dieses Datum</string>
     <string name="empty_expenses_description">Wählen Sie oben ein anderes Datum, um Ausgaben zu sehen</string>
     <string name="expenses_total">Ausgaben, gesamt</string>
+    <string name="expenses_not_included">Nicht enthalten: %1$s</string>
     <string name="retry">Wiederholen</string>
     <string name="error_network">Internetverbindung prüfen</string>
     <string name="error_authorization">Anmeldung fehlgeschlagen</string>

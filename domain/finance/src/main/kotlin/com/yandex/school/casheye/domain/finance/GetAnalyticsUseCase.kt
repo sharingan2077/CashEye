@@ -1,10 +1,14 @@
 package com.yandex.school.casheye.domain.finance
 
+import com.yandex.school.casheye.core.model.Category
+import com.yandex.school.casheye.core.model.CurrencyCode
 import com.yandex.school.casheye.core.model.MoneyAmount
+import com.yandex.school.casheye.core.model.Transaction
 import com.yandex.school.casheye.domain.finance.currency.CurrencyConversionResult
 import com.yandex.school.casheye.domain.finance.currency.CurrencyConverter
 import com.yandex.school.casheye.domain.finance.currency.DefaultReportingCurrencyRepository
 import com.yandex.school.casheye.domain.finance.currency.EmptyExchangeRateRepository
+import com.yandex.school.casheye.domain.finance.currency.ExchangeRate
 import com.yandex.school.casheye.domain.finance.currency.ExchangeRateRefreshResult
 import com.yandex.school.casheye.domain.finance.currency.ExchangeRateRepository
 import com.yandex.school.casheye.domain.finance.currency.ReportingCurrencyRepository
@@ -34,84 +38,105 @@ class GetAnalyticsUseCase(
             reportingCurrencyRepository.observe(),
             exchangeRateRepository.observeRange(query.startDate, query.endDate),
         ) { accounts, transactions, reportingCurrency, rateSnapshot ->
-            val kindFiltered =
-                transactions.filter { transaction ->
-                    when (query.transactionKind) {
-                        AnalyticsTransactionKind.Income -> transaction.category.isIncome
-                        AnalyticsTransactionKind.Expense -> !transaction.category.isIncome
-                        AnalyticsTransactionKind.All -> true
-                    }
-                }
-            val availableCategories = kindFiltered.map { it.category }.distinctBy { it.id }.sortedBy { it.name }
-            val filtered =
-                kindFiltered
-                    .filter { transaction ->
-                        query.categoryIds.isEmpty() || transaction.category.id in query.categoryIds
-                    }.sortedByDescending { it.transactionDate }
-            val convertedTransactions = mutableListOf<AnalyticsTransaction>()
-            val unconvertedTransactions = mutableListOf<UnconvertedAnalyticsTransaction>()
-            filtered.forEach { transaction ->
-                val originalAmount = MoneyAmount(transaction.amount, transaction.currency)
-                val transactionDate = transaction.transactionDate.atZone(zoneId).toLocalDate()
-                when (
-                    val conversion =
-                        currencyConverter.convert(
-                            money = originalAmount,
-                            target = reportingCurrency,
-                            date = transactionDate,
-                            rates = rateSnapshot.rates,
-                        )
-                ) {
-                    is CurrencyConversionResult.Complete -> {
-                        convertedTransactions +=
-                            AnalyticsTransaction(
-                                transaction = transaction,
-                                originalAmount = originalAmount,
-                                reportingAmount = conversion.money,
-                                rateDate =
-                                    listOfNotNull(conversion.sourceRateDate, conversion.targetRateDate)
-                                        .minOrNull(),
-                            )
-                    }
-
-                    is CurrencyConversionResult.Incomplete -> {
-                        unconvertedTransactions +=
-                            UnconvertedAnalyticsTransaction(
-                                transaction = transaction,
-                                originalAmount = originalAmount,
-                                missingCurrencies = conversion.missingCurrencies,
-                            )
-                    }
-                }
-            }
-
+            val filtered = filterTransactions(transactions, query)
+            val conversion = convertTransactions(filtered.transactions, reportingCurrency, rateSnapshot.rates)
             val result: AnalyticsLoadResult =
                 AnalyticsLoadResult.Success(
                     AnalyticsSummary(
-                        total =
-                            convertedTransactions.fold(BigDecimal.ZERO) { total, transaction ->
-                                val amount = transaction.reportingAmount.amount.abs()
-                                when (query.transactionKind) {
-                                    AnalyticsTransactionKind.All -> {
-                                        if (transaction.category.isIncome) total + amount else total - amount
-                                    }
-
-                                    AnalyticsTransactionKind.Income,
-                                    AnalyticsTransactionKind.Expense,
-                                    -> {
-                                        total + amount
-                                    }
-                                }
-                            },
+                        total = conversion.total(query.transactionKind),
                         currencyCode = reportingCurrency,
-                        transactions = convertedTransactions,
-                        unconvertedTransactions = unconvertedTransactions,
+                        transactions = conversion.converted,
+                        unconvertedTransactions = conversion.unconverted,
                         accounts = accounts,
-                        availableCategories = availableCategories,
+                        availableCategories = filtered.availableCategories,
                     ),
                 )
             result
         }.catch { emit(AnalyticsLoadResult.Failure(FinanceFailureReason.Unknown)) }
+
+    private fun filterTransactions(
+        transactions: List<Transaction>,
+        query: AnalyticsQuery,
+    ): FilteredAnalyticsTransactions {
+        val kindFiltered = transactions.filter { it.matches(query.transactionKind) }
+        return FilteredAnalyticsTransactions(
+            availableCategories = kindFiltered.map { it.category }.distinctBy { it.id }.sortedBy { it.name },
+            transactions =
+                kindFiltered
+                    .filter { query.categoryIds.isEmpty() || it.category.id in query.categoryIds }
+                    .sortedByDescending { it.transactionDate },
+        )
+    }
+
+    private fun convertTransactions(
+        transactions: List<Transaction>,
+        reportingCurrency: CurrencyCode,
+        rates: Collection<ExchangeRate>,
+    ): ConvertedAnalyticsTransactions {
+        val converted = mutableListOf<AnalyticsTransaction>()
+        val unconverted = mutableListOf<UnconvertedAnalyticsTransaction>()
+        transactions.forEach { transaction ->
+            val originalAmount = MoneyAmount(transaction.amount, transaction.currency)
+            when (
+                val result =
+                    currencyConverter.convert(
+                        originalAmount,
+                        reportingCurrency,
+                        transaction.localDate(),
+                        rates,
+                    )
+            ) {
+                is CurrencyConversionResult.Complete -> {
+                    converted += transaction.toAnalyticsTransaction(originalAmount, result)
+                }
+
+                is CurrencyConversionResult.Incomplete -> {
+                    unconverted +=
+                        UnconvertedAnalyticsTransaction(transaction, originalAmount, result.missingCurrencies)
+                }
+            }
+        }
+        return ConvertedAnalyticsTransactions(converted, unconverted)
+    }
+
+    private fun Transaction.matches(kind: AnalyticsTransactionKind): Boolean =
+        when (kind) {
+            AnalyticsTransactionKind.Income -> category.isIncome
+            AnalyticsTransactionKind.Expense -> !category.isIncome
+            AnalyticsTransactionKind.All -> true
+        }
+
+    private fun Transaction.localDate() = transactionDate.atZone(zoneId).toLocalDate()
+
+    private fun Transaction.toAnalyticsTransaction(
+        originalAmount: MoneyAmount,
+        result: CurrencyConversionResult.Complete,
+    ) = AnalyticsTransaction(
+        transaction = this,
+        originalAmount = originalAmount,
+        reportingAmount = result.money,
+        rateDate = listOfNotNull(result.sourceRateDate, result.targetRateDate).minOrNull(),
+    )
+
+    private data class FilteredAnalyticsTransactions(
+        val availableCategories: List<Category>,
+        val transactions: List<Transaction>,
+    )
+
+    private data class ConvertedAnalyticsTransactions(
+        val converted: List<AnalyticsTransaction>,
+        val unconverted: List<UnconvertedAnalyticsTransaction>,
+    ) {
+        fun total(kind: AnalyticsTransactionKind): BigDecimal =
+            converted.fold(BigDecimal.ZERO) { total, transaction ->
+                val amount = transaction.reportingAmount.amount.abs()
+                if (kind == AnalyticsTransactionKind.All && !transaction.transaction.category.isIncome) {
+                    total - amount
+                } else {
+                    total + amount
+                }
+            }
+    }
 
     suspend fun refresh(query: AnalyticsQuery): FinanceRefreshResult {
         val financeResult = repository.refreshPeriod(query.startDate, query.endDate)

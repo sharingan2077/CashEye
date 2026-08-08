@@ -2,6 +2,7 @@ package com.yandex.school.casheye.app.navigation
 
 import androidx.navigation3.runtime.NavKey
 
+/** Applies navigation actions to the selected top-level route and its independent back stack. */
 class Navigator(
     val state: NavigationState,
 ) {

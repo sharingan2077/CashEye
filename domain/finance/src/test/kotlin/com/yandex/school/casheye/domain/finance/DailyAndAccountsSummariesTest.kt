@@ -59,6 +59,48 @@ class DailyAndAccountsSummariesTest {
         }
 
     @Test
+    fun `daily valuation converts available transactions and exposes excluded totals`() =
+        runTest {
+            val rubAccount = account(1, CurrencyCode.RUB, "0")
+            val usdAccount = account(2, CurrencyCode.USD, "0")
+            val cnyAccount = account(3, CurrencyCode.CNY, "0")
+            val summary =
+                (
+                    GetDailySummaryUseCase(
+                        repository =
+                            FakeFinanceRepository(
+                                accounts = listOf(rubAccount, usdAccount, cnyAccount),
+                                transactions =
+                                    listOf(
+                                        transaction(1, rubAccount, CurrencyCode.RUB, "12000"),
+                                        transaction(2, usdAccount, CurrencyCode.USD, "100"),
+                                        transaction(3, cnyAccount, CurrencyCode.CNY, "50"),
+                                    ),
+                            ),
+                        reportingCurrencyRepository = SummaryReportingCurrencyRepository(CurrencyCode.RUB),
+                        exchangeRateRepository =
+                            FakeExchangeRateRepository(
+                                listOf(
+                                    rate(CurrencyCode.RUB, "80", date),
+                                    rate(CurrencyCode.USD, "0.8", date),
+                                ),
+                            ),
+                    ).invoke(date, TransactionKind.Expense)
+                        .first() as FinanceLoadResult.Success
+                ).summary
+
+            assertEquals(
+                MoneyAmount(BigDecimal("22000"), CurrencyCode.RUB),
+                summary.currentValuation?.includedTotal,
+            )
+            assertEquals(
+                listOf(MoneyAmount(BigDecimal("50"), CurrencyCode.CNY)),
+                summary.currentValuation?.excludedNativeTotals,
+            )
+            assertFalse(requireNotNull(summary.currentValuation).isComplete)
+        }
+
+    @Test
     fun `accounts valuation uses latest cross rates`() =
         runTest {
             val rateDate = LocalDate.of(2026, 7, 25)

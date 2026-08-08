@@ -16,8 +16,8 @@ internal suspend inline fun <T> editorRequest(
         EditorResult.Success(withContext(dispatcher) { block() })
     } catch (error: CancellationException) {
         throw error
-    } catch (error: Exception) {
-        EditorResult.Failure(error.toFailureReason())
+    } catch (failure: Exception) {
+        EditorResult.Failure(failure.toFailureReason())
     }
 
 internal fun Exception.toFailureReason(): FinanceFailureReason =

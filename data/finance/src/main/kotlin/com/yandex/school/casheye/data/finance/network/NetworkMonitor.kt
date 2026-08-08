@@ -20,10 +20,12 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.stateIn
 
+/** App-scoped observable of validated internet availability. */
 interface NetworkMonitor : AutoCloseable {
     val isOnline: StateFlow<Boolean>
 }
 
+/** Bridges [ConnectivityManager] callbacks into a lifecycle-owned online state. */
 @Inject
 @SingleIn(AppScope::class)
 class ConnectivityManagerNetworkMonitor(

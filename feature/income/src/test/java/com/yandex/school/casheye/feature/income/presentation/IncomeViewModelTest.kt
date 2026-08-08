@@ -5,6 +5,7 @@ import com.yandex.school.casheye.core.model.Category
 import com.yandex.school.casheye.core.model.CurrencyCode
 import com.yandex.school.casheye.core.model.MoneyAmount
 import com.yandex.school.casheye.core.model.Transaction
+import com.yandex.school.casheye.domain.finance.DailyCurrentValuation
 import com.yandex.school.casheye.domain.finance.DeleteTransactionUseCase
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import com.yandex.school.casheye.domain.finance.FinanceLoadResult
@@ -63,6 +64,11 @@ class IncomeViewModelTest {
                 FinanceSummary(
                     nativeTotals = listOf(MoneyAmount(BigDecimal("125000.00"), CurrencyCode.RUB)),
                     transactions = listOf(incomeTransaction()),
+                    currentValuation =
+                        DailyCurrentValuation(
+                            includedTotal = MoneyAmount(BigDecimal("125000.00"), CurrencyCode.RUB),
+                            excludedNativeTotals = emptyList(),
+                        ),
                 )
             val repository = FakeIncomeFinanceRepository(FinanceLoadResult.Success(summary))
             val viewModel = incomeViewModel(repository, clock)
@@ -70,7 +76,7 @@ class IncomeViewModelTest {
             advanceUntilIdle()
 
             assertEquals(
-                IncomeUiState.Content(summary.nativeTotals, summary.transactions),
+                IncomeUiState.Content(summary.nativeTotals, summary.transactions, summary.currentValuation),
                 viewModel.state.value,
             )
         }
@@ -112,6 +118,11 @@ class IncomeViewModelTest {
                 FinanceSummary(
                     nativeTotals = listOf(MoneyAmount(BigDecimal("125000.00"), CurrencyCode.RUB)),
                     transactions = listOf(incomeTransaction()),
+                    currentValuation =
+                        DailyCurrentValuation(
+                            includedTotal = MoneyAmount(BigDecimal("125000.00"), CurrencyCode.RUB),
+                            excludedNativeTotals = emptyList(),
+                        ),
                 )
             val viewModel =
                 incomeViewModel(
@@ -128,7 +139,11 @@ class IncomeViewModelTest {
             advanceUntilIdle()
 
             assertEquals(
-                IncomeUiState.Content(summary.nativeTotals, summary.transactions),
+                IncomeUiState.Content(
+                    summary.nativeTotals,
+                    summary.transactions,
+                    summary.currentValuation,
+                ),
                 viewModel.state.value,
             )
             assertEquals(IncomeEffect.ShowError(FinanceFailureReason.Server), effect.await())

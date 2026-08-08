@@ -2,6 +2,7 @@ package com.yandex.school.casheye.feature.expenses.presentation.editor
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.yandex.school.casheye.core.model.FinanceEditorInputLimits
 import com.yandex.school.casheye.core.model.Transaction
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
 import com.yandex.school.casheye.domain.finance.GetEditorAccountsUseCase
@@ -66,7 +67,13 @@ class AddExpenseViewModel(
             }
 
             is AddExpenseIntent.CommentChanged -> {
-                _state.value = _state.value.copy(comment = intent.value)
+                _state.value =
+                    _state.value.copy(
+                        comment =
+                            intent.value
+                                .trim()
+                                .take(FinanceEditorInputLimits.TRANSACTION_COMMENT_MAX_LENGTH),
+                    )
             }
 
             AddExpenseIntent.Save -> {
@@ -125,7 +132,11 @@ class AddExpenseViewModel(
                     amount = transaction?.amount?.toPlainString().orEmpty(),
                     date = (local?.toLocalDate() ?: intent.defaultDate).coerceAtMost(today),
                     time = local?.toLocalTime()?.withSecond(0)?.withNano(0) ?: _state.value.time,
-                    comment = transaction?.comment.orEmpty(),
+                    comment =
+                        transaction
+                            ?.comment
+                            .orEmpty()
+                            .take(FinanceEditorInputLimits.TRANSACTION_COMMENT_MAX_LENGTH),
                 )
         }
     }

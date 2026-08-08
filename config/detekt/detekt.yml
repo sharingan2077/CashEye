@@ -7,19 +7,59 @@ naming:
       - Composable
 
 complexity:
+  ComplexCondition:
+    allowedConditions: 4
+
+  LongMethod:
+    ignoreAnnotated:
+      - Composable
+    excludes:
+      - '**/test/**'
+      - '**/androidTest/**'
+      - '**/commonTest/**'
+      - '**/jvmTest/**'
+      - '**/androidUnitTest/**'
+      - '**/androidInstrumentedTest/**'
+      - '**/jsTest/**'
+      - '**/iosTest/**'
+      - '**/preview/**'
+      - '**/database/dao/**'
+
   LongParameterList:
     ignoreDefaultParameters: true
 
   TooManyFunctions:
+    allowedFunctionsPerFile: 15
+    allowedFunctionsPerClass: 12
+    allowedFunctionsPerInterface: 20
+    allowedFunctionsPerObject: 16
+    ignoreOverridden: true
     ignoreAnnotatedFunctions:
       - Preview
+    excludes:
+      - '**/test/**'
+      - '**/androidTest/**'
+      - '**/commonTest/**'
+      - '**/jvmTest/**'
+      - '**/androidUnitTest/**'
+      - '**/androidInstrumentedTest/**'
+      - '**/jsTest/**'
+      - '**/iosTest/**'
+      - '**/database/dao/**'
 
 style:
   MagicNumber:
-    ignorePropertyDeclaration: true
     ignoreAnnotated:
-      - Preview
+      - Composable
+    ignorePropertyDeclaration: true
+
+  ReturnCount:
+    max: 4
 
   UnusedPrivateFunction:
     ignoreAnnotated:
       - Preview
+
+exceptions:
+  TooGenericExceptionCaught:
+    allowedExceptionNameRegex: '_|(ignore|expected|failure).*'

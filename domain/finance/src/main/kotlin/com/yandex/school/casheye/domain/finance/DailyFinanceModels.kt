@@ -11,7 +11,16 @@ enum class TransactionKind {
 data class FinanceSummary(
     val nativeTotals: List<MoneyAmount>,
     val transactions: List<Transaction>,
+    val currentValuation: DailyCurrentValuation? = null,
 )
+
+data class DailyCurrentValuation(
+    val includedTotal: MoneyAmount?,
+    val excludedNativeTotals: List<MoneyAmount>,
+) {
+    val isComplete: Boolean
+        get() = excludedNativeTotals.isEmpty()
+}
 
 sealed interface FinanceLoadResult {
     data class Success(

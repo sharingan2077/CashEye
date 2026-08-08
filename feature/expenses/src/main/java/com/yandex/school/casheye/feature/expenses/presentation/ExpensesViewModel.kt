@@ -2,6 +2,7 @@ package com.yandex.school.casheye.feature.expenses.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.yandex.school.casheye.core.model.DatePeriod
 import com.yandex.school.casheye.core.model.MoneyAmount
 import com.yandex.school.casheye.domain.finance.DeleteTransactionUseCase
 import com.yandex.school.casheye.domain.finance.FinanceFailureReason
@@ -42,19 +43,20 @@ class ExpensesViewModel(
     private var latestSummary: FinanceSummary? = null
     private var initialRefreshCompleted = false
     private var localObservationReady = CompletableDeferred<Unit>()
-    private var selectedDate = LocalDate.now(clock)
+    private var selectedPeriod = DatePeriod(LocalDate.now(clock), LocalDate.now(clock))
 
     init {
-        observeExpenses(selectedDate)
-        refreshExpenses(selectedDate)
+        observeExpenses(selectedPeriod)
+        refreshExpenses(selectedPeriod)
     }
 
     fun onIntent(intent: ExpensesIntent) {
         when (intent) {
-            ExpensesIntent.Retry -> refreshExpenses(selectedDate)
-            ExpensesIntent.Refresh -> refreshExpenses(selectedDate)
-            ExpensesIntent.NetworkRecovered -> refreshExpenses(selectedDate, showLoadingForEmptyCache = true)
-            is ExpensesIntent.SelectDate -> selectDate(intent.date)
+            ExpensesIntent.Retry -> refreshExpenses(selectedPeriod)
+            ExpensesIntent.Refresh -> refreshExpenses(selectedPeriod)
+            ExpensesIntent.NetworkRecovered -> refreshExpenses(selectedPeriod, showLoadingForEmptyCache = true)
+            is ExpensesIntent.SelectDate -> selectPeriod(DatePeriod(intent.date, intent.date))
+            is ExpensesIntent.SelectPeriod -> selectPeriod(intent.period)
             is ExpensesIntent.DeleteTransaction -> deleteTransaction(intent.id)
         }
     }
@@ -88,31 +90,38 @@ class ExpensesViewModel(
                             amount = MoneyAmount(removed.amount, removed.currency),
                         ),
                     transactions = remaining,
+                    currentValuation = null,
                     isRefreshing = false,
                 )
             }
     }
 
-    private fun selectDate(date: LocalDate) {
-        val selectableDate = date.coerceAtMost(LocalDate.now(clock))
-        if (selectableDate == selectedDate) return
+    private fun selectPeriod(period: DatePeriod) {
+        val today = LocalDate.now(clock)
+        val selectablePeriod =
+            DatePeriod(
+                period.startDate.coerceAtMost(today),
+                period.endDate.coerceAtMost(today),
+            )
+        if (selectablePeriod.startDate > selectablePeriod.endDate || selectablePeriod == selectedPeriod) return
 
-        selectedDate = selectableDate
+        selectedPeriod = selectablePeriod
         latestSummary = null
         initialRefreshCompleted = false
         localObservationReady = CompletableDeferred()
         _state.value = ExpensesUiState.Loading
-        observeExpenses(selectableDate)
-        refreshExpenses(selectableDate)
+        observeExpenses(selectablePeriod)
+        refreshExpenses(selectablePeriod)
     }
 
-    private fun observeExpenses(date: LocalDate) {
+    private fun observeExpenses(period: DatePeriod) {
         observeJob?.cancel()
         val observationReady = localObservationReady
         observeJob =
             viewModelScope.launch {
                 getDailySummary(
-                    date = date,
+                    startDate = period.startDate,
+                    endDate = period.endDate,
                     transactionKind = TransactionKind.Expense,
                 ).collectLatest { result ->
                     observationReady.complete(Unit)
@@ -133,19 +142,19 @@ class ExpensesViewModel(
     }
 
     private fun refreshExpenses(
-        date: LocalDate,
+        period: DatePeriod,
         showLoadingForEmptyCache: Boolean = false,
     ) {
         refreshJob?.cancel()
         val observationReady = localObservationReady
         if (_state.value.isRefreshable()) {
-            _state.value = _state.value.withRefreshing(true)
+            _state.value = _state.value.markRefreshing()
         } else if (showLoadingForEmptyCache) {
             _state.value = ExpensesUiState.Loading
         }
         refreshJob =
             viewModelScope.launch {
-                when (val result = getDailySummary.refresh(date)) {
+                when (val result = getDailySummary.refresh(period.startDate, period.endDate)) {
                     FinanceRefreshResult.Success -> {
                         initialRefreshCompleted = true
                         renderSummary(isRefreshing = false)
@@ -183,6 +192,7 @@ class ExpensesViewModel(
                 ExpensesUiState.Content(
                     nativeTotals = summary.nativeTotals,
                     transactions = summary.transactions,
+                    currentValuation = summary.currentValuation,
                     isRefreshing = isRefreshing,
                 )
             }
@@ -202,11 +212,11 @@ private fun List<MoneyAmount>.subtract(amount: MoneyAmount): List<MoneyAmount> =
 
 private fun ExpensesUiState.isRefreshable(): Boolean = this is ExpensesUiState.Content || this is ExpensesUiState.Empty
 
-private fun ExpensesUiState.withRefreshing(isRefreshing: Boolean): ExpensesUiState =
+private fun ExpensesUiState.markRefreshing(): ExpensesUiState =
     when (this) {
-        is ExpensesUiState.Content -> copy(isRefreshing = isRefreshing)
+        is ExpensesUiState.Content -> copy(isRefreshing = true)
 
-        is ExpensesUiState.Empty -> copy(isRefreshing = isRefreshing)
+        is ExpensesUiState.Empty -> copy(isRefreshing = true)
 
         ExpensesUiState.Loading,
         is ExpensesUiState.Error,

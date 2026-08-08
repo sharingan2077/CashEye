@@ -7,5 +7,6 @@ kotlin {
 }
 
 dependencies {
+    // Unit tests
     testImplementation(libs.junit)
 }

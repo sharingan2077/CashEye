@@ -2,6 +2,7 @@
     <string name="empty_expenses">No expenses for this date</string>
     <string name="empty_expenses_description">Select another date in the top bar to view expenses</string>
     <string name="expenses_total">expenses, total</string>
+    <string name="expenses_not_included">Not included: %1$s</string>
     <string name="retry">Retry</string>
     <string name="error_network">Check your internet connection</string>
     <string name="error_authorization">Authorization failed</string>

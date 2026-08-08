@@ -10,6 +10,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 
+/** Downloads a consistent finance snapshot for one period before replacing its cached range. */
 internal class FinancePeriodRefresher(
     private val api: FinanceApi,
     private val localStore: FinanceLocalStore,

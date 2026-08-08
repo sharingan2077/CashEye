@@ -2,6 +2,7 @@ package com.yandex.school.casheye.feature.accounts.presentation
 
 import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.CurrencyCode
+import com.yandex.school.casheye.core.model.FinanceEditorInputLimits
 import com.yandex.school.casheye.domain.finance.FinanceRepository
 import com.yandex.school.casheye.domain.finance.GetAccountCurrencyChangeEligibilityUseCase
 import com.yandex.school.casheye.domain.finance.GetAccountUseCase
@@ -30,9 +31,11 @@ import java.math.BigDecimal
 class AccountEditorViewModelTest {
     private val dispatcher = StandardTestDispatcher()
 
-    @Before fun setUp() = Dispatchers.setMain(dispatcher)
+    @Before
+    fun setUp() = Dispatchers.setMain(dispatcher)
 
-    @After fun tearDown() = Dispatchers.resetMain()
+    @After
+    fun tearDown() = Dispatchers.resetMain()
 
     @Test
     fun `editing loads account and saves full update command`() =
@@ -46,7 +49,8 @@ class AccountEditorViewModelTest {
                 )
             viewModel.onIntent(AccountEditorIntent.Open(5))
             advanceUntilIdle()
-            viewModel.onIntent(AccountEditorIntent.NameChanged("Резерв"))
+            viewModel.onIntent(AccountEditorIntent.NameChanged(" \nРезерв\n "))
+            assertEquals("Резерв", viewModel.state.value.name)
             viewModel.onIntent(AccountEditorIntent.CurrencyChanged(CurrencyCode.USD))
             viewModel.onIntent(AccountEditorIntent.EmojiChanged("🏦"))
             viewModel.onIntent(AccountEditorIntent.Save)
@@ -67,12 +71,29 @@ class AccountEditorViewModelTest {
                 )
             viewModel.onIntent(AccountEditorIntent.Open(null))
             advanceUntilIdle()
-            viewModel.onIntent(AccountEditorIntent.NameChanged("Основной"))
+            viewModel.onIntent(AccountEditorIntent.NameChanged(" \nОсновной\n "))
+            assertEquals("Основной", viewModel.state.value.name)
             viewModel.onIntent(AccountEditorIntent.BalanceChanged("100.00"))
             viewModel.onIntent(AccountEditorIntent.Save)
             advanceUntilIdle()
 
             assertEquals(SaveAccountCommand(null, "Основной", "💵", BigDecimal("100.00"), "RUB"), repository.saved)
+        }
+
+    @Test
+    fun `account name is limited to fifty characters`() =
+        runTest {
+            val repository = AccountEditorRepository()
+            val viewModel =
+                AccountEditorViewModel(
+                    GetAccountUseCase(repository),
+                    GetAccountCurrencyChangeEligibilityUseCase(repository),
+                    SaveAccountUseCase(repository),
+                )
+
+            viewModel.onIntent(AccountEditorIntent.NameChanged("a".repeat(51)))
+
+            assertEquals(FinanceEditorInputLimits.ACCOUNT_NAME_MAX_LENGTH, viewModel.state.value.name.length)
         }
 
     @Test

@@ -5,16 +5,20 @@ import androidx.annotation.DrawableRes
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.input.InputTransformation
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.maxLength
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -29,10 +33,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -41,7 +45,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.yandex.school.casheye.core.designsystem.R
+import com.yandex.school.casheye.core.designsystem.component.IconCircle
 import com.yandex.school.casheye.core.designsystem.component.ListItem
+import com.yandex.school.casheye.core.designsystem.component.ListItemDefaults
 import com.yandex.school.casheye.core.designsystem.theme.CashEyeTheme
 import kotlinx.coroutines.android.awaitFrame
 
@@ -55,35 +61,27 @@ fun EditorRow(
     showDivider: Boolean = true,
 ) {
     Column(modifier = modifier) {
-        Row(
+        ListItem(
             modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .then(if (onClick == null) Modifier else Modifier.clickable(onClick = onClick))
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(
-                modifier =
-                    Modifier
-                        .size(40.dp)
-                        .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    painter = painterResource(icon),
+                Modifier.then(if (onClick == null) Modifier else Modifier.clickable(onClick = onClick)),
+            minHeight = ListItemDefaults.MediumMinHeight,
+            leadingContent = {
+                IconCircle(
+                    iconPainter = painterResource(icon),
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(18.dp),
+                    containerSize = 40.dp,
+                    iconSize = 18.dp,
+                    iconTint = MaterialTheme.colorScheme.primary,
                 )
-            }
+            },
+            trailingContent = { ValuePill(value = value) },
+        ) {
             Text(
                 text = label,
                 style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(start = 16.dp),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
-            Spacer(modifier = Modifier.weight(1f))
-            ValuePill(value = value, modifier = Modifier.padding(start = 12.dp))
         }
         if (showDivider) HorizontalDivider()
     }
@@ -105,7 +103,8 @@ private fun ValuePill(
                     1.dp,
                     MaterialTheme.colorScheme.outline,
                     CircleShape,
-                ).padding(horizontal = 12.dp, vertical = 6.dp),
+                ).widthIn(max = 160.dp)
+                .padding(horizontal = 12.dp, vertical = 6.dp),
     )
 }
 
@@ -180,8 +179,8 @@ fun EditorSelectionRow(
 ) {
     Column(modifier = modifier) {
         ListItem(
-            lead = { Text(text = emoji, fontSize = 24.sp) },
-            trail = {
+            leadingContent = { Text(text = emoji, fontSize = 24.sp) },
+            trailingContent = {
                 if (selected) {
                     Icon(
                         painter = painterResource(R.drawable.ic_editor_check_purple),
@@ -191,9 +190,14 @@ fun EditorSelectionRow(
                 }
             },
             modifier = Modifier.clickable(onClick = onClick),
-            height = if (subtitle == null) 56.dp else 72.dp,
-            rowHorizontalPadding = 20.dp,
-            contentHorizontalPadding = 12.dp,
+            minHeight =
+                if (subtitle == null) {
+                    ListItemDefaults.CompactMinHeight
+                } else {
+                    ListItemDefaults.DefaultMinHeight
+                },
+            contentPadding = ListItemDefaults.InsetContentPadding,
+            slotSpacing = ListItemDefaults.DenseSlotSpacing,
         ) {
             Column {
                 Text(
@@ -223,12 +227,22 @@ fun EditorTextContent(
     placeholder: String,
     singleLine: Boolean,
     onConfirm: (String) -> Unit,
+    maxLength: Int,
     modifier: Modifier = Modifier,
     onDismiss: () -> Unit = {},
 ) {
-    var draft by remember(value) { mutableStateOf(value) }
+    val textFieldState = rememberTextFieldState(initialText = value)
+    val inputTransformation = remember(maxLength) { InputTransformation.maxLength(maxLength) }
+    val lineLimits =
+        if (singleLine) {
+            TextFieldLineLimits.SingleLine
+        } else {
+            TextFieldLineLimits.MultiLine(minHeightInLines = 4, maxHeightInLines = 4)
+        }
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
+    val scrollState = rememberScrollState()
+    val gestureCoordinator = rememberSheetTextFieldGestureCoordinator(scrollState)
     LaunchedEffect(Unit) {
         awaitFrame()
         focusRequester.requestFocus()
@@ -236,18 +250,19 @@ fun EditorTextContent(
     Column(modifier.fillMaxWidth().imePadding()) {
         EditorSheetTitle(title)
         OutlinedTextField(
-            value = draft,
-            onValueChange = { draft = it },
+            state = textFieldState,
             placeholder = { Text(placeholder) },
             modifier =
                 Modifier
                     .fillMaxWidth()
                     .focusRequester(focusRequester)
                     .heightIn(min = if (singleLine) 56.dp else 128.dp)
+                    .nestedScroll(gestureCoordinator)
                     .padding(horizontal = 20.dp),
-            singleLine = singleLine,
-            minLines = if (singleLine) 1 else 4,
-            maxLines = if (singleLine) 1 else 4,
+            lineLimits = lineLimits,
+            scrollState = scrollState,
+            inputTransformation = inputTransformation,
+            supportingText = { Text(text = "${textFieldState.text.length}/$maxLength") },
         )
         Row(
             modifier = Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 8.dp, end = 24.dp),
@@ -264,7 +279,7 @@ fun EditorTextContent(
             TextButton(
                 onClick = {
                     focusManager.clearFocus(force = true)
-                    onConfirm(draft)
+                    onConfirm(textFieldState.text.toString())
                 },
             ) {
                 Text(stringResource(R.string.finance_editor_done))

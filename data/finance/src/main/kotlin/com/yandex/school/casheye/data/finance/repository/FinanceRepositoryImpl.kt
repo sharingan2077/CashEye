@@ -27,6 +27,13 @@ import java.time.Instant
 import java.time.LocalDate
 import kotlin.time.Duration.Companion.milliseconds
 
+/**
+ * Coordinates local-first finance reads and writes.
+ *
+ * Room remains the UI source of truth: successful refreshes update it, while a refresh failure
+ * still returns usable cached data. Editor writes are persisted locally before an outbox sync is
+ * scheduled.
+ */
 class FinanceRepositoryImpl(
     private val api: FinanceApi,
     private val localStore: FinanceLocalStore,
@@ -73,8 +80,8 @@ class FinanceRepositoryImpl(
                     null
                 } catch (error: CancellationException) {
                     throw error
-                } catch (error: Exception) {
-                    error.toFailureReason()
+                } catch (failure: Exception) {
+                    failure.toFailureReason()
                 }
             try {
                 val accounts = localStore.getAccounts()
@@ -217,9 +224,9 @@ class FinanceRepositoryImpl(
             FinanceRefreshResult.Success
         } catch (error: CancellationException) {
             throw error
-        } catch (error: Exception) {
+        } catch (failure: Exception) {
             FinanceRefreshResult.Failure(
-                reason = error.toFailureReason(),
+                reason = failure.toFailureReason(),
                 hasUsableCache = hasUsableCache(),
             )
         }
@@ -237,6 +244,7 @@ class FinanceRepositoryImpl(
         runCatching(syncScheduler::enqueueImmediateSync)
     }
 
+    /** Returns refreshed data when possible, but preserves a non-empty local cache after a failure. */
     private suspend fun <T> localFirstEditorRequest(
         refresh: suspend () -> Unit,
         read: suspend () -> T,
@@ -250,8 +258,8 @@ class FinanceRepositoryImpl(
                         null
                     } catch (error: CancellationException) {
                         throw error
-                    } catch (error: Exception) {
-                        error.toFailureReason()
+                    } catch (failure: Exception) {
+                        failure.toFailureReason()
                     }
                 val local = read()
                 if (refreshFailure == null || hasCache(local)) {

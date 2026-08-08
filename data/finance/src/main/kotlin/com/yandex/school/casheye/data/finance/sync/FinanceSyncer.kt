@@ -14,7 +14,6 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import retrofit2.HttpException
 import java.io.IOException
@@ -51,6 +50,7 @@ class FinanceSyncer internal constructor(
     private val mutex = Mutex()
     private val retryPolicy = ServerRetryPolicy(waitBeforeRetry)
 
+    /** Serializes push-then-pull runs so concurrent workers cannot send the same outbox entry. */
     suspend fun sync(): FinanceSyncResult = mutex.withLock { syncLocked() }
 
     private suspend fun syncLocked(): FinanceSyncResult =
@@ -68,8 +68,8 @@ class FinanceSyncer internal constructor(
             } else {
                 FinanceSyncResult.PermanentFailure(error)
             }
-        } catch (error: Exception) {
-            FinanceSyncResult.PermanentFailure(error)
+        } catch (failure: Exception) {
+            FinanceSyncResult.PermanentFailure(failure)
         }
 
     private suspend fun drainOutbox() {
@@ -193,6 +193,7 @@ class FinanceSyncer internal constructor(
         val isCreate: Boolean = operations.any { it.operationType == PendingOperationType.CREATE }
     }
 
+    /** Collapses operations per entity and orders ready batches so account operations precede dependents. */
     private fun List<PendingOperationEntity>.toBatches(): List<PendingBatch> =
         groupBy { it.entityType to it.localEntityId }
             .values

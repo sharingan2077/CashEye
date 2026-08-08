@@ -2,11 +2,8 @@
     <string name="empty_accounts">Aucun compte pour le moment</string>
     <string name="empty_accounts_description">Ajoutez votre premier compte pour suivre votre solde.</string>
     <string name="balance_total">solde, total</string>
-    <string name="balance_valuation">≈ %1$s</string>
-    <string name="balance_valuation_dated">≈ %1$s · taux au %2$s</string>
-    <string name="balance_valuation_partial">Inclus ≈ %1$s</string>
-    <string name="balance_valuation_partial_dated">Inclus ≈ %1$s · taux au %2$s</string>
     <string name="balance_not_included">Non inclus : %1$s</string>
+    <string name="balance_rate_date">Taux du %1$s</string>
     <string name="retry">Réessayer</string>
     <string name="error_network">Vérifiez votre connexion Internet</string>
     <string name="error_authorization">Échec de l’autorisation</string>
@@ -14,7 +11,6 @@
     <string name="error_load_accounts">Impossible de charger les comptes</string>
     <string name="error_account_name_required">Saisissez le nom du compte</string>
     <string name="error_invalid_balance">Saisissez un solde valide</string>
-    <string name="error_select_currency">Sélectionnez une devise</string>
     <string name="error_save_account">Impossible d’enregistrer le compte</string>
     <string name="error_account_currency_has_transactions">Impossible de changer la devise d’un compte ayant des transactions</string>
     <string name="error_account_currency_history_unavailable">Connectez-vous à Internet pour vérifier que ce compte n’a pas de transactions</string>

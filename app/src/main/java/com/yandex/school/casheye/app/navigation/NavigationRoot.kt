@@ -4,6 +4,7 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -18,18 +19,27 @@ import com.yandex.school.casheye.app.navigation.chrome.NavigationScaffold
 import com.yandex.school.casheye.app.navigation.chrome.TOP_LEVEL_DESTINATIONS
 import com.yandex.school.casheye.app.navigation.editor.EditorOverlayHost
 import com.yandex.school.casheye.app.navigation.editor.EditorTarget
-import com.yandex.school.casheye.core.designsystem.component.datepicker.PastOrPresentDatePickerDialog
+import com.yandex.school.casheye.core.designsystem.component.datepicker.DatePeriodPickerSheet
+import com.yandex.school.casheye.core.model.DatePeriod
+import com.yandex.school.casheye.feature.settings.presentation.SettingsSheetRoute
 import kotlinx.coroutines.flow.StateFlow
 import java.time.LocalDate
+
+private object SettingsSheetSessionState {
+    var isVisible: Boolean? = null
+}
 
 @Composable
 fun NavigationRoot(
     networkStatus: StateFlow<Boolean>,
+    biometricsAvailable: Boolean,
+    onRequestBiometricAuthentication: (onResult: (Boolean) -> Unit) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var selectedDateEpochDay by rememberSaveable {
+    var selectedStartDateEpochDay by rememberSaveable {
         mutableLongStateOf(LocalDate.now().toEpochDay())
     }
+    var selectedEndDateEpochDay by rememberSaveable { mutableLongStateOf(LocalDate.now().toEpochDay()) }
     val snackbarHostState = remember { SnackbarHostState() }
     val isOnline by networkStatus.collectAsStateWithLifecycle()
     var previousOnline by rememberSaveable { mutableStateOf<Boolean?>(null) }
@@ -64,23 +74,31 @@ fun NavigationRoot(
         }
     }
 
-    var showDatePicker by rememberSaveable { mutableStateOf(false) }
-    val selectedDate = LocalDate.ofEpochDay(selectedDateEpochDay).coerceAtMost(LocalDate.now())
+    var showPeriodPicker by rememberSaveable { mutableStateOf(false) }
+    val selectedPeriod =
+        DatePeriod(
+            LocalDate.ofEpochDay(selectedStartDateEpochDay).coerceAtMost(LocalDate.now()),
+            LocalDate.ofEpochDay(selectedEndDateEpochDay).coerceAtMost(LocalDate.now()),
+        )
     var editorTarget by remember { mutableStateOf<EditorTarget?>(null) }
+    var showSettings by rememberSaveable {
+        mutableStateOf(SettingsSheetSessionState.isVisible ?: false)
+    }
+    SideEffect { SettingsSheetSessionState.isVisible = showSettings }
 
     NavigationScaffold(
         modifier = modifier,
         navigationState = navigationState,
         snackbarHostState = snackbarHostState,
         navigator = navigator,
-        selectedDate = selectedDate,
+        selectedPeriod = selectedPeriod,
         networkRecoveryRefresh = networkRecoveryRefresh,
         onNetworkRecoveryRefresh = { id ->
             if (networkRecoveryRefresh?.id == id) {
                 networkRecoveryRefresh = null
             }
         },
-        onDateClick = { showDatePicker = true },
+        onDateClick = { showPeriodPicker = true },
         onEditExpense = { editorTarget = EditorTarget.Expense(it) },
         onEditIncome = { editorTarget = EditorTarget.Income(it) },
         onEditAccount = { editorTarget = EditorTarget.Account(it) },
@@ -92,24 +110,35 @@ fun NavigationRoot(
                     else -> EditorTarget.Expense(null)
                 }
         },
+        onSettingsClick = { showSettings = true },
     )
 
-    if (showDatePicker) {
-        PastOrPresentDatePickerDialog(
-            selectedDate = selectedDate,
-            onDateSelect = { date ->
-                selectedDateEpochDay = date.toEpochDay()
-                showDatePicker = false
+    if (showPeriodPicker) {
+        DatePeriodPickerSheet(
+            period = selectedPeriod,
+            today = LocalDate.now(),
+            onPeriodSelect = { period ->
+                selectedStartDateEpochDay = period.startDate.toEpochDay()
+                selectedEndDateEpochDay = period.endDate.toEpochDay()
+                showPeriodPicker = false
             },
-            onDismiss = { showDatePicker = false },
+            onDismiss = { showPeriodPicker = false },
         )
     }
 
     EditorOverlayHost(
         target = editorTarget,
-        selectedDate = selectedDate,
+        selectedDate = selectedPeriod.endDate,
         onDismiss = { editorTarget = null },
     )
+
+    if (showSettings) {
+        SettingsSheetRoute(
+            onDismiss = { showSettings = false },
+            biometricsAvailable = biometricsAvailable,
+            onRequestBiometricEnable = onRequestBiometricAuthentication,
+        )
+    }
 }
 
 internal data class NetworkRecoveryRefresh(

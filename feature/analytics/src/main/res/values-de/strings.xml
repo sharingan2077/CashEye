@@ -14,7 +14,10 @@
     <string name="selected_count">Ausgewählt: %1$d</string>
     <string name="transactions">Transaktionen</string>
     <string name="missing_rates_title">Einige Transaktionen wurden nicht einbezogen</string>
-    <string name="missing_rates_description">%1$d Transaktionen: historische Kurse für %2$s fehlen.</string>
+    <plurals name="missing_rates_description">
+        <item quantity="one">%1$d Transaktion: Historischer Kurs für %2$s fehlt.</item>
+        <item quantity="other">%1$d Transaktionen: Historische Kurse für %2$s fehlen.</item>
+    </plurals>
     <string name="not_included_missing_rate">Nicht einbezogen: Wechselkurs nicht verfügbar</string>
     <string name="original_amount_rate">%1$s · Kurs %2$s</string>
     <string name="empty_period">Keine Vorgänge im ausgewählten Zeitraum</string>
@@ -25,6 +28,7 @@
     <string name="type_income">Einnahmen</string>
     <string name="type_all">Alle</string>
     <string name="period_custom">Benutzerdefiniert</string>
+    <string name="period_today">Heute</string>
     <string name="period_week">Letzte Woche</string>
     <string name="period_month">Letzter Monat</string>
     <string name="period_quarter">Letztes Quartal</string>

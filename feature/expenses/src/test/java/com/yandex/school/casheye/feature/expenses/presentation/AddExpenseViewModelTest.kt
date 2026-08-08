@@ -2,6 +2,7 @@ package com.yandex.school.casheye.feature.expenses.presentation
 
 import com.yandex.school.casheye.core.model.Account
 import com.yandex.school.casheye.core.model.Category
+import com.yandex.school.casheye.core.model.FinanceEditorInputLimits
 import com.yandex.school.casheye.core.model.Transaction
 import com.yandex.school.casheye.domain.finance.FinanceDataLoadResult
 import com.yandex.school.casheye.domain.finance.FinanceRepository
@@ -42,9 +43,11 @@ class AddExpenseViewModelTest {
     private val dispatcher = StandardTestDispatcher()
     private val clock = Clock.fixed(Instant.parse("2026-07-22T10:30:00Z"), ZoneOffset.UTC)
 
-    @Before fun setUp() = Dispatchers.setMain(dispatcher)
+    @Before
+    fun setUp() = Dispatchers.setMain(dispatcher)
 
-    @After fun tearDown() = Dispatchers.resetMain()
+    @After
+    fun tearDown() = Dispatchers.resetMain()
 
     @Test
     fun `expense that would make balance negative is not saved`() =
@@ -71,12 +74,31 @@ class AddExpenseViewModelTest {
             viewModel.onIntent(AddExpenseIntent.Open(original.id, LocalDate.of(2026, 7, 22)))
             advanceUntilIdle()
             viewModel.onIntent(AddExpenseIntent.AmountChanged("45"))
+            viewModel.onIntent(AddExpenseIntent.CommentChanged(" \nПродукты\n "))
             val effect = async(start = CoroutineStart.UNDISPATCHED) { viewModel.effects.first() }
             viewModel.onIntent(AddExpenseIntent.Save)
             advanceUntilIdle()
 
             assertEquals(BigDecimal("45"), repository.saved?.amount)
+            assertEquals("Продукты", repository.saved?.comment)
             assertEquals(AddExpenseEffect.Saved, effect.await())
+        }
+
+    @Test
+    fun `new expense saves comment without surrounding whitespace`() =
+        runTest {
+            val repository = EditorRepository(accounts = listOf(account(balance = "50")))
+            val viewModel = viewModel(repository)
+            viewModel.onIntent(AddExpenseIntent.Open(null, LocalDate.of(2026, 7, 22)))
+            advanceUntilIdle()
+            viewModel.onIntent(AddExpenseIntent.CategorySelected(2))
+            viewModel.onIntent(AddExpenseIntent.AmountChanged("10"))
+            viewModel.onIntent(AddExpenseIntent.CommentChanged(" \nПродукты\n "))
+            assertEquals("Продукты", viewModel.state.value.comment)
+            viewModel.onIntent(AddExpenseIntent.Save)
+            advanceUntilIdle()
+
+            assertEquals("Продукты", repository.saved?.comment)
         }
 
     @Test
@@ -91,6 +113,16 @@ class AddExpenseViewModelTest {
 
             viewModel.onIntent(AddExpenseIntent.DateChanged(LocalDate.of(2026, 8, 1)))
             assertEquals(LocalDate.of(2026, 7, 22), viewModel.state.value.date)
+        }
+
+    @Test
+    fun `expense comment is limited to two hundred characters`() =
+        runTest {
+            val viewModel = viewModel(EditorRepository(accounts = listOf(account(balance = "50"))))
+
+            viewModel.onIntent(AddExpenseIntent.CommentChanged("a".repeat(201)))
+
+            assertEquals(FinanceEditorInputLimits.TRANSACTION_COMMENT_MAX_LENGTH, viewModel.state.value.comment.length)
         }
 
     private fun viewModel(repository: FinanceRepository) =
