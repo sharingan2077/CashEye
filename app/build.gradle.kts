@@ -48,16 +48,20 @@ android {
     }
 
     val releaseStoreFile =
-        providers.gradleProperty("releaseStoreFile")
+        providers
+            .gradleProperty("releaseStoreFile")
             .orElse(providers.environmentVariable("RELEASE_STORE_FILE"))
     val releaseStorePassword =
-        providers.gradleProperty("releaseStorePassword")
+        providers
+            .gradleProperty("releaseStorePassword")
             .orElse(providers.environmentVariable("RELEASE_STORE_PASSWORD"))
     val releaseKeyAlias =
-        providers.gradleProperty("releaseKeyAlias")
+        providers
+            .gradleProperty("releaseKeyAlias")
             .orElse(providers.environmentVariable("RELEASE_KEY_ALIAS"))
     val releaseKeyPassword =
-        providers.gradleProperty("releaseKeyPassword")
+        providers
+            .gradleProperty("releaseKeyPassword")
             .orElse(providers.environmentVariable("RELEASE_KEY_PASSWORD"))
 
     signingConfigs {
