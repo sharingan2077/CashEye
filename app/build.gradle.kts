@@ -31,7 +31,7 @@ android {
         minSdk = 26
         targetSdk = 37
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -47,9 +47,31 @@ android {
         buildConfigField("String", "API_KEY", "\"$apiKey\"")
     }
 
+    val releaseStoreFile =
+        providers.gradleProperty("releaseStoreFile")
+            .orElse(providers.environmentVariable("RELEASE_STORE_FILE"))
+    val releaseStorePassword =
+        providers.gradleProperty("releaseStorePassword")
+            .orElse(providers.environmentVariable("RELEASE_STORE_PASSWORD"))
+    val releaseKeyAlias =
+        providers.gradleProperty("releaseKeyAlias")
+            .orElse(providers.environmentVariable("RELEASE_KEY_ALIAS"))
+    val releaseKeyPassword =
+        providers.gradleProperty("releaseKeyPassword")
+            .orElse(providers.environmentVariable("RELEASE_KEY_PASSWORD"))
+
+    signingConfigs {
+        create("release") {
+            storeFile = releaseStoreFile.orNull?.let(rootProject::file)
+            storePassword = releaseStorePassword.orNull
+            keyAlias = releaseKeyAlias.orNull
+            keyPassword = releaseKeyPassword.orNull
+        }
+    }
+
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
             resValue("string", "app_name", "CashEye")
             optimization {
                 enable = true

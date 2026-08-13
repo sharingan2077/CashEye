@@ -24,6 +24,7 @@ output.json
 # Local configuration and signing
 local.properties
 */local.properties
+keystore.properties
 .env
 .env.*
 !.env.example

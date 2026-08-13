@@ -1,0 +1,47 @@
+name: Release
+
+on:
+  push:
+    tags: [v'*']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+      - name: Restore release keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/casheye-release.keystore"
+      - name: Build signed APK
+        env:
+          RELEASE_STORE_FILE: ${{ runner.temp }}/casheye-release.keystore
+          RELEASE_STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./gradlew --no-daemon assembleRelease
+      - name: Prepare release assets
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          cp app/build/outputs/apk/release/app-release.apk "CashEye-${TAG}.apk"
+          sha256sum "CashEye-${TAG}.apk" > "CashEye-${TAG}.apk.sha256"
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: gh release create "$TAG" "CashEye-${TAG}.apk" "CashEye-${TAG}.apk.sha256" --generate-notes --title "CashEye $TAG"
