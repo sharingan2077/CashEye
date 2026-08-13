@@ -1,6 +1,14 @@
 # CashEye
 
+[![CI](https://github.com/sharingan2077/CashEye/actions/workflows/ci.yml/badge.svg)](https://github.com/sharingan2077/CashEye/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/sharingan2077/CashEye)](https://github.com/sharingan2077/CashEye/releases/latest)
+[![License](https://img.shields.io/github/license/sharingan2077/CashEye)](LICENSE)
+
 Android-приложение для учёта личных финансов: счетов, доходов, расходов и аналитики.
+
+**[Скачать последнюю версию](https://github.com/sharingan2077/CashEye/releases/latest)** ·
+**[Сообщить об ошибке](https://github.com/sharingan2077/CashEye/issues/new/choose)** ·
+**[Предложить улучшение](https://github.com/sharingan2077/CashEye/issues/new/choose)**
 
 ## Возможности
 
@@ -115,9 +123,9 @@ name `com.yandex.school.casheye.debug`, поэтому её можно уста�
 APK находится в `app/build/outputs/apk/release/app-release.apk`. Для release включён R8: он удаляет
 неиспользуемые код и ресурсы и выполняет обфускацию.
 
-Сейчас release намеренно подписывается debug-ключом — это подходит только для локальной проверки.
-Такой APK не следует распространять как production-релиз. Для публикации нужно заменить debug
-подпись на отдельный release keystore и хранить его вне Git.
+Для публичных релизов нужен отдельный keystore. GitHub Actions получает его и пароли только из
+GitHub Secrets, собирает подписанный APK и публикует вместе с SHA-256. Подробная инструкция для
+настройки первого релиза — в [docs/RELEASING.md](docs/RELEASING.md).
 
 При смене ключа подписи Android не устанавливает новую версию поверх уже установленной версии с
 другим ключом: старое приложение потребуется удалить один раз.
@@ -146,3 +154,13 @@ APK находится в `app/build/outputs/apk/release/app-release.apk`. Дл�
 ./gradlew ktlintCheck
 ./gradlew lintDebug
 ```
+
+## Участие и безопасность
+
+Пожалуйста, прочитайте [CONTRIBUTING.md](CONTRIBUTING.md) перед первым pull request. Обычные
+ошибки и предложения принимаются через Issues; уязвимости не публикуйте в открытом issue — порядок
+сообщения описан в [SECURITY.md](SECURITY.md).
+
+## Лицензия
+
+Проект распространяется по [MIT License](LICENSE).
