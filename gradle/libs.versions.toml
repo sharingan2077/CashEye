@@ -38,7 +38,7 @@ datastoreCore = "1.2.1"
 
 # Networking
 retrofit = "3.0.0"
-okhttp = "5.4.0"
+okhttp = "5.5.0"
 
 # Security
 biometric = "1.1.0"
