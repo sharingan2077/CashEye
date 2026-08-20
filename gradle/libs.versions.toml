@@ -27,7 +27,7 @@ ktlintPlugin = "14.2.0"
 ktlintEngine = "1.8.0"
 detekt = "2.0.0-alpha.5"
 composeRules = "0.6.2"
-metro = "1.4.0"
+metro = "1.4.2"
 
 # Data and background work
 coroutines = "1.11.0"
